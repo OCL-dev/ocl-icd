@@ -1,4 +1,12 @@
-all: library partial-clean
+all: library_database
+
+library_database: 
+	ruby icd_generator.rb --database
+	gcc -g -c ocl_icd.c -o ocl_icd.o -Wno-cpp -Wno-deprecated-declarations -fpic
+	gcc -g -c ocl_icd_lib.c -o ocl_icd_lib.o -Wno-cpp -Wno-deprecated-declarations -fpic
+	gcc -g -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
+	gcc -g -c ocl_icd_test.c -o ocl_icd_test.o 
+	gcc -g ocl_icd_test.o -lOpenCL -o ocl_icd_test
 
 library: test_tools install
 	ruby icd_generator.rb --finalize

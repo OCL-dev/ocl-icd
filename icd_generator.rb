@@ -481,12 +481,53 @@ EOF
       f.puts generate_ocl_icd_lib_source
     }
   end
+  
+  def self.generate_from_database
+    doc={}
+    File::open('./ocl_interface.yaml') { |f|
+      doc = YAML:: load(f.read)
+    }
+    $known_entries = {}
+    $api_entries = {}
+    entry_name = ""
+    doc.each { |key, value|
+      begin
+        entry_name = value.match(/CL_API_CALL(.*?)\(/m)[1].strip
+      rescue
+        entry_name = value.match(/(\S*?)\(/m)[1].strip
+      end
+      $known_entries[key] = entry_name
+      $api_entries[entry_name] = value
+    }
+    $api_entries_array = []
+    unknown=0
+    ($known_entries.length+$buff).times { |i|
+      #puts $known_entries[i]
+      if $known_entries[i] then
+        $api_entries_array.push( $api_entries[$known_entries[i]] )
+      else
+        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{unknown}(void);" )
+        unknown += 1
+      end
+    }
+    File.open('ocl_icd.h','w') { |f|
+      f.puts generate_ocl_icd_header_final
+    }
+    File.open('ocl_icd_bindings.c','w') { |f|
+      f.puts generate_ocl_icd_source
+    }
+    File.open('ocl_icd_lib.c','w') { |f|
+      f.puts generate_ocl_icd_lib_source
+    }
+  end
 end
 
 if ARGV[0] == "--generate"
   IcdGenerator.generate_sources
 elsif ARGV[0] == "--finalize"
   IcdGenerator.finalize
+elsif ARGV[0] == "--database"
+  IcdGenerator.generate_from_database
 else
   raise "Argument must be one of --generate or --finalize" 
 end

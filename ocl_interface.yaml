@@ -458,31 +458,6 @@
                     cl_buffer_create_type    /* buffer_create_type */,
                     const void *             /* buffer_create_info */,
                     cl_int *                 /* errcode_ret */) CL_API_SUFFIX__VERSION_1_1;
-73: |-
-  CL_API_ENTRY cl_int CL_API_CALL
-  clEnqueueReleaseGLObjects(cl_command_queue      /* command_queue */,
-                            cl_uint               /* num_objects */,
-                            const cl_mem *        /* mem_objects */,
-                            cl_uint               /* num_events_in_wait_list */,
-                            const cl_event *      /* event_wait_list */,
-                            cl_event *            /* event */) CL_API_SUFFIX__VERSION_1_0;
-54: |-
-  CL_API_ENTRY cl_int CL_API_CALL
-  clEnqueueCopyImageToBuffer(cl_command_queue /* command_queue */,
-                             cl_mem           /* src_image */,
-                             cl_mem           /* dst_buffer */, 
-                             const size_t *   /* src_origin[3] */,
-                             const size_t *   /* region[3] */, 
-                             size_t           /* dst_offset */,
-                             cl_uint          /* num_events_in_wait_list */,
-                             const cl_event * /* event_wait_list */,
-                             cl_event *       /* event */) CL_API_SUFFIX__VERSION_1_0;
-35: |-
-  CL_API_ENTRY cl_int CL_API_CALL
-  clCreateKernelsInProgram(cl_program     /* program */,
-                           cl_uint        /* num_kernels */,
-                           cl_kernel *    /* kernels */,
-                           cl_uint *      /* num_kernels_ret */) CL_API_SUFFIX__VERSION_1_0;
 16: |-
   CL_API_ENTRY cl_mem CL_API_CALL
   clCreateImage3D(cl_context              /* context */,
@@ -495,24 +470,31 @@
                   size_t                  /* image_slice_pitch */, 
                   void *                  /* host_ptr */,
                   cl_int *                /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
-83: |-
+35: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clSetMemObjectDestructorCallback(  cl_mem /* memobj */, 
-                                      void (CL_CALLBACK * /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/), 
-                                      void * /*user_data */ )             CL_API_SUFFIX__VERSION_1_1;
-26: |-
-  CL_API_ENTRY cl_program CL_API_CALL
-  clCreateProgramWithSource(cl_context        /* context */,
-                            cl_uint           /* count */,
-                            const char **     /* strings */,
-                            const size_t *    /* lengths */,
-                            cl_int *          /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
-64: |-
+  clCreateKernelsInProgram(cl_program     /* program */,
+                           cl_uint        /* num_kernels */,
+                           cl_kernel *    /* kernels */,
+                           cl_uint *      /* num_kernels_ret */) CL_API_SUFFIX__VERSION_1_0;
+54: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clEnqueueBarrier(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
-7: |-
+  clEnqueueCopyImageToBuffer(cl_command_queue /* command_queue */,
+                             cl_mem           /* src_image */,
+                             cl_mem           /* dst_buffer */, 
+                             const size_t *   /* src_origin[3] */,
+                             const size_t *   /* region[3] */, 
+                             size_t           /* dst_offset */,
+                             cl_uint          /* num_events_in_wait_list */,
+                             const cl_event * /* event_wait_list */,
+                             cl_event *       /* event */) CL_API_SUFFIX__VERSION_1_0;
+73: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clReleaseContext(cl_context /* context */) CL_API_SUFFIX__VERSION_1_0;
+  clEnqueueReleaseGLObjects(cl_command_queue      /* command_queue */,
+                            cl_uint               /* num_objects */,
+                            const cl_mem *        /* mem_objects */,
+                            cl_uint               /* num_events_in_wait_list */,
+                            const cl_event *      /* event_wait_list */,
+                            cl_event *            /* event */) CL_API_SUFFIX__VERSION_1_0;
 45: |-
   CL_API_ENTRY cl_int CL_API_CALL
   clGetEventProfilingInfo(cl_event            /* event */,
@@ -520,12 +502,24 @@
                           size_t              /* param_value_size */,
                           void *              /* param_value */,
                           size_t *            /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
-36: |-
+7: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clRetainKernel(cl_kernel    /* kernel */) CL_API_SUFFIX__VERSION_1_0;
-17: |-
+  clReleaseContext(cl_context /* context */) CL_API_SUFFIX__VERSION_1_0;
+64: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clRetainMemObject(cl_mem /* memobj */) CL_API_SUFFIX__VERSION_1_0;
+  clEnqueueBarrier(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
+26: |-
+  CL_API_ENTRY cl_program CL_API_CALL
+  clCreateProgramWithSource(cl_context        /* context */,
+                            cl_uint           /* count */,
+                            const char **     /* strings */,
+                            const size_t *    /* lengths */,
+                            cl_int *          /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
+83: |-
+  CL_API_ENTRY cl_int CL_API_CALL
+  clSetMemObjectDestructorCallback(  cl_mem /* memobj */, 
+                                      void (CL_CALLBACK * /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/), 
+                                      void * /*user_data */ )             CL_API_SUFFIX__VERSION_1_1;
 55: |-
   CL_API_ENTRY cl_int CL_API_CALL
   clEnqueueCopyBufferToImage(cl_command_queue /* command_queue */,
@@ -537,20 +531,12 @@
                              cl_uint          /* num_events_in_wait_list */,
                              const cl_event * /* event_wait_list */,
                              cl_event *       /* event */) CL_API_SUFFIX__VERSION_1_0;
-8: |-
+17: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clGetContextInfo(cl_context         /* context */, 
-                   cl_context_info    /* param_name */, 
-                   size_t             /* param_value_size */, 
-                   void *             /* param_value */, 
-                   size_t *           /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
-46: |-
+  clRetainMemObject(cl_mem /* memobj */) CL_API_SUFFIX__VERSION_1_0;
+36: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clFlush(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
-84: |-
-  CL_API_ENTRY cl_event CL_API_CALL
-  clCreateUserEvent(cl_context    /* context */,
-                    cl_int *      /* errcode_ret */) CL_API_SUFFIX__VERSION_1_1;
+  clRetainKernel(cl_kernel    /* kernel */) CL_API_SUFFIX__VERSION_1_0;
 27: |-
   CL_API_ENTRY cl_program CL_API_CALL
   clCreateProgramWithBinary(cl_context                     /* context */,
@@ -560,12 +546,20 @@
                             const unsigned char **         /* binaries */,
                             cl_int *                       /* binary_status */,
                             cl_int *                       /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
-18: |-
+84: |-
+  CL_API_ENTRY cl_event CL_API_CALL
+  clCreateUserEvent(cl_context    /* context */,
+                    cl_int *      /* errcode_ret */) CL_API_SUFFIX__VERSION_1_1;
+46: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clReleaseMemObject(cl_mem /* memobj */) CL_API_SUFFIX__VERSION_1_0;
-37: |-
+  clFlush(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
+8: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clReleaseKernel(cl_kernel   /* kernel */) CL_API_SUFFIX__VERSION_1_0;
+  clGetContextInfo(cl_context         /* context */, 
+                   cl_context_info    /* param_name */, 
+                   size_t             /* param_value_size */, 
+                   void *             /* param_value */, 
+                   size_t *           /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 56: |-
   CL_API_ENTRY void * CL_API_CALL
   clEnqueueMapBuffer(cl_command_queue /* command_queue */,
@@ -578,3 +572,9 @@
                      const cl_event * /* event_wait_list */,
                      cl_event *       /* event */,
                      cl_int *         /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
+37: |-
+  CL_API_ENTRY cl_int CL_API_CALL
+  clReleaseKernel(cl_kernel   /* kernel */) CL_API_SUFFIX__VERSION_1_0;
+18: |-
+  CL_API_ENTRY cl_int CL_API_CALL
+  clReleaseMemObject(cl_mem /* memobj */) CL_API_SUFFIX__VERSION_1_0;
