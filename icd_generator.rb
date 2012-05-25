@@ -175,6 +175,69 @@ CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(
     return (void *)clIcdGetPlatformIDsKHR;
   return NULL;
 }
+CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
+             cl_platform_id   platform, 
+             cl_platform_info param_name,
+             size_t           param_value_size, 
+             void *           param_value,
+             size_t *         param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
+#error You ahve to fill this function with your information or assert that your version responds to CL_PLATFORM_ICD_SUFFIX_KHR
+//  char cl_platform_profile[] = "FULL_PROFILE";
+//  char cl_platform_version[] = "OpenCL 1.1";
+//  char cl_platform_name[] = "DummyCL";
+//  char cl_platform_vendor[] = "LIG";
+//  char cl_platform_extensions[] = "cl_khr_icd";
+//  char cl_platform_icd_suffix_khr[] = "DUMMY";
+  size_t size_string;
+  char * string_p;
+  if( platform != NULL ) {
+    int found = 0;
+    int i;
+    for(i=0; i<num_master_platforms; i++) {
+      if( platform == &master_platforms[i] )
+        found = 1;
+    }
+    if(!found)
+      return CL_INVALID_PLATFORM;
+  }
+  switch ( param_name ) {
+    case CL_PLATFORM_PROFILE:
+      string_p = cl_platform_profile;
+      size_string = sizeof(cl_platform_profile);
+      break;
+    case CL_PLATFORM_VERSION:
+      string_p = cl_platform_version;
+      size_string = sizeof(cl_platform_version);
+      break;
+    case CL_PLATFORM_NAME:
+      string_p = cl_platform_name;
+      size_string = sizeof(cl_platform_name);
+      break;
+    case CL_PLATFORM_VENDOR:
+      string_p = cl_platform_vendor;
+      size_string = sizeof(cl_platform_vendor);
+      break;
+    case CL_PLATFORM_EXTENSIONS:
+      string_p = cl_platform_extensions;
+      size_string = sizeof(cl_platform_extensions);
+      break;
+    case CL_PLATFORM_ICD_SUFFIX_KHR:
+      string_p = cl_platform_icd_suffix_khr;
+      size_string = sizeof(cl_platform_icd_suffix_khr);
+      break;
+    default:
+      return CL_INVALID_VALUE;
+      break;
+  }
+  if( param_value != NULL ) {
+    if( size_string > param_value_size )
+      return CL_INVALID_VALUE;
+    memcpy(param_value, string_p, size_string);
+  }
+  if( param_value_size_ret != NULL )
+    *param_value_size_ret = size_string;
+  return CL_SUCCESS;
+}
 EOF
     return ocl_icd_source
   end
