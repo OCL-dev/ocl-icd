@@ -45,7 +45,7 @@ install_test_lib: libdummycl.so.1.0
 	echo "/usr/local/lib/libdummycl.so" > /etc/OpenCL/vendors/dummycl.icd
 	ldconfig
 
-uninstall:
+uninstall_test_lib:
 	rm -f /usr/local/lib/libdummycl.so /usr/local/lib/libdummycl.so.1 /etc/OpenCL/vendors/dummycl.icd
 
 clean:

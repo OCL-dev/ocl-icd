@@ -1,0 +1,28 @@
+This package aims at creating an Open Source alternative to vendor specific
+OpenCL ICD driver demultiplexers.  It can do so in two fashion:
+ - by creating a dummy OpenCL implementation using available headers on the
+   system. This implementation is compatible with existing ICDs
+   demultiplexers. A test program then calls every function defined in the
+   headers and thus obtains the function mapping inside the demultiplexer.
+   This mapping in then used to create an Open Source demultiplexer.
+ - by using a provided database of API entries and their order in the
+   demultiplexer table.
+
+Using the first alternative automatically add new functions to the
+database. Nonetheless it has some drawbacks:
+ - you avec to install the file dummy.icd in /etc/OpenCL/vendors/ which can
+   only be done if root.
+ - if new API entry in headers are not canonical or have strange structure
+   the giant ruby script can mess things up. In this case happy have fun
+   with regular expressions, or custom function writing. For now 3
+   functions are treated differently: clCreateContext,
+   clCreateContextFromType and clWaitForEvents. This is because the parameter
+   relevant for the ICD demultiplexer is hidden inside lists.
+
+This package also delivers a skeleton of bindings to incorporate inside an
+OpenCL implementation to give it ICD functionalities.
+
+Main targets:
+make : builds the library and bindings from database
+make library : builds the library from scratch and adds new functions to
+               the database. Needs root permission.
