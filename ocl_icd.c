@@ -68,6 +68,7 @@ static inline cl_uint _open_drivers(DIR *dir) {
     if( strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
     char * lib_path;
+    char * err;
     unsigned int lib_path_length = strlen(_dir_path) + strlen(ent->d_name) + 1;
     lib_path = malloc(lib_path_length*sizeof(char));
     sprintf(lib_path,"%s%s", _dir_path, ent->d_name);
@@ -77,14 +78,20 @@ static inline cl_uint _open_drivers(DIR *dir) {
     fseek(f, 0, SEEK_END);
     lib_path_length = ftell(f)+1;
     fseek(f, 0, SEEK_SET);
+    if(lib_path_length == 1) {
+      fclose(f);
+      continue;
+    }
     lib_path = malloc(lib_path_length*sizeof(char));
+    err = fgets(lib_path, lib_path_length, f);
     fclose(f);
-    if( fgets(lib_path, lib_path_length, f) == NULL ) {
+    if( err == NULL ) {
       free(lib_path);
       continue;
     }
 
     lib_path_length = strlen(lib_path);
+    
     if( lib_path[lib_path_length-1] == '\n' )
       lib_path[lib_path_length-1] = '\0';
 
