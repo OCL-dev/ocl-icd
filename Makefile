@@ -1,37 +1,41 @@
+CC=gcc
+RUBY=ruby
+CCFLAGS=-O2 -Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
+
 all: library_database
 
 library_database: 
-	ruby icd_generator.rb --database
-	gcc -g -c ocl_icd.c -o ocl_icd.o -Wno-cpp -Wno-deprecated-declarations -fpic
-	gcc -g -c ocl_icd_lib.c -o ocl_icd_lib.o -Wno-cpp -Wno-deprecated-declarations -fpic
-	gcc -g -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
-	gcc -g -c ocl_icd_test.c -o ocl_icd_test.o 
-	gcc -g ocl_icd_test.o -lOpenCL -o ocl_icd_test
+	$(RUBY) icd_generator.rb --database
+	$(CC) $(CCFLAGS) -fpic -c ocl_icd.c -o ocl_icd.o
+	$(CC) $(CCFLAGS) -fpic -c ocl_icd_lib.c -o ocl_icd_lib.o
+	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
+	$(CC) $(CCFLAGS) -c ocl_icd_test.c -o ocl_icd_test.o 
+	$(CC) $(CCFLAGS) ocl_icd_test.o -lOpenCL -o ocl_icd_test
 
 library: test_tools install
-	ruby icd_generator.rb --finalize
-	gcc -g -c ocl_icd.c -o ocl_icd.o -Wno-cpp -Wno-deprecated-declarations -fpic
-	gcc -g -c ocl_icd_lib.c -o ocl_icd_lib.o -Wno-cpp -Wno-deprecated-declarations -fpic
-	gcc -g -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
-	gcc -g -c ocl_icd_test.c -o ocl_icd_test.o 
-	gcc -g ocl_icd_test.o -lOpenCL -o ocl_icd_test 
+	$(RUBY) icd_generator.rb --finalize
+	$(CC) $(CCFLAGS) -c ocl_icd.c -o ocl_icd.o -fpic
+	$(CC) $(CCFLAGS) -c ocl_icd_lib.c -o ocl_icd_lib.o -fpic
+	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
+	$(CC) $(CCFLAGS) -c ocl_icd_test.c -o ocl_icd_test.o 
+	$(CC) $(CCFLAGS) ocl_icd_test.o -lOpenCL -o ocl_icd_test 
 
 test_tools: libdummycl.so.1.0 ocl_icd_dummy_test
 
 libdummycl.so.1.0: ocl_icd_dummy.o
-	gcc -g -fpic -shared -Wl,-Bsymbolic -Wl,-soname,libdummycl.so.1 -o libdummycl.so.1.0 ocl_icd_dummy.o
+	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,libdummycl.so.1 -o libdummycl.so.1.0 ocl_icd_dummy.o
 
 ocl_icd_dummy_test: ocl_icd_dummy_test.o
-	gcc -g -o ocl_icd_dummy_test ocl_icd_dummy_test.o -lOpenCL -lpthread
+	$(CC) $(CCFLAGS) -o ocl_icd_dummy_test ocl_icd_dummy_test.o -lOpenCL
 
 ocl_icd_dummy_test.o: generator
-	gcc -g -Wall -Wno-cpp -Wno-deprecated-declarations -c ocl_icd_dummy_test.c -o ocl_icd_dummy_test.o
+	$(CC) $(CCFLAGS) -c ocl_icd_dummy_test.c -o ocl_icd_dummy_test.o
 
 ocl_icd_dummy.o: generator
-	gcc -g -Wall -fpic -c ocl_icd_dummy.c -o ocl_icd_dummy.o
+	$(CC) $(CCFLAGS) -fpic -c ocl_icd_dummy.c -o ocl_icd_dummy.o
 
 generator: icd_generator.rb
-	ruby icd_generator.rb --generate
+	$(RUBY) icd_generator.rb --generate
 
 
 install: libdummycl.so.1.0

@@ -1,3 +1,28 @@
+=begin
+Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
+All rights reserved.
+      
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+        
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+=end
+
 require 'yaml'
 
 module IcdGenerator
@@ -9,6 +34,30 @@ module IcdGenerator
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
 #  $header_files = ["./cl.h", "./cl_gl.h", "./cl_ext.h", "./cl_gl_ext.h"]
   $buff=20
+  $license = <<EOF
+Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
+All rights reserved.
+      
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+        
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+EOF
 
   def self.parse_headers
     api_entries = []
@@ -48,7 +97,8 @@ module IcdGenerator
     return headers
   end
   def self.generate_ocl_icd_header
-    ocl_icd_header =  "#include <CL/opencl.h>\n"
+    ocl_icd_header = "/**\n#{$license}\n*/"
+    ocl_icd_header +=  "#include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
     ocl_icd_header +=  "struct _cl_icd_dispatch {\n"
     $api_entries.each_value { |entry|
@@ -61,7 +111,8 @@ module IcdGenerator
   end
 
   def self.generate_ocl_icd_header_final
-    ocl_icd_header = "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    ocl_icd_header = "/**\n#{$license}\n*/"
+    ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
     ocl_icd_header += "#include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
@@ -78,7 +129,8 @@ module IcdGenerator
   end
 
   def self.generate_ocl_icd_source
-    ocl_icd_source = "#include \"ocl_icd.h\"\n"
+    ocl_icd_source = "/**\n#{$license}\n*/"
+    ocl_icd_source += "#include \"ocl_icd.h\"\n"
     ocl_icd_source += "struct _cl_icd_dispatch master_dispatch = {\n"
     ($api_entries.length+$buff-1).times { |i|
       if( $known_entries[i] ) then 
@@ -128,7 +180,8 @@ EOF
   end
  
   def self.generate_ocl_icd_dummy_header
-    ocl_icd_dummy_header = "#include <CL/opencl.h>\n"
+    ocl_icd_dummy_header = "/**\n#{$license}\n*/"
+    ocl_icd_dummy_header += "#include <CL/opencl.h>\n"
     ocl_icd_dummy_header += "#include \"ocl_icd.h\"\n"
     ($api_entries.length+$buff).times { |i|
       ocl_icd_dummy_header += "void dummyFunc#{i}(void);\n"
@@ -156,7 +209,8 @@ EOF
  
   def self.generate_ocl_icd_lib_source
     forbidden_funcs = $forbidden_funcs[2..-1]
-    ocl_icd_lib_source = "#include \"ocl_icd.h\"\n"
+    ocl_icd_lib_source = "/**\n#{$license}\n*/"
+    ocl_icd_lib_source += "#include \"ocl_icd.h\"\n"
     ocl_icd_lib_source += ""
     $api_entries.each { |func_name, entry|
       next if forbidden_funcs.include?(func_name)
@@ -212,7 +266,7 @@ EOF
           first_parameter = first_parameter[0][0..-2]
         end
         fps = first_parameter.split
-        ocl_icd_lib_source += "((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+        ocl_icd_lib_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
         ps = parameters.split(",")
         ps = ps.collect { |p|
           p = p.split
@@ -228,7 +282,8 @@ EOF
   end
   
   def self.generate_ocl_icd_dummy_source
-    ocl_icd_dummy_source = "#include \"ocl_icd_dummy.h\"\n"
+    ocl_icd_dummy_source = "/**\n#{$license}\n*/"
+    ocl_icd_dummy_source += "#include \"ocl_icd_dummy.h\"\n"
     ocl_icd_dummy_source += "#include <stdio.h>\n"
     ocl_icd_dummy_source += "#include <string.h>\n"
     ocl_icd_dummy_source += <<EOF
@@ -359,7 +414,8 @@ EOF
   end
   
   def self.generate_ocl_icd_dummy_test_source
-    ocl_icd_dummy_test = "#include <stdlib.h>\n"
+    ocl_icd_dummy_test = "/**\n#{$license}\n*/"
+    ocl_icd_dummy_test += "#include <stdlib.h>\n"
     ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
     ocl_icd_dummy_test += "#include <CL/opencl.h>\n"
@@ -448,9 +504,11 @@ EOF
       api_db = {}
     end
     $known_entries.each_key {|i|
+      next if api_db[i]
       api_db[i] = $api_entries[$known_entries[i]].gsub("\r","")
     }
     File::open("ocl_interface.yaml","w") { |f|
+      f.write($license.gsub(/^/,"# "))
       f.write(YAML::dump(api_db))
     }
   end
