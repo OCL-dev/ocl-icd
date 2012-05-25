@@ -8,15 +8,15 @@ library_database:
 	$(RUBY) icd_generator.rb --database
 	$(CC) $(CCFLAGS) -fpic -c ocl_icd.c -o ocl_icd.o
 	$(CC) $(CCFLAGS) -fpic -c ocl_icd_lib.c -o ocl_icd_lib.o
-	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
+	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,libOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
 	$(CC) $(CCFLAGS) -c ocl_icd_test.c -o ocl_icd_test.o 
 	$(CC) $(CCFLAGS) ocl_icd_test.o -lOpenCL -o ocl_icd_test
 
-library: test_tools install
+library: test_tools install_test_lib
 	$(RUBY) icd_generator.rb --finalize
 	$(CC) $(CCFLAGS) -c ocl_icd.c -o ocl_icd.o -fpic
 	$(CC) $(CCFLAGS) -c ocl_icd_lib.c -o ocl_icd_lib.o -fpic
-	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,liOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
+	$(CC) $(CCFLAGS) -fpic -shared -Wl,-Bsymbolic -Wl,-soname,libOpenCL.so -o libOpenCL.so.1.0 ocl_icd.o ocl_icd_lib.o
 	$(CC) $(CCFLAGS) -c ocl_icd_test.c -o ocl_icd_test.o 
 	$(CC) $(CCFLAGS) ocl_icd_test.o -lOpenCL -o ocl_icd_test 
 
@@ -38,7 +38,7 @@ generator: icd_generator.rb
 	$(RUBY) icd_generator.rb --generate
 
 
-install: libdummycl.so.1.0
+install_test_lib: libdummycl.so.1.0
 	cp libdummycl.so.1.0 /usr/local/lib/
 	ln -sf /usr/local/lib/libdummycl.so.1.0 /usr/local/lib/libdummycl.so
 	ln -sf /usr/local/lib/libdummycl.so.1.0 /usr/local/lib/libdummycl.so.1
