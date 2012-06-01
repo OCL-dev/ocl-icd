@@ -46,12 +46,12 @@ libOpenCL.so.1.0: $(OpenCL_OBJECTS)
 libOpenCL.so: libOpenCL.so.1.0
 	ln -sf $< $@
 
-test_tools: libdummycl.so.1.0 ocl_icd_dummy_test
+test_tools: libdummycl.so ocl_icd_dummy_test
 
 ocl_icd_dummy.o: CFLAGS+= -fpic
-libdummycl.so.1.0: ocl_icd_dummy.o
+libdummycl.so: ocl_icd_dummy.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ \
-		-Wl,-Bsymbolic -Wl,-soname,libdummycl.so.1 \
+		-Wl,-Bsymbolic -Wl,-soname,libdummycl.so \
 		$(filter %.o,$^) $(LIBS)
 
 ocl_icd_dummy_test: LIBS+= -lOpenCL
@@ -76,15 +76,11 @@ stamp-generator-dummy: icd_generator.rb
 	touch $@
 
 .PHONY: install_test_lib uninstall_test_lib
-install_test_lib: libdummycl.so.1.0
-	cp libdummycl.so.1.0 /usr/local/lib/
-	ln -sf libdummycl.so.1.0 /usr/local/lib/libdummycl.so
-	ln -sf libdummycl.so.1.0 /usr/local/lib/libdummycl.so.1
-	echo "/usr/local/lib/libdummycl.so" > /etc/OpenCL/vendors/dummycl.icd
-	ldconfig
+install_test_lib: libdummycl.so
+	sudo bash -c 'echo "$(CURDIR)/libdummycl.so" > /etc/OpenCL/vendors/dummycl.icd'
 
 uninstall_test_lib:
-	rm -f /usr/local/lib/libdummycl.so /usr/local/lib/libdummycl.so.1 /etc/OpenCL/vendors/dummycl.icd
+	sudo rm -f /etc/OpenCL/vendors/dummycl.icd
 
 .PHONY: distclean clean partial-clean
 distclean:: clean
@@ -93,7 +89,7 @@ clean:: partial-clean
 	$(RM) *.o ocl_icd_bindings.c ocl_icd.h ocl_icd_lib.c ocl_icd_test ocl_icd_dummy_test libOpenCL.so.1.0 libOpenCL.so stamp-generator
 
 partial-clean::
-	$(RM) ocl_icd_dummy_test.o ocl_icd_dummy_test.c ocl_icd_dummy.o ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so.1.0 stamp-generator-dummy
+	$(RM) ocl_icd_dummy_test.o ocl_icd_dummy_test.c ocl_icd_dummy.o ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so stamp-generator-dummy
 
 .PHONY: install
 install: all
