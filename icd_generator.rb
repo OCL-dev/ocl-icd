@@ -247,7 +247,7 @@ EOF
   def self.generate_ocl_icd_dummy_header
     ocl_icd_dummy_header = "/**\n#{$license}\n*/\n"
     ocl_icd_dummy_header += "#include <CL/opencl.h>\n"
-    ocl_icd_dummy_header += "#include \"ocl_icd.h\"\n"
+    ocl_icd_dummy_header += "#include \"ocl_icd_h_dummy.h\"\n"
     ($api_entries.length+$buff).times { |i|
       ocl_icd_dummy_header += "void dummyFunc#{i}(void);\n"
     }
@@ -544,7 +544,7 @@ EOF
 
   def self.generate_sources
     parse_headers
-    File.open('ocl_icd.h','w') { |f|
+    File.open('ocl_icd_h_dummy.h','w') { |f|
       f.puts generate_ocl_icd_header
     }
     File.open('ocl_icd_dummy.h','w') { |f|
