@@ -44,6 +44,7 @@ module IcdGenerator
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
   $known_entries= { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
   $forbidden_funcs = ["clGetPlatformInfo", "clUnloadCompiler", "clGetExtensionFunctionAddress","clGetPlatformIDs" ]
+  $noweak_funcs = ["clWaitForEvents", "clCreateContextFromType", "clCreateContext" ]
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
 #  $header_files = ["./cl.h", "./cl_gl.h", "./cl_ext.h", "./cl_gl_ext.h"]
   $buff=20
@@ -491,17 +492,44 @@ EOF
     return ocl_icd_dummy_source
   end
   
+  def self.generate_ocl_icd_dummy_test_weak_source
+    ocl_icd_dummy_test_weak = "/**\n#{$license}\n*/\n"
+    ocl_icd_dummy_test_weak += <<EOF
+#define _GNU_SOURCE 1
+#include <stdio.h>
+#include <dlfcn.h>
+
+#define F(f) \\
+__attribute__((weak)) int f (void* arg) { \\
+  void (* p)(void*)=NULL; \\
+  p=dlsym(RTLD_NEXT, #f); \\
+  if (p) { \\
+    (*p)(arg); \\
+  } else { \\
+    printf("-1 : "); \\
+  } \\
+  return 0; \\
+} 
+EOF
+    $api_entries.each_key { |func_name|
+       next if $forbidden_funcs.include?(func_name)
+       next if $noweak_funcs.include?(func_name)
+       ocl_icd_dummy_test_weak += "F(#{func_name})\n"
+    }
+    return ocl_icd_dummy_test_weak
+  end
   def self.generate_ocl_icd_dummy_test_source
     ocl_icd_dummy_test = "/**\n#{$license}\n*/\n"
     ocl_icd_dummy_test += "#include <stdlib.h>\n"
+    ocl_icd_dummy_test += "#include <stdio.h>\n"
     ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
     ocl_icd_dummy_test += "#include <CL/opencl.h>\n"
     ocl_icd_dummy_test += self.include_headers
-    ocl_icd_dummy_test += "#include <stdio.h>\n"
     ocl_icd_dummy_test += "#include <string.h>\n"
-    ocl_icd_dummy_test += "int main(void) {\n"
     ocl_icd_dummy_test += <<EOF
+
+int main(void) {
   int i;
   cl_uint num_platforms;
   clGetPlatformIDs( 0, NULL, &num_platforms);
@@ -536,10 +564,10 @@ EOF
 
   cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)chosen_platform, 0 };
   printf("---\\n");
+  fflush(NULL);
 EOF
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
-       ocl_icd_dummy_test += "  fflush(NULL);\n"
        if func_name == "clCreateContext" then
          ocl_icd_dummy_test += "  #{func_name}(properties,1,(cl_device_id*)&chosen_platform,NULL,NULL,NULL);\n"
        elsif func_name == "clCreateContextFromType" then
@@ -551,8 +579,10 @@ EOF
          ocl_icd_dummy_test += "  oclFuncPtr(chosen_platform);\n"
        end
        ocl_icd_dummy_test += "  printf(\"%s\\n\", \"#{func_name}\");"
+       ocl_icd_dummy_test += "  fflush(NULL);\n"
     }
-    return ocl_icd_dummy_test += "  return 0;\n}\n"
+    ocl_icd_dummy_test += "  return 0;\n}\n"
+    return ocl_icd_dummy_test
   end
 
   def self.generate_sources
@@ -568,6 +598,9 @@ EOF
     }
     File.open('ocl_icd_dummy_test.c','w') { |f|
       f.puts generate_ocl_icd_dummy_test_source
+    }
+    File.open('ocl_icd_dummy_test_weak.c','w') { |f|
+      f.puts generate_ocl_icd_dummy_test_weak_source
     }
   end
 
@@ -594,6 +627,7 @@ EOF
   def self.finalize
     parse_headers
     doc = YAML::load(`./ocl_icd_dummy_test`)
+    doc.delete(-1)
     $known_entries.merge!(doc)
     self.savedb
     unknown=0

@@ -31,7 +31,7 @@ ocl_icd.o: ocl_icd.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(PRGS): %: %.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(filter %.o,$^) $(LIBS)
 
 ocl_icd_test: LIBS += -lOpenCL
 
@@ -47,6 +47,7 @@ libOpenCL.so: libOpenCL.so.1.0
 	ln -sf $< $@
 
 test_tools: libdummycl.so ocl_icd_dummy_test
+ocl_icd_dummy_test: ocl_icd_dummy_test.o ocl_icd_dummy_test_weak.o
 
 ocl_icd_dummy.o: CFLAGS+= -fpic
 libdummycl.so: ocl_icd_dummy.o
@@ -57,6 +58,7 @@ libdummycl.so: ocl_icd_dummy.o
 ocl_icd_dummy_test: LIBS+= -lOpenCL
 
 ocl_icd_dummy_test.c: stamp-generator-dummy
+ocl_icd_dummy_test_weak.c: stamp-generator-dummy
 ocl_icd_dummy.c: stamp-generator-dummy
 ocl_icd_dummy.h: stamp-generator-dummy
 ocl_icd_h_dummy.h: stamp-generator-dummy
