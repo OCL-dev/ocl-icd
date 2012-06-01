@@ -1,8 +1,11 @@
+prefix=/usr/local
+exec_prefix=$(prefix)
+libdir=$(exec_prefix)/lib
+
 CC=gcc
 RUBY=ruby
 CFLAGS=-O2
 CPPFLAGS+=-Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
-LDFLAGS=-L.
 
 OpenCL_SOURCES=ocl_icd.c ocl_icd_lib.c
 
@@ -34,6 +37,7 @@ ocl_icd_test: LIBS += -lOpenCL
 
 $(OpenCL_OBJECTS): CFLAGS+= -fpic
 libOpenCL.so.1.0: LIBS+= -ldl
+libOpenCL.so.1.0: LDFLAGS+= -L.
 libOpenCL.so.1.0: $(OpenCL_OBJECTS)
 	 $(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ \
 		-Wl,-Bsymbolic -Wl,-soname,libOpenCL.so \
@@ -71,6 +75,7 @@ stamp-generator-dummy: icd_generator.rb
 	$(RUBY) icd_generator.rb --generate
 	touch $@
 
+.PHONY: install_test_lib uninstall_test_lib
 install_test_lib: libdummycl.so.1.0
 	cp libdummycl.so.1.0 /usr/local/lib/
 	ln -sf libdummycl.so.1.0 /usr/local/lib/libdummycl.so
@@ -81,8 +86,17 @@ install_test_lib: libdummycl.so.1.0
 uninstall_test_lib:
 	rm -f /usr/local/lib/libdummycl.so /usr/local/lib/libdummycl.so.1 /etc/OpenCL/vendors/dummycl.icd
 
+.PHONY: distclean clean partial-clean
+distclean:: clean
+
 clean:: partial-clean
 	$(RM) *.o ocl_icd_bindings.c ocl_icd.h ocl_icd_lib.c ocl_icd_test ocl_icd_dummy_test libOpenCL.so.1.0 libOpenCL.so stamp-generator
 
 partial-clean::
 	$(RM) ocl_icd_dummy_test.o ocl_icd_dummy_test.c ocl_icd_dummy.o ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so.1.0 stamp-generator-dummy
+
+.PHONY: install
+install: all
+	install -m 755 -d $(DESTDIR)$(libdir)
+	install -m 644 libOpenCL.so.1.0 $(DESTDIR)$(libdir)
+	ln -s libOpenCL.so.1.0 $(DESTDIR)$(libdir)/libOpenCL.so
