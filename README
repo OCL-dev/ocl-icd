@@ -24,5 +24,5 @@ OpenCL implementation to give it ICD functionalities.
 
 Main targets:
 make : builds the library and bindings from database
-make library : builds the library from scratch and adds new functions to
-               the database. Needs root permission.
+make update-database : adds new functions to the database from the currently
+  installed OpenCL installed library. Needs root permission.

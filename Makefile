@@ -13,14 +13,13 @@ OpenCL_OBJECTS=$(OpenCL_SOURCES:%.c=%.o)
 
 PRGS=ocl_icd_test ocl_icd_dummy_test
 
-all: library_database
+all: library
 
+update-database: test_tools install_test_lib
+	$(RUBY) icd_generator.rb --finalize
 
-library: test_tools install_test_lib
-	$(MAKE) MODE=GENERATOR libOpenCL.so ocl_icd_test
-
-library_database:
-	$(MAKE) MODE=DATABASE libOpenCL.so ocl_icd_test
+library:
+	$(MAKE) libOpenCL.so ocl_icd_test
 
 # rules for all modes
 
@@ -66,11 +65,9 @@ ocl_icd.h: stamp-generator
 ocl_icd_lib.c: stamp-generator
 ocl_icd_bindings.c: stamp-generator
 
-ICD_GENERATOR_MODE_DATABASE=--database
 ICD_GENERATOR_MODE_GENERATOR=--finalize
-ICD_GENERATOR_MODE_=$(error No MODE specified!)
 stamp-generator: icd_generator.rb
-	$(RUBY) icd_generator.rb $(ICD_GENERATOR_MODE_$(MODE))
+	$(RUBY) icd_generator.rb --database
 	touch $@
 
 stamp-generator-dummy: icd_generator.rb

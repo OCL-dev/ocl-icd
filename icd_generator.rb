@@ -500,16 +500,17 @@ EOF
 #include <dlfcn.h>
 
 #define F(f) \\
-__attribute__((weak)) int f (void* arg) { \\
-  void (* p)(void*)=NULL; \\
+__attribute__((weak)) int f (void* arg, void* arg2) { \\
+  void (* p)(void*, void*)=NULL; \\
   p=dlsym(RTLD_NEXT, #f); \\
   if (p) { \\
-    (*p)(arg); \\
+    (*p)(arg, arg2); \\
   } else { \\
     printf("-1 : "); \\
   } \\
   return 0; \\
 } 
+
 EOF
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
@@ -574,6 +575,8 @@ EOF
          ocl_icd_dummy_test += "  #{func_name}(properties,CL_DEVICE_TYPE_CPU,NULL,NULL,NULL);\n"
        elsif func_name == "clWaitForEvents" then
          ocl_icd_dummy_test += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
+       elsif func_name == "clGetExtensionFunctionAddressForPlatform" then
+         ocl_icd_dummy_test += "  #{func_name}((cl_platform_id)chosen_platform, \"clIcdGetPlatformIDsKHR\");\n"
        else
          ocl_icd_dummy_test += "  oclFuncPtr = (oclFuncPtr_fn)" + func_name + ";\n"
          ocl_icd_dummy_test += "  oclFuncPtr(chosen_platform);\n"
@@ -640,15 +643,6 @@ EOF
         $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{unknown}(void);" )
         unknown += 1
       end
-    }
-    File.open('ocl_icd.h','w') { |f|
-      f.puts generate_ocl_icd_header_final
-    }
-    File.open('ocl_icd_bindings.c','w') { |f|
-      f.puts generate_ocl_icd_source
-    }
-    File.open('ocl_icd_lib.c','w') { |f|
-      f.puts generate_ocl_icd_lib_source
     }
   end
   
