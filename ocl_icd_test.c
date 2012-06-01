@@ -32,10 +32,15 @@ int main(void) {
   cl_int error;
 
   error = clGetPlatformIDs(0, NULL, &num_platforms);
-  if( error == CL_SUCCESS )
+  if( error == CL_SUCCESS ) {
     printf("Found %u platforms!\n", num_platforms);
-  else
+  } else if( error == CL_PLATFORM_NOT_FOUND_KHR ) {
+    printf("No platforms found!\n");
+    exit(0);
+  } else {
+    printf("OpenCL error: %i\n", error);
     exit(-1);
+  }
   platforms = (cl_platform_id *)malloc(sizeof(cl_platform_id *) * num_platforms);
   error = clGetPlatformIDs(num_platforms, platforms, NULL);
   cl_uint i;
