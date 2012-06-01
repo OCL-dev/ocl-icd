@@ -110,7 +110,11 @@ EOF
   def self.include_headers
     headers =""
     $header_files.each { |h|
-      headers += "#include \"#{h}\"\n"
+      if h.match('^/usr/include/') then
+        headers += "#include <#{h[13..-1]}>\n"
+      else
+        headers += "#include \"#{h}\"\n"
+      end
     }
     return headers
   end
@@ -118,7 +122,7 @@ EOF
     ocl_icd_header = "/**\n#{$license}\n*/\n"
     ocl_icd_header +=  "#include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
-    ocl_icd_header +=  "struct _cl_icd_dispatch {\n"
+    ocl_icd_header +=  "\nstruct _cl_icd_dispatch {\n"
     $api_entries.each_value { |entry|
       ocl_icd_header += entry.sub(/CL_API_CALL(.*?)\(/m,'(CL_API_CALL*\1)(').gsub("\r","") + "\n"
     }
@@ -129,16 +133,25 @@ EOF
   end
 
   def self.generate_ocl_icd_header_final
-    ocl_icd_header = "/**\n#{$license}\n*/\n"
+    ocl_icd_header = "/**\n#{$license}\n*/\n\n"
     ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
     ocl_icd_header += "#include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
-    ocl_icd_header += "struct _cl_icd_dispatch {\n"
+    ocl_icd_header += <<EOF
+
+#define OCL_ICD_API_VERSION	1
+#define OCL_ICD_IDENTIFIED_FUNCTIONS	#{$known_entries.count}
+
+struct _cl_icd_dispatch {
+EOF
     $api_entries_array.each { |entry|
-      ocl_icd_header += entry.sub(/CL_API_CALL(.*?)\(/m,'(CL_API_CALL*\1)(').gsub("\r","") + "\n"
+      ocl_icd_header += entry.gsub("\r","").
+	sub(/CL_API_CALL\n?(.*?)\(/m,'(CL_API_CALL*\1)('+"\n  ").
+	gsub(/\) (CL_API_SUFFIX__VERSION)/m,"\n) \\1").gsub(/\s*$/,'').
+	gsub(/^[\t ]+/,"    ").gsub(/^([^\t ])/, '  \1') + "\n\n"
     }
-    ocl_icd_header += "};\n"
+    ocl_icd_header += "};\n\n"
     ocl_icd_header += "extern struct _cl_icd_dispatch master_dispatch;\n"
     $cl_objects.each { |o|
       ocl_icd_header += "struct _cl_#{o} { struct _cl_icd_dispatch *dispatch; };\n"
@@ -642,7 +655,7 @@ EOF
       if $known_entries[i] then
         $api_entries_array.push( $api_entries[$known_entries[i]] )
       else
-        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{unknown}(void);" )
+        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{i}(void);" )
         unknown += 1
       end
     }
@@ -672,7 +685,7 @@ EOF
       if $known_entries[i] then
         $api_entries_array.push( $api_entries[$known_entries[i]] )
       else
-        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{unknown}(void);" )
+        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{i}(void);" )
         unknown += 1
       end
     }
