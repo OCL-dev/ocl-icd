@@ -95,7 +95,7 @@ static inline cl_uint _open_drivers(DIR *dir) {
     if( lib_path[lib_path_length-1] == '\n' )
       lib_path[lib_path_length-1] = '\0';
 
-    _vendor_dl_handles[num_vendors] = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);
+    _vendor_dl_handles[num_vendors] = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL|RTLD_DEEPBIND);
     free(lib_path);
     if(_vendor_dl_handles[num_vendors] != NULL)      
       num_vendors++;
