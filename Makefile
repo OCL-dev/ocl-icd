@@ -1,5 +1,5 @@
 package=ocl-icd
-VERSION=1.0
+VERSION=1.0-beta2
 
 prefix=/usr/local
 exec_prefix=$(prefix)
@@ -18,7 +18,7 @@ CPPFLAGS+=-Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
 
 OpenCL_SOURCES=ocl_icd.c ocl_icd_lib.c
 
-DIST_SOURCES=ocl_icd.c icd_generator.rb License.txt Makefile ocl_icd_test.c ocl_interface.yaml README
+DIST_SOURCES=ocl_icd.c icd_generator.rb License.txt Makefile ocl_icd_test.c ocl_interface.yaml README ChangeLog
 
 OpenCL_OBJECTS=$(OpenCL_SOURCES:%.c=%.o)
 

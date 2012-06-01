@@ -1,0 +1,28 @@
+Version 1.0 beta2
+=================
+Vincent Danjean (14):
+      Rewrite Makefile
+      cleanup Makefile, add support for install with DESTDIR
+      Add .gitignore file
+      update Makefile
+      Force sorted order in yaml file
+      Add weak functions
+      Fix problem with special functions
+      Update database from OpenCL 1.2 headers and AMD implementation
+      Cleanup clean/distclean Makefile rules
+      force deep binding so that OpenCL implementation use their own functions
+      Add 'install', 'dist', 'distcheck' targets in Makefile
+      Add myself in copyright
+      Fix soname
+      release 1.0 beta2
+
+Brice Videau (9):
+      First version
+      Added option to generate from database.
+      Added License and bugfixes.     Clean up of Makefile. (Still work to do).
+      Added a clGetPlatformInfo template in generated bindings.
+      Bugfix...
+      Bugfix.
+      Added README.
+      In order database.
+      Fixed typo in Makefile
