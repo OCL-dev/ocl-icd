@@ -51,7 +51,7 @@ libOpenCL.so.1.0: LIBS+= -ldl
 libOpenCL.so.1.0: LDFLAGS+= -L.
 libOpenCL.so.1.0: $(OpenCL_OBJECTS)
 	 $(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ \
-		-Wl,-Bsymbolic -Wl,-soname,libOpenCL.so \
+		-Wl,-Bsymbolic -Wl,-soname,libOpenCL.so.1 \
 		$(filter %.o,$^) $(LIBS)
 
 libOpenCL.so: libOpenCL.so.1.0
@@ -105,7 +105,8 @@ clean::
 install: all
 	install -m 755 -d $(DESTDIR)$(libdir)
 	install -m 644 libOpenCL.so.1.0 $(DESTDIR)$(libdir)
-	ln -sf libOpenCL.so.1.0 $(DESTDIR)$(libdir)/libOpenCL.so
+	ln -sf libOpenCL.so.1 $(DESTDIR)$(libdir)/libOpenCL.so
+	ln -sf libOpenCL.so.1.0 $(DESTDIR)$(libdir)/libOpenCL.so.1
 	install -m 755 -d $(DESTDIR)$(includedir)
 	install -m 644 ocl_icd.h $(DESTDIR)$(includedir)
 	install -m 755 -d $(DESTDIR)$(exampledir)
