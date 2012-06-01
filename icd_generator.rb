@@ -1,5 +1,6 @@
 =begin
 Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
+Copyright (c) 2012, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
       
 Redistribution and use in source and binary forms, with or without
@@ -50,6 +51,7 @@ module IcdGenerator
   $buff=20
   $license = <<EOF
 Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
+Copyright (c) 2012, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
       
 Redistribution and use in source and binary forms, with or without
