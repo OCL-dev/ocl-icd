@@ -81,14 +81,13 @@ install_test_lib: libdummycl.so
 uninstall_test_lib:
 	sudo rm -f /etc/OpenCL/vendors/dummycl.icd
 
-.PHONY: distclean clean partial-clean
+.PHONY: distclean clean
 distclean:: clean
+	$(RM) ocl_icd_bindings.c ocl_icd.h libOpenCL.so.1.0 libOpenCL.so
 
-clean:: partial-clean
-	$(RM) *.o ocl_icd_bindings.c ocl_icd.h ocl_icd_lib.c ocl_icd_test ocl_icd_dummy_test libOpenCL.so.1.0 libOpenCL.so stamp-generator
-
-partial-clean::
-	$(RM) ocl_icd_dummy_test.o ocl_icd_dummy_test.c ocl_icd_dummy.o ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so stamp-generator-dummy
+clean::
+	$(RM) *.o ocl_icd_dummy_test_weak.c ocl_icd_dummy_test.c ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so stamp-generator-dummy \
+		ocl_icd_lib.c ocl_icd_test $(PROGRAM) stamp-generator
 
 .PHONY: install
 install: all
