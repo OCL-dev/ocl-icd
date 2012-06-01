@@ -99,7 +99,7 @@ distclean:: clean
 
 clean::
 	$(RM) *.o ocl_icd_dummy_test_weak.c ocl_icd_dummy_test.c ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so stamp-generator-dummy \
-		ocl_icd_lib.c ocl_icd_test $(PROGRAM) stamp-generator
+		ocl_icd_lib.c ocl_icd_test $(PRGS) stamp-generator
 
 .PHONY: install
 install: all
