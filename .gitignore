@@ -1,0 +1,9 @@
+/*dummy*
+/*.o
+/*.so
+/*.so.*
+/stamp-*
+/ocl_icd.h
+/ocl_icd_bindings.c
+/ocl_icd_lib.c
+/ocl_icd_test
