@@ -25,6 +25,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'yaml'
 
+class Hash
+    def to_yaml( opts = {} )
+        YAML::quick_emit( self, opts ) do |out|
+            out.map( taguri, to_yaml_style ) do |map|
+                sort.each do |k, v|
+                    map.add( k, v )
+                end
+            end
+        end
+    end
+end
+
+
 module IcdGenerator
   $api_entries = {}
   $api_entries_array = []
