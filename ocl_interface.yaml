@@ -464,6 +464,9 @@
 64: |-
   CL_API_ENTRY cl_int CL_API_CALL
   clEnqueueBarrier(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
+65: |-
+  CL_API_ENTRY void * CL_API_CALL
+  clGetExtensionFunctionAddress(const char * /* func_name */) CL_API_SUFFIX__VERSION_1_0;
 66: |-
   CL_API_ENTRY cl_mem CL_API_CALL
   clCreateFromGLBuffer(cl_context     /* context */,
