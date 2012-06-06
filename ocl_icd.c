@@ -175,6 +175,11 @@ static void _initClIcd( void ) {
   cl_uint num_vendors = 0;
   DIR *dir;
   dir = opendir(_dir_path);
+  if(dir == NULL) {
+    _num_valid_vendors = 0;
+    _initialized = 1;
+    return;
+  }
 
   num_vendors = _find_num_vendors(dir);
 //  printf("%d vendor(s)!\n", num_vendors);
