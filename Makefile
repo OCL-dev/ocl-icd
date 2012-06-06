@@ -1,5 +1,5 @@
 package=ocl-icd
-VERSION=1.0-beta2
+VERSION=1.0
 
 prefix=/usr/local
 exec_prefix=$(prefix)
