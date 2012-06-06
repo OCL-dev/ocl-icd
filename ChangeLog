@@ -1,4 +1,11 @@
 
+Version 1.0.1
+=============
+
+Vincent Danjean (2):
+      Correctly detect no platforms when no /etc/OpenCL/vendors directory exists
+      New version
+
 Version 1.0
 ===========
 Vincent Danjean (6):
