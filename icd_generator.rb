@@ -47,6 +47,7 @@ module IcdGenerator
   $forbidden_funcs = ["clGetPlatformInfo", "clUnloadCompiler", "clGetExtensionFunctionAddress","clGetPlatformIDs" ]
   $noweak_funcs = ["clWaitForEvents", "clCreateContextFromType", "clCreateContext" ]
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
+  $versions_entries = []
 #  $header_files = ["./cl.h", "./cl_gl.h", "./cl_ext.h", "./cl_gl_ext.h"]
   $buff=20
   $license = <<EOF
@@ -668,15 +669,22 @@ EOF
     }
     $known_entries = {}
     $api_entries = {}
+    $versions_entries = []
     entry_name = ""
+    version = ""
     doc.each { |key, value|
       begin
         entry_name = value.match(/CL_API_CALL(.*?)\(/m)[1].strip
       rescue
         entry_name = value.match(/(\S*?)\(/m)[1].strip
       end
+      version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
+      $versions_entries.push([version, entry_name])
       $known_entries[key] = entry_name
       $api_entries[entry_name] = value
+    }
+    $versions_entries.sort! { |a, b|
+      a[0] <=> b[0]
     }
     $api_entries_array = []
     unknown=0
