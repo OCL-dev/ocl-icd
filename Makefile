@@ -40,18 +40,20 @@ ocl_icd.o: ocl_icd.h
 
 # Generate sources and headers from the database
 ocl_icd.h: stamp-generator
+ocl_icd.map: stamp-generator
 ocl_icd_lib.c: stamp-generator
 ocl_icd_bindings.c: stamp-generator
 stamp-generator: icd_generator.rb
 	$(RUBY) icd_generator.rb --database
 	touch $@
 
+PREFIX_MAP=-Wl,--version-script,
 # libOpenCL building
 $(OpenCL_OBJECTS): CFLAGS+= -fpic
-libOpenCL.so.1.0: $(OpenCL_OBJECTS)
+libOpenCL.so.1.0: $(OpenCL_OBJECTS) ocl_icd.map
 	 $(CC) $(CFLAGS) $(LDFLAGS) -L. -shared -o $@ \
 		-Wl,-Bsymbolic -Wl,-soname,libOpenCL.so.1 \
-		$(filter %.o,$^) $(LIBS) -ldl
+		$(filter %.o,$^) $(addprefix $(PREFIX_MAP),$(filter %.map,$^)) $(LIBS) -ldl
 libOpenCL.so.1: libOpenCL.so.1.0
 	ln -sf $< $@
 libOpenCL.so: libOpenCL.so.1
@@ -106,7 +108,7 @@ update-database: test_tools install_test_lib
 
 .PHONY: distclean clean
 distclean:: clean
-	$(RM) ocl_icd_bindings.c ocl_icd.h \
+	$(RM) ocl_icd_bindings.c ocl_icd.h ocl_icd.map \
 		libOpenCL.so.1.0 libOpenCL.so.1 libOpenCL.so
 
 clean::
@@ -123,6 +125,7 @@ install: all
 	install -m 644 ocl_icd.h $(DESTDIR)$(includedir)
 	install -m 755 -d $(DESTDIR)$(exampledir)
 	install -m 644 ocl_icd_bindings.c $(DESTDIR)$(exampledir)
+	install -m 644 ocl_icd.map $(DESTDIR)$(exampledir)
 
 dist: $(package)-$(VERSION).tar.gz
 

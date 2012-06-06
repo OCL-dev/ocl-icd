@@ -604,6 +604,25 @@ EOF
     return ocl_icd_dummy_test
   end
 
+  def self.generate_ocl_icd_map
+    ocl_icd_map = "/**\n#{$license}\n*/\n\n"
+    prev_version=""
+    $versions_entries.keys.sort.each { |version|
+      ocl_icd_map += "OPENCL_#{version.sub('_','.')} {\n";
+      ocl_icd_map += "  global:\n";
+      $versions_entries[version].each { |symb|
+        ocl_icd_map += "    #{symb};\n"
+      }
+      if (prev_version == "") then
+        ocl_icd_map += "  local:\n";
+        ocl_icd_map += "    *;\n";
+      end
+      ocl_icd_map += "} #{prev_version};\n\n";
+      prev_version="OPENCL_#{version.sub('_','.')}";
+    }
+    return ocl_icd_map
+  end
+
   def self.generate_sources
     parse_headers
     File.open('ocl_icd_h_dummy.h','w') { |f|
@@ -669,7 +688,7 @@ EOF
     }
     $known_entries = {}
     $api_entries = {}
-    $versions_entries = []
+    $versions_entries = Hash::new { |hash,key| hash[key]=[] }
     entry_name = ""
     version = ""
     doc.each { |key, value|
@@ -679,12 +698,9 @@ EOF
         entry_name = value.match(/(\S*?)\(/m)[1].strip
       end
       version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
-      $versions_entries.push([version, entry_name])
+      $versions_entries[version].push(entry_name)
       $known_entries[key] = entry_name
       $api_entries[entry_name] = value
-    }
-    $versions_entries.sort! { |a, b|
-      a[0] <=> b[0]
     }
     $api_entries_array = []
     unknown=0
@@ -699,6 +715,9 @@ EOF
     }
     File.open('ocl_icd.h','w') { |f|
       f.puts generate_ocl_icd_header_final
+    }
+    File.open('ocl_icd.map','w') { |f|
+      f.puts generate_ocl_icd_map
     }
     File.open('ocl_icd_bindings.c','w') { |f|
       f.puts generate_ocl_icd_source
