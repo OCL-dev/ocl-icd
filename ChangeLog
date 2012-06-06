@@ -1,3 +1,21 @@
+
+Version 1.0
+===========
+Vincent Danjean (6):
+      Add a message in ocl_icd_test when no plateform is found
+      Cleanup and comment the Makefile
+      cleanup ocl_icd.h
+      Generate and use a map symbol file
+      Release 1.0
+      Real release 1.0 (changelog updated)
+
+Brice Videau (5):
+      Copyright change.
+      Added clUnloadCompiler at its most propable place in the table : 31.
+      Added clGetExtensionFunctionAddress at its most probable place in the table : 65.
+      RTLD_DEEPBIND seemed to cause problems with intelocl and BigDFT.
+      Added version and symbol association.
+
 Version 1.0 beta2
 =================
 Vincent Danjean (14):
@@ -26,3 +44,4 @@ Brice Videau (9):
       Added README.
       In order database.
       Fixed typo in Makefile
+
