@@ -25,6 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <CL/opencl.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(void) {
   cl_platform_id *platforms;
