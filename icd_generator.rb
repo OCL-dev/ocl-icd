@@ -31,7 +31,7 @@ module IcdGenerator
   $api_entries_array = []
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
   $known_entries= { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
-  $forbidden_funcs = ["clGetPlatformInfo", "clUnloadCompiler", "clGetExtensionFunctionAddress","clGetPlatformIDs" ]
+  $forbidden_funcs = ["clGetPlatformInfo", "clUnloadCompiler", "clGetExtensionFunctionAddress","clGetPlatformIDs", "clGetGLContextInfoKHR"]
   $noweak_funcs = ["clWaitForEvents", "clCreateContextFromType", "clCreateContext" ]
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
   $versions_entries = []
@@ -69,7 +69,7 @@ EOF
     $header_files.each{ |fname|
       f = File::open(fname)
       doc = f.read
-      api_entries += doc.scan(/CL_API_ENTRY.*?;/m).reject {|item| item.match("KHR")}
+      api_entries += doc.scan(/CL_API_ENTRY.*?;/m)
       f.close
     }
     api_entries.each{ |entry|
@@ -697,6 +697,29 @@ EOF
     }
     File::open("ocl_interface.yaml","w") { |f|
       f.write($license.gsub(/^/,"# "))
+      f.write( <<EOF
+
+# In Intel (OpenCL 1.1):
+# * clSetCommandQueueProperty(13): nil (deprecated in 1.1)
+# * clGetGLContextInfoKHR(74): function present with its symbol
+# * 75-80: nil
+# * 92: correspond to symbol clGetKernelArgInfo (first abandonned version?)
+# * 93-: garbage
+# In nvidia (OpenCL 1.1):
+# * clGetGLContextInfoKHR(74): function present but no symbol
+# * 75-80: nil
+# * 89-: nil
+# * only two OpenCL symbols: clGetPlatformInfo(1) and clGetExtensionFunctionAddress(65)
+# In AMD (OpenCL 1.2):
+# * clGetPlatformIDs(0): nil (symbol present)
+# * clGetGLContextInfoKHR(74): function present but no symbol
+# * 75-80: nil
+# * 92: nil
+# * 109-118: nil
+# * 119-: garbage
+
+EOF
+)
       # Not using YAML::dump as:
       # * keys are not ordered
       # * strings are badly formatted in new YAML ruby implementation (psych)
