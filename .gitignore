@@ -5,5 +5,8 @@
 /stamp-*
 /ocl_icd.h
 /ocl_icd_bindings.c
-/ocl_icd_lib.c
-/ocl_icd_test
+/ocl_icd_loader_gen.c
+/ocl_icd_loader.h
+/ocl_icd_loader.map
+/ocl_test
+/ocl-icd-*.tar.gz

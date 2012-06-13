@@ -282,9 +282,9 @@ EOF
     ($api_entries.length+$buff).times { |i|
       comma="" if (i == $api_entries.length+$buff-1)
       if( $known_entries[i] ) then 
-        libdummy_icd_header += "  (void *)& #{$known_entries[i]}#{comma}\n"
+        libdummy_icd_header += "  (void(*)(void))& #{$known_entries[i]}#{comma}\n"
       else
-        libdummy_icd_header += "  (void *)& dummyFunc#{i}#{comma}\n"
+        libdummy_icd_header += "  (void(*)(void))& dummyFunc#{i}#{comma}\n"
       end
     }
     libdummy_icd_header += "};\n"
