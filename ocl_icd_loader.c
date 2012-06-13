@@ -29,6 +29,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <dlfcn.h>
 #include <CL/opencl.h>
+
+#pragma GCC visibility push(hidden)
+
 #include "ocl_icd_loader.h"
 
 typedef CL_API_ENTRY void * (CL_API_CALL *clGetExtensionFunctionAddress_fn)(const char * /* func_name */) CL_API_SUFFIX__VERSION_1_0;
@@ -215,6 +218,8 @@ static void _initClIcd( void ) {
   _initialized = 1;
 }
 
+#pragma GCC visibility pop
+
 CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   if( !_initialized )
     _initClIcd();
@@ -223,6 +228,12 @@ CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(const char * func_
   cl_uint suffix_length;
   cl_uint i;
   void * return_value=NULL;
+  struct func_desc const * fn=&function_description[0];
+  while (fn->name != NULL) {
+    if (strcmp(func_name, fn->name)==0)
+      return fn->addr;
+    fn++;
+  }
   for(i=0; i<_num_valid_vendors; i++) {
     suffix_length = strlen(_vendors_extension_suffixes[i]);
     if( suffix_length > strlen(func_name) )

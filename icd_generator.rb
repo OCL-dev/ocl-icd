@@ -132,6 +132,16 @@ EOF
   def self.generate_ocl_icd_loader_header
     ocl_icd_header = "/**\n#{$license}\n*/\n\n"
     ocl_icd_header += "#include \"ocl_icd.h\"\n\n"
+    ocl_icd_header += <<EOF
+
+struct func_desc {
+  const char* name;
+  void(*const addr)(void);
+};
+
+extern const struct func_desc function_description[];
+
+EOF
     ocl_icd_header += "extern struct _cl_icd_dispatch master_dispatch;\n"
     $cl_objects.each { |o|
       ocl_icd_header += "struct _cl_#{o} { struct _cl_icd_dispatch *dispatch; };\n"
@@ -361,7 +371,21 @@ EOF
       end
       ocl_icd_loader_gen_source += "}\n\n"
     }
-
+    ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
+    forbidden_funcs = $forbidden_funcs[2..-1]
+    $api_entries.each { |func_name, entry|
+      if (forbidden_funcs.include?(func_name)) then
+        ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_hid;\n"
+      else
+        ocl_icd_loader_gen_source += "typeof(#{func_name}) #{func_name}_hid __attribute__ ((alias (\"#{func_name}\"), visibility(\"hidden\")));\n"
+      end
+    }
+    ocl_icd_loader_gen_source += "\n\nstruct func_desc const function_description[]= {\n"
+    $api_entries.each { |func_name, entry|
+      ocl_icd_loader_gen_source += "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
+    }
+    ocl_icd_loader_gen_source += "  {NULL, NULL}\n};\n\n"
+    ocl_icd_loader_gen_source += "#pragma GCC visibility pop\n"
     return ocl_icd_loader_gen_source;
   end
   
