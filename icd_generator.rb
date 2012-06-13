@@ -305,6 +305,7 @@ EOF
     forbidden_funcs = $forbidden_funcs[2..-1]
     ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
+    ocl_icd_loader_gen_source += "#include \"ocl_icd_loader_debug.h\"\n"
     ocl_icd_loader_gen_source += ""
     $api_entries.each { |func_name, entry|
       next if forbidden_funcs.include?(func_name)
@@ -384,8 +385,29 @@ EOF
     $api_entries.each { |func_name, entry|
       ocl_icd_loader_gen_source += "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
     }
-    ocl_icd_loader_gen_source += "  {NULL, NULL}\n};\n\n"
-    ocl_icd_loader_gen_source += "#pragma GCC visibility pop\n"
+    ocl_icd_loader_gen_source += <<EOF
+  {NULL, NULL}
+};
+
+#if DEBUG_OCL_ICD
+void dump_platform(cl_platform_id pid) {
+  debug(D_DUMP, "platform @%p", pid);
+EOF
+    $api_entries_array.each { |entry|
+      e = entry.gsub("\r"," ").gsub("\n"," ").gsub("\t"," ").
+        sub(/.*CL_API_CALL *([^ ()]*)[ ()].*$/m, '\1')
+      ocl_icd_loader_gen_source += "  debug(D_DUMP, \"  "
+      ocl_icd_loader_gen_source += " "*(40-e.size())
+      ocl_icd_loader_gen_source += "#{e}=%p\", pid->dispatch->#{e});\n"
+    }
+
+    ocl_icd_loader_gen_source += <<EOF
+}
+#endif
+
+#pragma GCC visibility pop
+
+EOF
     return ocl_icd_loader_gen_source;
   end
   

@@ -35,29 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC visibility push(hidden)
 
 #include "ocl_icd_loader.h"
+#include "ocl_icd_loader_debug.h"
 
-#define DEBUG_OCL_ICD 1
-
-#define D_WARN 1
-#define D_LOG 2
-#define D_ARGS 4
-#define D_DUMP 8
-#if defined(DEBUG_OCL_ICD)
-static int debug_ocl_icd_mask=0;
-#  define debug(mask, fmt, ...) do {\
-	if (debug_ocl_icd_mask & mask) { \
-		fprintf(stderr, "ocl-icd: %s: " fmt "\n", __func__, ##__VA_ARGS__); \
-	} \
-   } while(0)
-#  define RETURN(val) do { \
-	__typeof__(val) ret=(val); \
-	debug(D_ARGS, "return: %ld/0x%lx", (long)ret, (long)ret);	\
-	return ret; \
-   } while(0)
-#else
-#  define debug(...) (void)0
-#  define RETURN(val) return (val)
-#endif
+int debug_ocl_icd_mask=0;
 
 typedef __typeof__(clGetExtensionFunctionAddress) *clGetExtensionFunctionAddress_fn;
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
@@ -160,7 +140,7 @@ static void* _get_function_addr(void* dlh, clGetExtensionFunctionAddress_fn fn, 
     if (addr2 == NULL) {
       debug(D_WARN, "Missing function '%s' in ICD, should be skipped", name);
     }
-#if defined(DEBUG_OCL_ICD)
+#if DEBUG_OCL_ICD
     if (addr1 && addr2 && addr1!=addr2) {
       debug(D_WARN, "Function and symbol '%s' have different addresses!", name);
     }
@@ -232,6 +212,11 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->extension_suffix=NULL;
       p->vicd=&_icds[i];
       p->pid=platforms[j];
+#if DEBUG_OCL_ICD
+      if (debug_ocl_icd_mask & D_DUMP) {
+	dump_platform(p->pid);
+      }
+#endif
       error = plt_info_ptr(p->pid, CL_PLATFORM_EXTENSIONS, 0, NULL, &param_value_size_ret);
       if (error != CL_SUCCESS) {
 	debug(D_WARN, "Error while loading extensions in platform %i, skipping it",j);
@@ -244,6 +229,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	debug(D_WARN, "Error while loading extensions in platform %i, skipping it", j);
         continue;
       }
+      debug(D_DUMP, "Supported extensions: %s", param_value);
       if( strstr(param_value, "cl_khr_icd") == NULL){
         free(param_value);
 	debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
@@ -284,7 +270,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 static void _initClIcd( void ) {
   if( _initialized )
     return;
-#if defined(DEBUG_OCL_ICD)
+#if DEBUG_OCL_ICD
   char *debug=getenv("OCL_ICD_DEBUG");
   if (debug) {
     debug_ocl_icd_mask=atoi(debug);

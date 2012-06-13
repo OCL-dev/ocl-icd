@@ -15,7 +15,9 @@ RUBY=ruby
 CFLAGS=-O2 -g
 CPPFLAGS+=-Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
 
-DIST_SOURCES=ocl_icd_loader.c icd_generator.rb License.txt Makefile ocl_test.c ocl_interface.yaml README ChangeLog
+DIST_SOURCES=ocl_icd_loader.c ocl_icd_loader_debug.h \
+	icd_generator.rb License.txt Makefile ocl_test.c \
+	ocl_interface.yaml README ChangeLog
 
 OpenCL_SOURCES=ocl_icd_loader.c ocl_icd_loader_gen.c
 OpenCL_OBJECTS=$(OpenCL_SOURCES:%.c=%.o)
@@ -36,9 +38,10 @@ $(PRGS): %: %.o
 		-o $@ $(filter %.o,$^) $(LIBS) $($@_LIBS)
 
 # Dependency to ensure that headers are created before
-ocl_icd_loader.o: ocl_icd.h ocl_icd_loader.h
+ocl_icd_loader.o: ocl_icd.h ocl_icd_loader.h ocl_icd_loader_debug.h
 
 # Generate sources and headers from the database
+stamp-generator: ocl_interface.yaml
 ocl_icd.h: stamp-generator
 ocl_icd_loader.h: stamp-generator
 ocl_icd_loader.map: stamp-generator
