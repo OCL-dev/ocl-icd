@@ -375,6 +375,8 @@ EOF
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
     forbidden_funcs = $forbidden_funcs[2..-1]
     $api_entries.each { |func_name, entry|
+      next if func_name.match(/EXT$/)
+      next if func_name.match(/KHR$/)
       if (forbidden_funcs.include?(func_name)) then
         ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_hid;\n"
       else
@@ -383,6 +385,8 @@ EOF
     }
     ocl_icd_loader_gen_source += "\n\nstruct func_desc const function_description[]= {\n"
     $api_entries.each { |func_name, entry|
+      next if func_name.match(/EXT$/)
+      next if func_name.match(/KHR$/)
       ocl_icd_loader_gen_source += "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
     }
     ocl_icd_loader_gen_source += <<EOF
