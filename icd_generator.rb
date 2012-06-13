@@ -26,19 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'yaml'
 
-class Hash
-    def to_yaml( opts = {} )
-        YAML::quick_emit( self, opts ) do |out|
-            out.map( taguri, to_yaml_style ) do |map|
-                sort.each do |k, v|
-                    map.add( k, v )
-                end
-            end
-        end
-    end
-end
-
-
 module IcdGenerator
   $api_entries = {}
   $api_entries_array = []
@@ -658,7 +645,17 @@ EOF
     }
     File::open("ocl_interface.yaml","w") { |f|
       f.write($license.gsub(/^/,"# "))
-      f.write(YAML::dump(api_db))
+      # Not using YAML::dump as:
+      # * keys are not ordered
+      # * strings are badly formatted in new YAML ruby implementation (psych)
+      # * it is very easy to do it ourself
+      #f.write(YAML::dump(api_db))
+      f.write("--- ")
+      api_db.keys.sort.each { |k|
+        f.write("\n#{k}: |-\n  ")
+        f.write(api_db[k].gsub("\n","\n  "))
+      }
+      f.write("\n")
     }
   end
 
