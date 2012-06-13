@@ -2,6 +2,21 @@
 Version 1.0.1
 =============
 
+Vincent Danjean (10):
+      Add missing include in ocl_icd_test.c
+      Format YAML output ourself
+      Rename files and cleanup includes
+      Cleanup again
+      Add visibility("hidden") for all but public symbols
+      Rewrite ICD loader
+      Cleanup debug
+      Do not look for *EXT or *KHR functions by name
+      Find a new entry manually (74) and another one (92) suspected
+      Bump version to 1.1
+
+Version 1.0.1
+=============
+
 Vincent Danjean (2):
       Correctly detect no platforms when no /etc/OpenCL/vendors directory exists
       New version
