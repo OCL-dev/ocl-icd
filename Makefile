@@ -15,12 +15,12 @@ RUBY=ruby
 CFLAGS=-O2 -g
 CPPFLAGS+=-Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
 
-DIST_SOURCES=ocl_icd.c icd_generator.rb License.txt Makefile ocl_icd_test.c ocl_interface.yaml README ChangeLog
+DIST_SOURCES=ocl_icd_loader.c icd_generator.rb License.txt Makefile ocl_test.c ocl_interface.yaml README ChangeLog
 
-OpenCL_SOURCES=ocl_icd.c ocl_icd_lib.c
+OpenCL_SOURCES=ocl_icd_loader.c ocl_icd_loader_gen.c
 OpenCL_OBJECTS=$(OpenCL_SOURCES:%.c=%.o)
 
-PRGS=ocl_icd_test ocl_icd_dummy_test
+PRGS=ocl_test run_dummy_icd
 
 .PHONY: all update-database library check
 all: library
@@ -36,12 +36,13 @@ $(PRGS): %: %.o
 		-o $@ $(filter %.o,$^) $(LIBS) $($@_LIBS)
 
 # Dependency to ensure that headers are created before
-ocl_icd.o: ocl_icd.h
+ocl_icd_loader.o: ocl_icd.h ocl_icd_loader.h
 
 # Generate sources and headers from the database
 ocl_icd.h: stamp-generator
-ocl_icd.map: stamp-generator
-ocl_icd_lib.c: stamp-generator
+ocl_icd_loader.h: stamp-generator
+ocl_icd_loader.map: stamp-generator
+ocl_icd_loader_gen.c: stamp-generator
 ocl_icd_bindings.c: stamp-generator
 stamp-generator: icd_generator.rb
 	$(RUBY) icd_generator.rb --database
@@ -50,7 +51,7 @@ stamp-generator: icd_generator.rb
 PREFIX_MAP=-Wl,--version-script,
 # libOpenCL building
 $(OpenCL_OBJECTS): CFLAGS+= -fpic
-libOpenCL.so.1.0: $(OpenCL_OBJECTS) ocl_icd.map
+libOpenCL.so.1.0: $(OpenCL_OBJECTS) ocl_icd_loader.map
 	 $(CC) $(CFLAGS) $(LDFLAGS) -L. -shared -o $@ \
 		-Wl,-Bsymbolic -Wl,-soname,libOpenCL.so.1 \
 		$(filter %.o,$^) $(addprefix $(PREFIX_MAP),$(filter %.map,$^)) $(LIBS) -ldl
@@ -60,38 +61,38 @@ libOpenCL.so: libOpenCL.so.1
 	ln -sf $< $@
 
 # libOpenCL test program
-ocl_icd_test_LIBS = -lOpenCL
-ocl_icd_test_LDFLAGS = -L.
-ocl_icd_test: libOpenCL.so
+ocl_test_LIBS = -lOpenCL
+ocl_test_LDFLAGS = -L.
+ocl_test: libOpenCL.so
 
-check: ocl_icd_test
-	env LD_LIBRARY_PATH=$(CURDIR) ./ocl_icd_test
+check: ocl_test
+	env LD_LIBRARY_PATH=$(CURDIR) ./ocl_test
 
 ##################################################################
 # rules to update the database from an already installed ICD Loader
 
-test_tools: libdummycl.so ocl_icd_dummy_test
+test_tools: libdummycl.so run_dummy_icd
 
 # Generate sources and headers from OpenCL installed headers
-ocl_icd_dummy_test.c: stamp-generator-dummy
-ocl_icd_dummy_test_weak.c: stamp-generator-dummy
-ocl_icd_dummy.c: stamp-generator-dummy
-ocl_icd_dummy.h: stamp-generator-dummy
-ocl_icd_h_dummy.h: stamp-generator-dummy
+run_dummy_icd.c: stamp-generator-dummy
+run_dummy_icd_weak.c: stamp-generator-dummy
+libdummy_icd.c: stamp-generator-dummy
+libdummy_icd.h: stamp-generator-dummy
+libdummy_icd_structures.h: stamp-generator-dummy
 stamp-generator-dummy: icd_generator.rb
 	$(RUBY) icd_generator.rb --generate
 	touch $@
 
 # Dummy OpenCL ICD library
-ocl_icd_dummy.o: CFLAGS+= -fpic
-libdummycl.so: ocl_icd_dummy.o
+libdummy_icd.o: CFLAGS+= -fpic
+libdummycl.so: libdummy_icd.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o $@ \
 		-Wl,-Bsymbolic -Wl,-soname,libdummycl.so \
 		$(filter %.o,$^) $(LIBS)
 
 # program to call the dummy OpenCL ICD through the installed ICD Loader
-ocl_icd_dummy_test_LIBS = -lOpenCL
-ocl_icd_dummy_test: ocl_icd_dummy_test.o ocl_icd_dummy_test_weak.o
+run_dummy_icd_LIBS = -lOpenCL
+run_dummy_icd: run_dummy_icd.o run_dummy_icd_weak.o
 
 # rules to install and remove our dummy ICD library
 .PHONY: install_test_lib uninstall_test_lib
@@ -108,12 +109,12 @@ update-database: test_tools install_test_lib
 
 .PHONY: distclean clean
 distclean:: clean
-	$(RM) ocl_icd_bindings.c ocl_icd.h ocl_icd.map \
+	$(RM) ocl_icd_bindings.c ocl_icd.h ocl_icd_loader.map \
 		libOpenCL.so.1.0 libOpenCL.so.1 libOpenCL.so
 
 clean::
-	$(RM) *.o ocl_icd_dummy_test_weak.c ocl_icd_dummy_test.c ocl_icd_dummy.c ocl_icd_dummy.h ocl_icd_h_dummy.h libdummycl.so stamp-generator-dummy \
-		ocl_icd_lib.c ocl_icd_test $(PRGS) stamp-generator
+	$(RM) *.o run_dummy_icd_weak.c run_dummy_icd.c libdummy_icd.c libdummy_icd.h libdummy_icd_structures.h libdummycl.so stamp-generator-dummy \
+		ocl_icd_loader_gen.c ocl_icd_loader.h ocl_test $(PRGS) stamp-generator
 
 .PHONY: install
 install: all
@@ -125,7 +126,7 @@ install: all
 	install -m 644 ocl_icd.h $(DESTDIR)$(includedir)
 	install -m 755 -d $(DESTDIR)$(exampledir)
 	install -m 644 ocl_icd_bindings.c $(DESTDIR)$(exampledir)
-	install -m 644 ocl_icd.map $(DESTDIR)$(exampledir)
+	install -m 644 ocl_icd_loader.map $(DESTDIR)$(exampledir)
 
 dist: $(package)-$(VERSION).tar.gz
 

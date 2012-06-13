@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <dlfcn.h>
 #include <CL/opencl.h>
-#include "ocl_icd.h"
+#include "ocl_icd_loader.h"
 
 typedef CL_API_ENTRY void * (CL_API_CALL *clGetExtensionFunctionAddress_fn)(const char * /* func_name */) CL_API_SUFFIX__VERSION_1_0;
 

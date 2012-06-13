@@ -35,7 +35,6 @@ module IcdGenerator
   $noweak_funcs = ["clWaitForEvents", "clCreateContextFromType", "clCreateContext" ]
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
   $versions_entries = []
-#  $header_files = ["./cl.h", "./cl_gl.h", "./cl_ext.h", "./cl_gl_ext.h"]
   $buff=20
   $license = <<EOF
 Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
@@ -106,21 +105,8 @@ EOF
     }
     return headers
   end
-  def self.generate_ocl_icd_header
-    ocl_icd_header = "/**\n#{$license}\n*/\n"
-    ocl_icd_header +=  "#include <CL/opencl.h>\n"
-    ocl_icd_header += self.include_headers
-    ocl_icd_header +=  "\nstruct _cl_icd_dispatch {\n"
-    $api_entries.each_value { |entry|
-      ocl_icd_header += entry.sub(/CL_API_CALL(.*?)\(/m,'(CL_API_CALL*\1)(').gsub("\r","") + "\n"
-    }
-    $buff.times {|i|
-      ocl_icd_header += "void (* dummyFunc#{i})(void) ;\n"
-    }
-    return ocl_icd_header += "};\n"
-  end
 
-  def self.generate_ocl_icd_header_final
+  def self.generate_ocl_icd_header
     ocl_icd_header = "/**\n#{$license}\n*/\n\n"
     ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
@@ -140,6 +126,12 @@ EOF
 	gsub(/^[\t ]+/,"    ").gsub(/^([^\t ])/, '  \1') + "\n\n"
     }
     ocl_icd_header += "};\n\n"
+    return ocl_icd_header
+  end
+
+  def self.generate_ocl_icd_loader_header
+    ocl_icd_header = "/**\n#{$license}\n*/\n\n"
+    ocl_icd_header += "#include \"ocl_icd.h\"\n\n"
     ocl_icd_header += "extern struct _cl_icd_dispatch master_dispatch;\n"
     $cl_objects.each { |o|
       ocl_icd_header += "struct _cl_#{o} { struct _cl_icd_dispatch *dispatch; };\n"
@@ -147,24 +139,24 @@ EOF
     return ocl_icd_header
   end
 
-  def self.generate_ocl_icd_source
-    ocl_icd_source = "/**\n#{$license}\n*/\n"
-    ocl_icd_source += "#include \"ocl_icd.h\"\n"
-    ocl_icd_source += "struct _cl_icd_dispatch master_dispatch = {\n"
+  def self.generate_ocl_icd_bindings_source
+    ocl_icd_bindings_source = "/**\n#{$license}\n*/\n"
+    ocl_icd_bindings_source += "#include \"ocl_icd.h\"\n"
+    ocl_icd_bindings_source += "struct _cl_icd_dispatch master_dispatch = {\n"
     ($api_entries.length+$buff-1).times { |i|
       if( $known_entries[i] ) then 
-        ocl_icd_source += "  #{$known_entries[i]},\n"
+        ocl_icd_bindings_source += "  #{$known_entries[i]},\n"
       else
-        ocl_icd_source += "  (void *) NULL,\n"
+        ocl_icd_bindings_source += "  (void *) NULL,\n"
       end
     }
     if( $known_entries[$api_entries.length+$buff-1] ) then
-      ocl_icd_source += "  #{$known_entries[i]}\n"
+      ocl_icd_bindings_source += "  #{$known_entries[i]}\n"
     else
-      ocl_icd_source += "  (void *) NULL\n"
+      ocl_icd_bindings_source += "  (void *) NULL\n"
     end
-    ocl_icd_source += "};\n"
-    ocl_icd_source += <<EOF
+    ocl_icd_bindings_source += "};\n"
+    ocl_icd_bindings_source += <<EOF
 
 CL_API_ENTRY cl_int CL_API_CALL clIcdGetPlatformIDsKHR(  
              cl_uint num_entries, 
@@ -258,51 +250,61 @@ CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
   return CL_SUCCESS;
 }
 EOF
-    return ocl_icd_source
+    return ocl_icd_bindings_source
   end
  
-  def self.generate_ocl_icd_dummy_header
-    ocl_icd_dummy_header = "/**\n#{$license}\n*/\n"
-    ocl_icd_dummy_header += "#include <CL/opencl.h>\n"
-    ocl_icd_dummy_header += "#include \"ocl_icd_h_dummy.h\"\n"
+  def self.generate_libdummy_icd_structures
+    libdummy_icd_structures = "/**\n#{$license}\n*/\n"
+    libdummy_icd_structures +=  "#include <CL/opencl.h>\n"
+    libdummy_icd_structures += self.include_headers
+    libdummy_icd_structures += "\n\nstruct _cl_icd_dispatch;\n"
+    libdummy_icd_structures += "struct _cl_platform_id { struct _cl_icd_dispatch *dispatch; };\n\n"
+    libdummy_icd_structures += "struct _cl_icd_dispatch {\n"
     ($api_entries.length+$buff).times { |i|
-      ocl_icd_dummy_header += "void dummyFunc#{i}(void);\n"
-    }
-    ocl_icd_dummy_header += "struct _cl_icd_dispatch master_dispatch = {\n"
-    ($api_entries.length+$buff-1).times { |i|
-      if( $known_entries[i] ) then 
-        ocl_icd_dummy_header += "  (void *)& #{$known_entries[i]},\n"
+      if( $known_entries[i] ) then
+        libdummy_icd_structures += "  void(*known#{i})(void);\n"
       else
-        ocl_icd_dummy_header += "  (void *)& dummyFunc#{i},\n"
+        libdummy_icd_structures += "  void(*unknown#{i})(void);\n"
       end
     }
-    if( $known_entries[$api_entries.length+$buff-1] ) then
-      cl_icd_dummy_header += "  (void *)& #{$known_entries[$api_entries.length+$buff-1]}\n"
-    else
-      ocl_icd_dummy_header += "  (void *)& dummyFunc#{$api_entries.length+$buff-1}\n"
-    end
-    ocl_icd_dummy_header += "};\n"
-    $cl_objects.each { |o|
-      ocl_icd_dummy_header += "struct _cl_#{o} { struct _cl_icd_dispatch *dispatch; };\n"
-      ocl_icd_dummy_header += "struct _cl_#{o} master_#{o} = { &master_dispatch };\n"
+    return libdummy_icd_structures += "};\n"
+  end
+
+  def self.generate_libdummy_icd_header
+    libdummy_icd_header = "/**\n#{$license}\n*/\n"
+    libdummy_icd_header += "#include <CL/opencl.h>\n"
+    libdummy_icd_header += "#include \"libdummy_icd_structures.h\"\n"
+    ($api_entries.length+$buff).times { |i|
+      libdummy_icd_header += "void dummyFunc#{i}(void);\n"
     }
-    return ocl_icd_dummy_header
+    libdummy_icd_header += "struct _cl_icd_dispatch master_dispatch = {\n"
+    comma=","
+    ($api_entries.length+$buff).times { |i|
+      comma="" if (i == $api_entries.length+$buff-1)
+      if( $known_entries[i] ) then 
+        libdummy_icd_header += "  (void *)& #{$known_entries[i]}#{comma}\n"
+      else
+        libdummy_icd_header += "  (void *)& dummyFunc#{i}#{comma}\n"
+      end
+    }
+    libdummy_icd_header += "};\n"
+    return libdummy_icd_header
   end
  
-  def self.generate_ocl_icd_lib_source
+  def self.generate_ocl_icd_loader_gen_source
     forbidden_funcs = $forbidden_funcs[2..-1]
-    ocl_icd_lib_source = "/**\n#{$license}\n*/\n"
-    ocl_icd_lib_source += "#include \"ocl_icd.h\"\n"
-    ocl_icd_lib_source += ""
+    ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
+    ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
+    ocl_icd_loader_gen_source += ""
     $api_entries.each { |func_name, entry|
       next if forbidden_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
       parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
       parameters.gsub!(/\[.*?\]/,"")
       parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/,'\1')
-      ocl_icd_lib_source += clean_entry.gsub(/\[.*?\]/,"")
+      ocl_icd_loader_gen_source += clean_entry.gsub(/\[.*?\]/,"")
       if func_name == "clCreateContext" then
-        ocl_icd_lib_source += <<EOF
+        ocl_icd_loader_gen_source += <<EOF
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -318,7 +320,7 @@ EOF
   return ((struct _cl_device_id *)devices[0])->dispatch->clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
 EOF
       elsif func_name == "clCreateContextFromType" then
-        ocl_icd_lib_source += <<EOF
+        ocl_icd_loader_gen_source += <<EOF
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -331,13 +333,13 @@ EOF
   return NULL;
 EOF
       elsif func_name == "clWaitForEvents" then
-        ocl_icd_lib_source += <<EOF
+        ocl_icd_loader_gen_source += <<EOF
   if( num_events == 0 || event_list == NULL )
     return CL_INVALID_VALUE;
   return ((struct _cl_event *)event_list[0])->dispatch->clWaitForEvents(num_events, event_list);
 EOF
       elsif func_name == "clUnloadCompiler" then
-        ocl_icd_lib_source += <<EOF
+        ocl_icd_loader_gen_source += <<EOF
   return CL_SUCCESS;
 EOF
       else
@@ -348,27 +350,27 @@ EOF
           first_parameter = first_parameter[0][0..-2]
         end
         fps = first_parameter.split
-        ocl_icd_lib_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+        ocl_icd_loader_gen_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
         ps = parameters.split(",")
         ps = ps.collect { |p|
           p = p.split
           p = p[-1].gsub("*","")
         }
-        ocl_icd_lib_source += ps.join(", ")
-        ocl_icd_lib_source += ");\n"
+        ocl_icd_loader_gen_source += ps.join(", ")
+        ocl_icd_loader_gen_source += ");\n"
       end
-      ocl_icd_lib_source += "}\n\n"
+      ocl_icd_loader_gen_source += "}\n\n"
     }
 
-    return ocl_icd_lib_source;
+    return ocl_icd_loader_gen_source;
   end
   
-  def self.generate_ocl_icd_dummy_source
-    ocl_icd_dummy_source = "/**\n#{$license}\n*/\n"
-    ocl_icd_dummy_source += "#include \"ocl_icd_dummy.h\"\n"
-    ocl_icd_dummy_source += "#include <stdio.h>\n"
-    ocl_icd_dummy_source += "#include <string.h>\n"
-    ocl_icd_dummy_source += <<EOF
+  def self.generate_libdummy_icd_source
+    libdummy_icd_source = "/**\n#{$license}\n*/\n"
+    libdummy_icd_source += "#include \"libdummy_icd.h\"\n"
+    libdummy_icd_source += "#include <stdio.h>\n"
+    libdummy_icd_source += "#include <string.h>\n"
+    libdummy_icd_source += <<EOF
 #define NUM_PLATFORMS 1
 #define DEBUG 0
 cl_uint const num_master_platforms = NUM_PLATFORMS;
@@ -433,11 +435,11 @@ CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
 #endif
 
   char cl_platform_profile[] = "FULL_PROFILE";
-  char cl_platform_version[] = "OpenCL 1.1";
+  char cl_platform_version[] = "OpenCL 1.2";
   char cl_platform_name[] = "DummyCL";
   char cl_platform_vendor[] = "LIG";
   char cl_platform_extensions[] = "cl_khr_icd";
-  char cl_platform_icd_suffix_khr[] = "dummy";
+  char cl_platform_icd_suffix_khr[] = "LIG";
   size_t size_string;
   char * string_p;
   if( platform != NULL ) {
@@ -490,14 +492,14 @@ CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
 }
 EOF
     (0...$api_entries.length+$buff).each { |i|
-      ocl_icd_dummy_source += "void dummyFunc#{i}(void){ printf(\"#{i}  : \"); fflush(NULL); }\n"
+      libdummy_icd_source += "void dummyFunc#{i}(void){ printf(\"#{i}  : \"); fflush(NULL); }\n"
     }
-    return ocl_icd_dummy_source
+    return libdummy_icd_source
   end
   
-  def self.generate_ocl_icd_dummy_test_weak_source
-    ocl_icd_dummy_test_weak = "/**\n#{$license}\n*/\n"
-    ocl_icd_dummy_test_weak += <<EOF
+  def self.generate_run_dummy_icd_weak_source
+    run_dummy_icd_weak = "/**\n#{$license}\n*/\n"
+    run_dummy_icd_weak += <<EOF
 #define _GNU_SOURCE 1
 #include <stdio.h>
 #include <dlfcn.h>
@@ -518,20 +520,20 @@ EOF
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
        next if $noweak_funcs.include?(func_name)
-       ocl_icd_dummy_test_weak += "F(#{func_name})\n"
+       run_dummy_icd_weak += "F(#{func_name})\n"
     }
-    return ocl_icd_dummy_test_weak
+    return run_dummy_icd_weak
   end
-  def self.generate_ocl_icd_dummy_test_source
-    ocl_icd_dummy_test = "/**\n#{$license}\n*/\n"
-    ocl_icd_dummy_test += "#include <stdlib.h>\n"
-    ocl_icd_dummy_test += "#include <stdio.h>\n"
-    ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    ocl_icd_dummy_test += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    ocl_icd_dummy_test += "#include <CL/opencl.h>\n"
-    ocl_icd_dummy_test += self.include_headers
-    ocl_icd_dummy_test += "#include <string.h>\n"
-    ocl_icd_dummy_test += <<EOF
+  def self.generate_run_dummy_icd_source
+    run_dummy_icd = "/**\n#{$license}\n*/\n"
+    run_dummy_icd += "#include <stdlib.h>\n"
+    run_dummy_icd += "#include <stdio.h>\n"
+    run_dummy_icd += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    run_dummy_icd += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    run_dummy_icd += "#include <CL/opencl.h>\n"
+    run_dummy_icd += self.include_headers
+    run_dummy_icd += "#include <string.h>\n"
+    run_dummy_icd += <<EOF
 
 int main(void) {
   int i;
@@ -573,59 +575,59 @@ EOF
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
        if func_name == "clCreateContext" then
-         ocl_icd_dummy_test += "  #{func_name}(properties,1,(cl_device_id*)&chosen_platform,NULL,NULL,NULL);\n"
+         run_dummy_icd += "  #{func_name}(properties,1,(cl_device_id*)&chosen_platform,NULL,NULL,NULL);\n"
        elsif func_name == "clCreateContextFromType" then
-         ocl_icd_dummy_test += "  #{func_name}(properties,CL_DEVICE_TYPE_CPU,NULL,NULL,NULL);\n"
+         run_dummy_icd += "  #{func_name}(properties,CL_DEVICE_TYPE_CPU,NULL,NULL,NULL);\n"
        elsif func_name == "clWaitForEvents" then
-         ocl_icd_dummy_test += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
+         run_dummy_icd += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
        elsif func_name == "clGetExtensionFunctionAddressForPlatform" then
-         ocl_icd_dummy_test += "  #{func_name}((cl_platform_id)chosen_platform, \"clIcdGetPlatformIDsKHR\");\n"
+         run_dummy_icd += "  #{func_name}((cl_platform_id)chosen_platform, \"clIcdGetPlatformIDsKHR\");\n"
        else
-         ocl_icd_dummy_test += "  oclFuncPtr = (oclFuncPtr_fn)" + func_name + ";\n"
-         ocl_icd_dummy_test += "  oclFuncPtr(chosen_platform);\n"
+         run_dummy_icd += "  oclFuncPtr = (oclFuncPtr_fn)" + func_name + ";\n"
+         run_dummy_icd += "  oclFuncPtr(chosen_platform);\n"
        end
-       ocl_icd_dummy_test += "  printf(\"%s\\n\", \"#{func_name}\");"
-       ocl_icd_dummy_test += "  fflush(NULL);\n"
+       run_dummy_icd += "  printf(\"%s\\n\", \"#{func_name}\");"
+       run_dummy_icd += "  fflush(NULL);\n"
     }
-    ocl_icd_dummy_test += "  return 0;\n}\n"
-    return ocl_icd_dummy_test
+    run_dummy_icd += "  return 0;\n}\n"
+    return run_dummy_icd
   end
 
-  def self.generate_ocl_icd_map
-    ocl_icd_map = "/**\n#{$license}\n*/\n\n"
+  def self.generate_ocl_icd_loader_map
+    ocl_icd_loader_map = "/**\n#{$license}\n*/\n\n"
     prev_version=""
     $versions_entries.keys.sort.each { |version|
-      ocl_icd_map += "OPENCL_#{version.sub('_','.')} {\n";
-      ocl_icd_map += "  global:\n";
+      ocl_icd_loader_map += "OPENCL_#{version.sub('_','.')} {\n";
+      ocl_icd_loader_map += "  global:\n";
       $versions_entries[version].each { |symb|
-        ocl_icd_map += "    #{symb};\n"
+        ocl_icd_loader_map += "    #{symb};\n"
       }
       if (prev_version == "") then
-        ocl_icd_map += "  local:\n";
-        ocl_icd_map += "    *;\n";
+        ocl_icd_loader_map += "  local:\n";
+        ocl_icd_loader_map += "    *;\n";
       end
-      ocl_icd_map += "} #{prev_version};\n\n";
+      ocl_icd_loader_map += "} #{prev_version};\n\n";
       prev_version="OPENCL_#{version.sub('_','.')}";
     }
-    return ocl_icd_map
+    return ocl_icd_loader_map
   end
 
   def self.generate_sources
     parse_headers
-    File.open('ocl_icd_h_dummy.h','w') { |f|
-      f.puts generate_ocl_icd_header
+    File.open('libdummy_icd_structures.h','w') { |f|
+      f.puts generate_libdummy_icd_structures
     }
-    File.open('ocl_icd_dummy.h','w') { |f|
-      f.puts generate_ocl_icd_dummy_header
+    File.open('libdummy_icd.h','w') { |f|
+      f.puts generate_libdummy_icd_header
     }
-    File.open('ocl_icd_dummy.c','w') { |f|
-      f.puts generate_ocl_icd_dummy_source
+    File.open('libdummy_icd.c','w') { |f|
+      f.puts generate_libdummy_icd_source
     }
-    File.open('ocl_icd_dummy_test.c','w') { |f|
-      f.puts generate_ocl_icd_dummy_test_source
+    File.open('run_dummy_icd.c','w') { |f|
+      f.puts generate_run_dummy_icd_source
     }
-    File.open('ocl_icd_dummy_test_weak.c','w') { |f|
-      f.puts generate_ocl_icd_dummy_test_weak_source
+    File.open('run_dummy_icd_weak.c','w') { |f|
+      f.puts generate_run_dummy_icd_weak_source
     }
   end
 
@@ -661,7 +663,7 @@ EOF
 
   def self.finalize
     parse_headers
-    doc = YAML::load(`./ocl_icd_dummy_test`)
+    doc = YAML::load(`./run_dummy_icd`)
     doc.delete(-1)
     $known_entries.merge!(doc)
     self.savedb
@@ -711,16 +713,19 @@ EOF
       end
     }
     File.open('ocl_icd.h','w') { |f|
-      f.puts generate_ocl_icd_header_final
+      f.puts generate_ocl_icd_header
     }
-    File.open('ocl_icd.map','w') { |f|
-      f.puts generate_ocl_icd_map
+    File.open('ocl_icd_loader.h','w') { |f|
+      f.puts generate_ocl_icd_loader_header
+    }
+    File.open('ocl_icd_loader.map','w') { |f|
+      f.puts generate_ocl_icd_loader_map
     }
     File.open('ocl_icd_bindings.c','w') { |f|
-      f.puts generate_ocl_icd_source
+      f.puts generate_ocl_icd_bindings_source
     }
-    File.open('ocl_icd_lib.c','w') { |f|
-      f.puts generate_ocl_icd_lib_source
+    File.open('ocl_icd_loader_gen.c','w') { |f|
+      f.puts generate_ocl_icd_loader_gen_source
     }
   end
 end
