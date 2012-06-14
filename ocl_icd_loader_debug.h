@@ -41,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma GCC visibility pop
 extern int debug_ocl_icd_mask;
 #  define debug(mask, fmt, ...) do {\
-	if (debug_ocl_icd_mask & mask) { \
+	if (debug_ocl_icd_mask & (mask)) {			\
 		fprintf(stderr, "ocl-icd: %s: " fmt "\n", __func__, ##__VA_ARGS__); \
 	} \
    } while(0)
@@ -50,10 +50,16 @@ extern int debug_ocl_icd_mask;
 	debug(D_ARGS, "return: %ld/0x%lx", (long)ret, (long)ret);	\
 	return ret; \
    } while(0)
+#  define RETURN_STR(val) do { \
+	char* ret=(char*)(val);			\
+	debug(D_ARGS, "return: %s", ret);	\
+	return ret; \
+   } while(0)
 void dump_platform(cl_platform_id pid);
 #else
 #  define debug(...) (void)0
 #  define RETURN(val) return (val)
+#  define RETURN_STR(val) return (val)
 #endif
 
 #pragma GCC visibility pop

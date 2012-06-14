@@ -52,6 +52,7 @@ struct vendor_icd {
 
 struct platform_icd {
   char *	 extension_suffix;
+  char *	 version;
   struct vendor_icd *vicd;
   cl_platform_id pid;
 };
@@ -64,6 +65,96 @@ static cl_uint _num_picds = 0;
 static cl_uint _initialized = 0;
 
 static const char *_dir_path="/etc/OpenCL/vendors/";
+
+#if DEBUG_OCL_ICD
+#  define _clS(x) [-x] = #x
+#  define MAX_CL_ERRORS CL_INVALID_DEVICE_PARTITION_COUNT
+static char const * const clErrorStr[-MAX_CL_ERRORS+1] = {
+  _clS(CL_SUCCESS),
+  _clS(CL_DEVICE_NOT_FOUND),
+  _clS(CL_DEVICE_NOT_AVAILABLE),
+  _clS(CL_COMPILER_NOT_AVAILABLE),
+  _clS(CL_MEM_OBJECT_ALLOCATION_FAILURE),
+  _clS(CL_OUT_OF_RESOURCES),
+  _clS(CL_OUT_OF_HOST_MEMORY),
+  _clS(CL_PROFILING_INFO_NOT_AVAILABLE),
+  _clS(CL_MEM_COPY_OVERLAP),
+  _clS(CL_IMAGE_FORMAT_MISMATCH),
+  _clS(CL_IMAGE_FORMAT_NOT_SUPPORTED),
+  _clS(CL_BUILD_PROGRAM_FAILURE),
+  _clS(CL_MAP_FAILURE),
+  _clS(CL_MISALIGNED_SUB_BUFFER_OFFSET),
+  _clS(CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST),
+  _clS(CL_COMPILE_PROGRAM_FAILURE),
+  _clS(CL_LINKER_NOT_AVAILABLE),
+  _clS(CL_LINK_PROGRAM_FAILURE),
+  _clS(CL_DEVICE_PARTITION_FAILED),
+  _clS(CL_KERNEL_ARG_INFO_NOT_AVAILABLE),
+  _clS(CL_INVALID_VALUE),
+  _clS(CL_INVALID_DEVICE_TYPE),
+  _clS(CL_INVALID_PLATFORM),
+  _clS(CL_INVALID_DEVICE),
+  _clS(CL_INVALID_CONTEXT),
+  _clS(CL_INVALID_QUEUE_PROPERTIES),
+  _clS(CL_INVALID_COMMAND_QUEUE),
+  _clS(CL_INVALID_HOST_PTR),
+  _clS(CL_INVALID_MEM_OBJECT),
+  _clS(CL_INVALID_IMAGE_FORMAT_DESCRIPTOR),
+  _clS(CL_INVALID_IMAGE_SIZE),
+  _clS(CL_INVALID_SAMPLER),
+  _clS(CL_INVALID_BINARY),
+  _clS(CL_INVALID_BUILD_OPTIONS),
+  _clS(CL_INVALID_PROGRAM),
+  _clS(CL_INVALID_PROGRAM_EXECUTABLE),
+  _clS(CL_INVALID_KERNEL_NAME),
+  _clS(CL_INVALID_KERNEL_DEFINITION),
+  _clS(CL_INVALID_KERNEL),
+  _clS(CL_INVALID_ARG_INDEX),
+  _clS(CL_INVALID_ARG_VALUE),
+  _clS(CL_INVALID_ARG_SIZE),
+  _clS(CL_INVALID_KERNEL_ARGS),
+  _clS(CL_INVALID_WORK_DIMENSION),
+  _clS(CL_INVALID_WORK_GROUP_SIZE),
+  _clS(CL_INVALID_WORK_ITEM_SIZE),
+  _clS(CL_INVALID_GLOBAL_OFFSET),
+  _clS(CL_INVALID_EVENT_WAIT_LIST),
+  _clS(CL_INVALID_EVENT),
+  _clS(CL_INVALID_OPERATION),
+  _clS(CL_INVALID_GL_OBJECT),
+  _clS(CL_INVALID_BUFFER_SIZE),
+  _clS(CL_INVALID_MIP_LEVEL),
+  _clS(CL_INVALID_GLOBAL_WORK_SIZE),
+  _clS(CL_INVALID_PROPERTY),
+  _clS(CL_INVALID_IMAGE_DESCRIPTOR),
+  _clS(CL_INVALID_COMPILER_OPTIONS),
+  _clS(CL_INVALID_LINKER_OPTIONS),
+  _clS(CL_INVALID_DEVICE_PARTITION_COUNT)
+};
+#undef _clS
+#endif
+
+static char* _clerror2string (cl_int error) __attribute__((unused));
+static char* _clerror2string (cl_int error) {
+#if DEBUG_OCL_ICD
+  if (-error > MAX_CL_ERRORS || error > 0) {
+    debug(D_WARN, "Unknown error code %d", error);
+    RETURN_STR("OpenCL Error");
+  }
+  const char *ret=clErrorStr[-error];
+  if (ret == NULL) {
+    debug(D_WARN, "Unknown error code %d", error);
+    RETURN_STR("OpenCL Error");
+  }
+  RETURN_STR(ret);
+#else
+  static char number[15];
+  if (error==0) {
+    RETURN_STR("CL_SUCCESS");
+  }
+  snprintf(number, 15, "%i", error);
+  RETURN_STR(number);
+#endif
+}
 
 static inline cl_uint _find_num_icds(DIR *dir) {
   cl_uint num_icds = 0;
@@ -165,6 +256,32 @@ static int _allocate_platforms(int req) {
   RETURN(allocated - _num_picds);
 }
 
+static char* _malloc_clGetPlatformInfo(clGetPlatformInfo_fn plt_info_ptr,
+		 cl_platform_id pid, cl_platform_info cname, char* sname) {
+  cl_int error;
+  size_t param_value_size_ret;
+  error = plt_info_ptr(pid, cname, 0, NULL, &param_value_size_ret);
+  if (error != CL_SUCCESS) {
+    debug(D_WARN, "Error %s while requesting %s in platform %p",
+	  _clerror2string(error), sname, pid);
+    return NULL;
+  }
+  char *param_value = (char *)malloc(sizeof(char)*param_value_size_ret);
+  if (param_value == NULL) {
+    debug(D_WARN, "Error in malloc while requesting %s in platform %p",
+	  sname, pid);
+    return NULL;
+  }
+  error = plt_info_ptr(pid, cname, param_value_size_ret, param_value, NULL);
+  if (error != CL_SUCCESS){
+    free(param_value);
+    debug(D_WARN, "Error %s while requesting %s in platform %p",
+	  _clerror2string(error), sname, pid);
+    return NULL;
+  }
+  RETURN_STR(param_value);
+}
+
 static inline void _find_and_check_platforms(cl_uint num_icds) {
   cl_uint i;
   _num_icds = 0;
@@ -207,7 +324,6 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     }
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
-      size_t param_value_size_ret;
       struct platform_icd *p=&_picds[_num_picds];
       p->extension_suffix=NULL;
       p->vicd=&_icds[i];
@@ -217,16 +333,9 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	dump_platform(p->pid);
       }
 #endif
-      error = plt_info_ptr(p->pid, CL_PLATFORM_EXTENSIONS, 0, NULL, &param_value_size_ret);
-      if (error != CL_SUCCESS) {
-	debug(D_WARN, "Error while loading extensions in platform %i, skipping it",j);
-        continue;
-      }
-      char *param_value = (char *)malloc(sizeof(char)*param_value_size_ret);
-      error = plt_info_ptr(p->pid, CL_PLATFORM_EXTENSIONS, param_value_size_ret, param_value, NULL);
-      if (error != CL_SUCCESS){
-        free(param_value);
-	debug(D_WARN, "Error while loading extensions in platform %i, skipping it", j);
+      char *param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
+      if (param_value == NULL){
+	debug(D_WARN, "Skipping platform %i", j);
         continue;
       }
       debug(D_DUMP, "Supported extensions: %s", param_value);
@@ -236,20 +345,38 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
         continue;
       }
       free(param_value);
-      error = plt_info_ptr(p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, 0, NULL, &param_value_size_ret);
-      if (error != CL_SUCCESS) {
-	debug(D_WARN, "Error while loading suffix in platform %i, skipping it", j);
-        continue;
-      }
-      param_value = (char *)malloc(sizeof(char)*param_value_size_ret);
-      error = plt_info_ptr(p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, param_value_size_ret, param_value, NULL);
-      if (error != CL_SUCCESS){
-	debug(D_WARN, "Error while loading suffix in platform %i, skipping it", j);
-        free(param_value);
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
+      if (param_value == NULL){
+	debug(D_WARN, "Skipping platform %i", j);
         continue;
       }
       p->extension_suffix = param_value;
-      debug(D_LOG, "Extension suffix: %s", param_value);
+      debug(D_DUMP|D_LOG, "Extension suffix: %s", param_value);
+#if DEBUG_OCL_ICD
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_PROFILE, "profile");
+      if (param_value != NULL){
+        debug(D_DUMP, "Profile: %s", param_value);
+	free(param_value);
+      }
+#endif
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VERSION, "version");
+      p->version = param_value;
+      if (param_value != NULL){
+        debug(D_DUMP, "Version: %s", param_value);
+	free(param_value);
+      }
+#if DEBUG_OCL_ICD
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_NAME, "name");
+      if (param_value != NULL){
+        debug(D_DUMP, "Name: %s", param_value);
+	free(param_value);
+      }
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VENDOR, "vendor");
+      if (param_value != NULL){
+        debug(D_DUMP, "Vendor: %s", param_value);
+	free(param_value);
+      }
+#endif
       num_valid_platforms++;
       _num_picds++;
     }
@@ -274,7 +401,7 @@ static void _initClIcd( void ) {
   char *debug=getenv("OCL_ICD_DEBUG");
   if (debug) {
     debug_ocl_icd_mask=atoi(debug);
-    if (debug_ocl_icd_mask==0)
+    if (*debug == 0)
       debug_ocl_icd_mask=1;
   }
 #endif
