@@ -10,10 +10,14 @@ docdir=$(datadir)/doc
 pkgdocdir=$(docdir)/$(package)
 exampledir=$(pkgdocdir)/examples
 
+
 CC=gcc
 RUBY=ruby
 CFLAGS=-O2 -g
 CPPFLAGS+=-Wall -Werror -Wno-cpp -Wno-deprecated-declarations -Wno-comment
+ifeq ($(DEBUG),no)
+CPPFLAGS+=-DDEBUG_OCL_ICD=0
+endif
 
 DIST_SOURCES=ocl_icd_loader.c ocl_icd_loader_debug.h \
 	icd_generator.rb License.txt Makefile ocl_test.c \
