@@ -37,6 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocl_icd_loader.h"
 #include "ocl_icd_loader_debug.h"
 
+#define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors/"
+
 int debug_ocl_icd_mask=0;
 
 typedef __typeof__(clGetExtensionFunctionAddress) *clGetExtensionFunctionAddress_fn;
@@ -63,8 +65,6 @@ static cl_uint _num_icds = 0;
 static cl_uint _num_picds = 0;
 
 static cl_uint _initialized = 0;
-
-static const char *_dir_path="/etc/OpenCL/vendors/";
 
 #if DEBUG_OCL_ICD
 #  define _clS(x) [-x] = #x
@@ -165,14 +165,13 @@ static inline cl_uint _find_num_icds(DIR *dir) {
     cl_uint d_name_len = strlen(ent->d_name);
     if( d_name_len>4 && strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
-//    printf("%s%s\n", _dir_path, ent->d_name);
     num_icds++;
   }
   rewinddir(dir);
   RETURN(num_icds);
 }
 
-static inline cl_uint _open_drivers(DIR *dir) {
+static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
   cl_uint num_icds = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
@@ -183,9 +182,9 @@ static inline cl_uint _open_drivers(DIR *dir) {
       continue;
     char * lib_path;
     char * err;
-    unsigned int lib_path_length = strlen(_dir_path) + strlen(ent->d_name) + 1;
+    unsigned int lib_path_length = strlen(dir_path) + strlen(ent->d_name) + 1;
     lib_path = malloc(lib_path_length*sizeof(char));
-    sprintf(lib_path,"%s%s", _dir_path, ent->d_name);
+    sprintf(lib_path,"%s%s", dir_path, ent->d_name);
     FILE *f = fopen(lib_path,"r");
     free(lib_path);
 
@@ -407,7 +406,12 @@ static void _initClIcd( void ) {
 #endif
   cl_uint num_icds = 0;
   DIR *dir;
-  dir = opendir(_dir_path);
+  const char* dir_path=getenv("OCL_ICD_VENDORS");
+  if (! dir_path || dir_path[0]==0) {
+    dir_path=ETC_OPENCL_VENDORS;
+  }
+  debug(D_LOG,"Reading icd list from '%s'", dir_path);
+  dir = opendir(dir_path);
   if(dir == NULL) {
     goto abort;
   }
@@ -422,7 +426,7 @@ static void _initClIcd( void ) {
     goto abort;
   }
   
-  num_icds = _open_drivers(dir);
+  num_icds = _open_drivers(dir, dir_path);
   if(num_icds == 0) {
     goto abort;
   }
