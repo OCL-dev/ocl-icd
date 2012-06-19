@@ -681,10 +681,10 @@ EOF
     }
   end
 
-  def self.savedb
+  def self.savedb(yamlfile)
     api_db = {}
     begin
-      File::open("ocl_interface.yaml","r") { |f|
+      File::open(yamlfile,"r") { |f|
         api_db = YAML::load(f.read)
 #        puts api_db.inspect
       }
@@ -695,7 +695,7 @@ EOF
       next if api_db[i]
       api_db[i] = $api_entries[$known_entries[i]].gsub("\r","")
     }
-    File::open("ocl_interface.yaml","w") { |f|
+    File::open(yamlfile,"w") { |f|
       f.write($license.gsub(/^/,"# "))
       f.write( <<EOF
 
@@ -734,12 +734,12 @@ EOF
     }
   end
 
-  def self.finalize
+  def self.finalize(yamlfile)
     parse_headers
     doc = YAML::load(`./run_dummy_icd`)
     doc.delete(-1)
     $known_entries.merge!(doc)
-    self.savedb
+    self.savedb(yamlfile)
     unknown=0
     $api_entries_array = []
     ($known_entries.length+$buff).times { |i|
@@ -753,9 +753,9 @@ EOF
     }
   end
   
-  def self.generate_from_database
+  def self.generate_from_database(yamlfile)
     doc={}
-    File::open('./ocl_interface.yaml') { |f|
+    File::open(yamlfile) { |f|
       doc = YAML:: load(f.read)
     }
     $known_entries = {}
@@ -803,12 +803,36 @@ EOF
   end
 end
 
-if ARGV[0] == "--generate"
-  IcdGenerator.generate_sources
-elsif ARGV[0] == "--finalize"
-  IcdGenerator.finalize
-elsif ARGV[0] == "--database"
-  IcdGenerator.generate_from_database
-else
-  raise "Argument must be one of --generate or --finalize" 
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: cd_generator.rb [options] mode"
+
+  opts.on("-f", "--file FILE", String, "YAML file (default ocl_interface.yaml)") do |v|
+    options[:file] = v
+    puts "value: #{v}"
+  end
+  opts.on("-m", "--mode [MODE]", [:database, :generate, :finalize],
+          "Select mode (database, generate, finalize)") do |m|
+    options[:mode] = m
+  end
+end.parse!
+
+if !options[:file] then
+  options[:file] = "ocl_interface.yaml"
 end
+
+if !options[:mode] then
+  raise "--mode option required"
+end
+if options[:mode] == :generate then
+  IcdGenerator.generate_sources
+elsif options[:mode] == :finalize then
+  IcdGenerator.finalize(options[:file])
+elsif options[:mode] == :database then
+  IcdGenerator.generate_from_database(options[:file])
+else
+  raise "Mode must be one of generate, database or finalize not #{options[:mode]}" 
+end
+
