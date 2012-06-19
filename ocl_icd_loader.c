@@ -163,7 +163,7 @@ static inline cl_uint _find_num_icds(DIR *dir) {
     if( strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0 )
       continue;
     cl_uint d_name_len = strlen(ent->d_name);
-    if( d_name_len>4 && strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
+    if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
     num_icds++;
   }
@@ -178,13 +178,14 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
     if( strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0 )
       continue;
     cl_uint d_name_len = strlen(ent->d_name);
-    if( d_name_len>4 && strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
+    if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
     char * lib_path;
     char * err;
     unsigned int lib_path_length = strlen(dir_path) + strlen(ent->d_name) + 1;
     lib_path = malloc(lib_path_length*sizeof(char));
     sprintf(lib_path,"%s%s", dir_path, ent->d_name);
+    debug(D_LOG, "Considering file '%s'", lib_path);
     FILE *f = fopen(lib_path,"r");
     free(lib_path);
 
@@ -210,7 +211,7 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
 
     _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
     if(_icds[num_icds].dl_handle != NULL) {
-      debug(D_LOG, "Loading ICD[%i] -> '%s'", num_icds, lib_path);
+      debug(D_LOG, "ICD[%i] loaded", num_icds);
       num_icds++;
     }
     free(lib_path);
