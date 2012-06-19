@@ -263,49 +263,11 @@ EOF
     return ocl_icd_bindings_source
   end
  
-  def self.generate_libdummy_icd_structures
-    libdummy_icd_structures = "/**\n#{$license}\n*/\n"
-    libdummy_icd_structures +=  "#include <CL/opencl.h>\n"
-    libdummy_icd_structures += self.include_headers
-    libdummy_icd_structures += "\n\nstruct _cl_icd_dispatch;\n"
-    libdummy_icd_structures += "struct _cl_platform_id { struct _cl_icd_dispatch *dispatch; };\n\n"
-    libdummy_icd_structures += "struct _cl_icd_dispatch {\n"
-    ($api_entries.length+$buff).times { |i|
-      if( $known_entries[i] ) then
-        libdummy_icd_structures += "  void(*known#{i})(void);\n"
-      else
-        libdummy_icd_structures += "  void(*unknown#{i})(void);\n"
-      end
-    }
-    return libdummy_icd_structures += "};\n"
-  end
-
-  def self.generate_libdummy_icd_header
-    libdummy_icd_header = "/**\n#{$license}\n*/\n"
-    libdummy_icd_header += "#include <CL/opencl.h>\n"
-    libdummy_icd_header += "#include \"libdummy_icd_structures.h\"\n"
-    ($api_entries.length+$buff).times { |i|
-      libdummy_icd_header += "void dummyFunc#{i}(void);\n"
-    }
-    libdummy_icd_header += "struct _cl_icd_dispatch master_dispatch = {\n"
-    comma=","
-    ($api_entries.length+$buff).times { |i|
-      comma="" if (i == $api_entries.length+$buff-1)
-      if( $known_entries[i] ) then 
-        libdummy_icd_header += "  (void(*)(void))& #{$known_entries[i]}#{comma}\n"
-      else
-        libdummy_icd_header += "  (void(*)(void))& dummyFunc#{i}#{comma}\n"
-      end
-    }
-    libdummy_icd_header += "};\n"
-    return libdummy_icd_header
-  end
- 
   def self.generate_ocl_icd_loader_gen_source
     forbidden_funcs = $forbidden_funcs[2..-1]
     ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
-    ocl_icd_loader_gen_source += "#include \"ocl_icd_loader_debug.h\"\n"
+    ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
     ocl_icd_loader_gen_source += ""
     $api_entries.each { |func_name, entry|
       next if forbidden_funcs.include?(func_name)
@@ -415,135 +377,49 @@ EOF
     return ocl_icd_loader_gen_source;
   end
   
-  def self.generate_libdummy_icd_source
-    libdummy_icd_source = "/**\n#{$license}\n*/\n"
-    libdummy_icd_source += "#include \"libdummy_icd.h\"\n"
-    libdummy_icd_source += "#include <stdio.h>\n"
-    libdummy_icd_source += "#include <string.h>\n"
-    libdummy_icd_source += <<EOF
-#define NUM_PLATFORMS 1
-#define DEBUG 0
-cl_uint const num_master_platforms = NUM_PLATFORMS;
-struct _cl_platform_id master_platforms[NUM_PLATFORMS] = { {&master_dispatch} };
-CL_API_ENTRY cl_int CL_API_CALL clGetPlatformIDs(  
-             cl_uint num_entries, 
-             cl_platform_id *platforms,
-             cl_uint *num_platforms) {
-  return clIcdGetPlatformIDsKHR(num_entries, platforms, num_platforms);
-}
-CL_API_ENTRY cl_int CL_API_CALL clIcdGetPlatformIDsKHR(  
-             cl_uint num_entries, 
-             cl_platform_id *platforms,
-             cl_uint *num_platforms) {
-#if DEBUG
-  printf("In clIcdGetPlatformIDsKHR...\\n");
-#endif
-  if( platforms == NULL && num_platforms == NULL )
-    return CL_INVALID_VALUE;
-  if( num_entries == 0 && platforms != NULL )
-    return CL_INVALID_VALUE;
-  if( num_master_platforms == 0)
-    return CL_PLATFORM_NOT_FOUND_KHR;
-  if( num_platforms != NULL ){
-#if DEBUG
-  printf("  asked num_platforms\\n");
-#endif
-    *num_platforms = num_master_platforms; }
-  if( platforms != NULL ) {
-#if DEBUG
-  printf("  asked platforms\\n");
-#endif
-    cl_uint i;
-    for( i=0; i<(num_master_platforms<num_entries?num_master_platforms:num_entries); i++)
-      platforms[i] = &master_platforms[i];
-  }
-  return CL_SUCCESS;
-}
-
-/*CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddressForPlatform(
-             cl_platform_id platform,
-             const char *   func_name) CL_API_SUFFIX__VERSION_1_2 {
-}*/
-
-CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(
-             const char *   func_name) CL_API_SUFFIX__VERSION_1_0 {
-#if DEBUG
-  printf("In clGetExtensionFunctionAddress... asked %s\\n", func_name);
-#endif
-  if( func_name != NULL &&  strcmp("clIcdGetPlatformIDsKHR", func_name) == 0 )
-    return (void *)clIcdGetPlatformIDsKHR;
-  return NULL;
-}
-CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
-             cl_platform_id   platform, 
-             cl_platform_info param_name,
-             size_t           param_value_size, 
-             void *           param_value,
-             size_t *         param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
-#if DEBUG
-  printf("In clGetPlatformInfo...\\n");
-#endif
-
-  char cl_platform_profile[] = "FULL_PROFILE";
-  char cl_platform_version[] = "OpenCL 1.2";
-  char cl_platform_name[] = "DummyCL";
-  char cl_platform_vendor[] = "LIG";
-  char cl_platform_extensions[] = "cl_khr_icd";
-  char cl_platform_icd_suffix_khr[] = "LIG";
-  size_t size_string;
-  char * string_p;
-  if( platform != NULL ) {
-    int found = 0;
-    int i;
-    for(i=0; i<num_master_platforms; i++) {
-      if( platform == &master_platforms[i] )
-        found = 1;
+  def self.generate_libdummy_icd_header
+    libdummy_icd_structures = "/**\n#{$license}\n*/\n"
+    libdummy_icd_structures +=  "#include <CL/opencl.h>\n"
+    libdummy_icd_structures += self.include_headers
+    libdummy_icd_structures += "\n\nstruct _cl_icd_dispatch;\n"
+    libdummy_icd_structures += "struct _cl_platform_id { struct _cl_icd_dispatch *dispatch; };\n\n"
+    libdummy_icd_structures += "struct _cl_icd_dispatch {\n"
+    ($api_entries.length+$buff).times { |i|
+      if( $known_entries[i] ) then
+        libdummy_icd_structures += "  void(*known#{i})(void);\n"
+      else
+        libdummy_icd_structures += "  void(*unknown#{i})(void);\n"
+      end
     }
-    if(!found)
-      return CL_INVALID_PLATFORM;
-  }
-  switch ( param_name ) {
-    case CL_PLATFORM_PROFILE:
-      string_p = cl_platform_profile;
-      size_string = sizeof(cl_platform_profile);
-      break;
-    case CL_PLATFORM_VERSION:
-      string_p = cl_platform_version;
-      size_string = sizeof(cl_platform_version);
-      break;
-    case CL_PLATFORM_NAME:
-      string_p = cl_platform_name;
-      size_string = sizeof(cl_platform_name);
-      break;
-    case CL_PLATFORM_VENDOR:
-      string_p = cl_platform_vendor;
-      size_string = sizeof(cl_platform_vendor);
-      break;
-    case CL_PLATFORM_EXTENSIONS:
-      string_p = cl_platform_extensions;
-      size_string = sizeof(cl_platform_extensions);
-      break;
-    case CL_PLATFORM_ICD_SUFFIX_KHR:
-      string_p = cl_platform_icd_suffix_khr;
-      size_string = sizeof(cl_platform_icd_suffix_khr);
-      break;
-    default:
-      return CL_INVALID_VALUE;
-      break;
-  }
-  if( param_value != NULL ) {
-    if( size_string > param_value_size )
-      return CL_INVALID_VALUE;
-    memcpy(param_value, string_p, size_string);
-  }
-  if( param_value_size_ret != NULL )
-    *param_value_size_ret = size_string;
-  return CL_SUCCESS;
-}
-EOF
+    libdummy_icd_structures += "};\n\n"
+    libdummy_icd_structures += "#pragma GCC visibility push(hidden)\n\n"
+    libdummy_icd_structures += "struct _cl_icd_dispatch master_dispatch; \n\n"
+    $known_entries.each { |k, f|
+      libdummy_icd_structures += "typeof(#{f}) INT#{f};\n"
+    }
+    libdummy_icd_structures += "#pragma GCC visibility pop\n\n"
+    return libdummy_icd_structures
+  end
+
+  def self.generate_libdummy_icd_source
+    libdummy_icd_source = "/**\n#{$license}\n*/\n\n"
+    libdummy_icd_source += "#include <stdio.h>\n\n"
+    libdummy_icd_source += "#include \"libdummy_icd_gen.h\"\n\n"
+    libdummy_icd_source += "#include \"libdummy_icd.h\"\n\n"
     (0...$api_entries.length+$buff).each { |i|
       libdummy_icd_source += "void dummyFunc#{i}(void){ printf(\"#{i}  : \"); fflush(NULL); }\n"
     }
+    libdummy_icd_source += "\nstruct _cl_icd_dispatch master_dispatch = {\n"
+    comma=","
+    ($api_entries.length+$buff).times { |i|
+      comma="" if (i == $api_entries.length+$buff-1)
+      if( $known_entries[i] ) then 
+        libdummy_icd_source += "  (void(*)(void))& INT#{$known_entries[i]}#{comma}\n"
+      else
+        libdummy_icd_source += "  (void(*)(void))& dummyFunc#{i}#{comma}\n"
+      end
+    }
+    libdummy_icd_source += "};\n"
     return libdummy_icd_source
   end
   
@@ -664,13 +540,10 @@ EOF
 
   def self.generate_sources
     parse_headers
-    File.open('libdummy_icd_structures.h','w') { |f|
-      f.puts generate_libdummy_icd_structures
-    }
-    File.open('libdummy_icd.h','w') { |f|
+    File.open('libdummy_icd_gen.h','w') { |f|
       f.puts generate_libdummy_icd_header
     }
-    File.open('libdummy_icd.c','w') { |f|
+    File.open('libdummy_icd_gen.c','w') { |f|
       f.puts generate_libdummy_icd_source
     }
     File.open('run_dummy_icd.c','w') { |f|
@@ -811,7 +684,6 @@ OptionParser.new do |opts|
 
   opts.on("-f", "--file FILE", String, "YAML file (default ocl_interface.yaml)") do |v|
     options[:file] = v
-    puts "value: #{v}"
   end
   opts.on("-m", "--mode [MODE]", [:database, :generate, :finalize],
           "Select mode (database, generate, finalize)") do |m|

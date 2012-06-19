@@ -14,7 +14,6 @@ EXTRA_DIST=icd_generator.rb ocl_interface.yaml tests-env.sh
 lib_LTLIBRARIES = libOpenCL.la
 
 FILES_FROM_DATABASE = ocl_icd.h ocl_icd_loader.h \
-	ocl_icd_loader_debug.h \
 	ocl_icd_loader_gen.c ocl_icd_bindings.c \
 	ocl_icd_loader.map
 BUILT_SOURCES = $(FILES_FROM_DATABASE)
@@ -31,7 +30,7 @@ stamp-generator: icd_generator.rb
 libOpenCL_la_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
 
 libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_loader_gen.c \
-	ocl_icd_loader_debug.h
+	ocl_icd_debug.h
 libOpenCL_la_LDFLAGS = -version-info 1:0:0
 if USE_MAP
 libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader.map
@@ -58,7 +57,7 @@ TESTS_ENVIRONMENT = \
 if UPDATE_DATABASE
 
 FILES_FROM_GENERATOR = run_dummy_icd.c run_dummy_icd_weak.c \
-	libdummy_icd.c libdummy_icd.h libdummy_icd_structures.h
+	libdummy_icd_gen.c libdummy_icd_gen.h
 BUILT_SOURCES += $(FILES_FROM_GENERATOR)
 CLEANFILES += $(FILES_FROM_GENERATOR) stamp-generator-dummy
 
@@ -78,9 +77,8 @@ run_dummy_icd_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
 run_dummy_icd_LDADD = -lOpenCL
 
 lib_LTLIBRARIES += libdummycl.la
-libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h libdummy_icd_structures.h
-libdummycl_la_LDFLAGS = -Wl,-Bsymbolic
-
+libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h \
+	libdummy_icd_gen.c libdummy_icd_gen.h
 
 # run the test program and update the database
 .PHONY: update-database

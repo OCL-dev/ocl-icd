@@ -38,8 +38,8 @@ AC_ARG_ENABLE([debug],
                [remove debug and additionnal checks (default is included)])],
   [use_debug=$enableval],
   [use_debug=yes])
-if  test "x$use_debug" = xno ; then
-  AC_DEFINE([DEBUG_OCL_ICD], [0],
+if  test "x$use_debug" != xno ; then
+  AC_DEFINE([DEBUG_OCL_ICD], [1],
             [Add DEBUG additionnal code])
 fi
 

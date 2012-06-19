@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC visibility push(hidden)
 
 #include "ocl_icd_loader.h"
-#include "ocl_icd_loader_debug.h"
+#include "ocl_icd_debug.h"
 
 #define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors/"
 
@@ -397,14 +397,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 static void _initClIcd( void ) {
   if( _initialized )
     return;
-#if DEBUG_OCL_ICD
-  char *debug=getenv("OCL_ICD_DEBUG");
-  if (debug) {
-    debug_ocl_icd_mask=atoi(debug);
-    if (*debug == 0)
-      debug_ocl_icd_mask=1;
-  }
-#endif
+  debug_init();
   cl_uint num_icds = 0;
   DIR *dir;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
