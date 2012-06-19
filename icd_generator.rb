@@ -264,7 +264,7 @@ EOF
   end
  
   def self.generate_ocl_icd_loader_gen_source
-    forbidden_funcs = $forbidden_funcs[2..-1]
+    forbidden_funcs = $forbidden_funcs[2..-2]
     ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
@@ -291,6 +291,18 @@ EOF
     return NULL;
   }
   return ((struct _cl_device_id *)devices[0])->dispatch->clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
+EOF
+      elsif func_name == "clGetGLContextInfoKHR" then
+        ocl_icd_loader_gen_source += <<EOF
+  cl_uint i=0;
+  if( properties != NULL){
+    while( properties[i] != 0 ) {
+      if( properties[i] == CL_CONTEXT_PLATFORM )
+        return ((struct _cl_platform_id *) properties[i+1])->dispatch->clGetGLContextInfoKHR(properties, param_name, param_value_size, param_value, param_value_size_ret);
+      i += 2;
+    }
+  }
+  return CL_INVALID_PLATFORM;
 EOF
       elsif func_name == "clCreateContextFromType" then
         ocl_icd_loader_gen_source += <<EOF
@@ -502,6 +514,8 @@ EOF
        next if $forbidden_funcs.include?(func_name)
        if func_name == "clCreateContext" then
          run_dummy_icd += "  #{func_name}(properties,1,(cl_device_id*)&chosen_platform,NULL,NULL,NULL);\n"
+       elsif func_name == "clGetGLContextInfoKHR" then
+         run_dummy_icd += "  #{func_name}(properties,CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR, 0, NULL, NULL);\n"
        elsif func_name == "clCreateContextFromType" then
          run_dummy_icd += "  #{func_name}(properties,CL_DEVICE_TYPE_CPU,NULL,NULL,NULL);\n"
        elsif func_name == "clWaitForEvents" then
