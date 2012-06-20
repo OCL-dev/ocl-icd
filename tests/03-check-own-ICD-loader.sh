@@ -5,8 +5,15 @@ export OCL_ICD_VENDORS=vendors
 
 NAME="$(basename "$0")"
 
+# clIcdGetPlatformIDsKHR is only for ICDs, not for ICD Loaders
+# clSetPrintfCallback: CL 1.2, never found...
+# clCreateEventFromGLsyncKHR: CL 1.1, never found...
 ./run_dummy_icd_through_our_ICDL | \
-	tee >(grep "^-1 :" > "$NAME".error )
+	tee >(grep "^-1 :" \
+	| grep -v '^-1 : clSetPrintfCallback$' \
+	| grep -v '^-1 : clIcdGetPlatformIDsKHR$' \
+	| grep -v '^-1 : clCreateEventFromGLsyncKHR$' \
+	> "$NAME".error )
 
 # wait for file creation if any
 sleep 0.5
