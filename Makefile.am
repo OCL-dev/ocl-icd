@@ -35,6 +35,7 @@ stamp-generator: icd_generator.rb
 
 # ignore the warning in OpenCL headers when using old interface
 libOpenCL_la_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
+libOpenCL_la_CFLAGS= -Wno-deprecated-declarations $(AM_CFLAGS)
 
 libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_debug.h
 nodist_libOpenCL_la_SOURCES = ocl_icd_loader_gen.c ocl_icd.h
@@ -90,6 +91,7 @@ nodist_run_dummy_icd_through_our_ICDL_SOURCES = \
 	run_dummy_icd_gen.c run_dummy_icd_weak.c
 # ignore the warning in OpenCL headers when using old interface
 run_dummy_icd_through_our_ICDL_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
+run_dummy_icd_through_our_ICDL_CFLAGS= -Wno-deprecated-declarations $(AM_CFLAGS)
 # we want to link to our implementation here
 run_dummy_icd_through_our_ICDL_LDADD = libOpenCL.la
 
@@ -104,6 +106,8 @@ nodist_run_dummy_icd_SOURCES = \
 	$(nodist_run_dummy_icd_through_our_ICDL_SOURCES)
 run_dummy_icd_CPPFLAGS= \
 	$(run_dummy_icd_through_our_ICDL_CPPFLAGS)
+run_dummy_icd_CFLAGS= \
+	$(run_dummy_icd_through_our_ICDL_CFLAGS)
 # we do not want to link to our implementation here
 run_dummy_icd_LDADD = -lOpenCL
 run_dummy_icd_LINK = $(AM_V_CCLD)$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
