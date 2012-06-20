@@ -58,6 +58,9 @@ vendors/dummycl.icd:
 
 TESTS= $(TESTFILES)
 
+clean-local: mostlyclean-generic clean-generic
+	-rmdir vendors tests
+
 ##################################################################
 # dummy OpenCL ICD
 FILES_FROM_GENERATOR = run_dummy_icd_gen.c run_dummy_icd_weak.c \
