@@ -16,7 +16,7 @@ EXTRA_DIST=icd_generator.rb ocl_interface.yaml \
 ##################################################################
 # Main OpenCL ICD Loader library
 lib_LTLIBRARIES = libOpenCL.la
-include_HEADERS = ocl_icd.h
+nodist_include_HEADERS = ocl_icd.h
 pkgexampledir = $(docdir)/examples
 pkgexample_DATA = ocl_icd_loader.map ocl_icd_bindings.c
 
@@ -36,8 +36,8 @@ stamp-generator: icd_generator.rb
 # ignore the warning in OpenCL headers when using old interface
 libOpenCL_la_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
 
-libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_loader_gen.c \
-	ocl_icd_debug.h ocl_icd.h
+libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_debug.h
+nodist_libOpenCL_la_SOURCES = ocl_icd_loader_gen.c ocl_icd.h
 libOpenCL_la_LDFLAGS = -version-info 1:0:0
 if USE_MAP
 libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader.map
@@ -81,13 +81,13 @@ stamp-generator-dummy: icd_generator.rb
 pkglib_LTLIBRARIES = libdummycl.la
 install-exec-hook::
 	$(RM) -r $(DESTDIR)$(pkglibdir)
-libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h \
-	libdummy_icd_gen.c libdummy_icd_gen.h
-
+libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h
+nodist_libdummycl_la_SOURCES = libdummy_icd_gen.c libdummy_icd_gen.h
 
 noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
-run_dummy_icd_through_our_ICDL_SOURCES = \
-	run_dummy_icd.c run_dummy_icd_gen.c run_dummy_icd_weak.c
+run_dummy_icd_through_our_ICDL_SOURCES = run_dummy_icd.c
+nodist_run_dummy_icd_through_our_ICDL_SOURCES = \
+	run_dummy_icd_gen.c run_dummy_icd_weak.c
 # ignore the warning in OpenCL headers when using old interface
 run_dummy_icd_through_our_ICDL_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
 # we want to link to our implementation here
@@ -100,6 +100,8 @@ if UPDATE_DATABASE
 noinst_PROGRAMS += run_dummy_icd
 run_dummy_icd_SOURCES = \
 	$(run_dummy_icd_through_our_ICDL_SOURCES)
+nodist_run_dummy_icd_SOURCES = \
+	$(nodist_run_dummy_icd_through_our_ICDL_SOURCES)
 run_dummy_icd_CPPFLAGS= \
 	$(run_dummy_icd_through_our_ICDL_CPPFLAGS)
 # we do not want to link to our implementation here
