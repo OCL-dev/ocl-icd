@@ -1,4 +1,23 @@
 
+Version 1.2
+=============
+
+Brice Videau (1):
+      Added clGetGLContextInfoKHR to the loader.
+
+Vincent Danjean (11):
+      Fix Changelog
+      Add a easy way to disable DEBUG in Makefile
+      Improve debug mode
+      Add support for using alternate vendors configuration directory
+      Swich to autotools
+      Correct iteration in vendors/ directory
+      Cleanup debug, refactor libdummycl
+      Merge remote-tracking branch 'origin/master'
+      cleanup code and add additionnal tests
+      Whitelist known missing functions in ICD Loader
+      New release
+
 Version 1.1
 =============
 
