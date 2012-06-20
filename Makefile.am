@@ -106,7 +106,7 @@ run_dummy_icd_CPPFLAGS= \
 	$(run_dummy_icd_through_our_ICDL_CPPFLAGS)
 # we do not want to link to our implementation here
 run_dummy_icd_LDADD = -lOpenCL
-run_dummy_icd_LINK = $(AM_V_CCLD)$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+run_dummy_icd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 # run the test program and update the database
 .PHONY: update-database
