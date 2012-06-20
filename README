@@ -1,28 +1,29 @@
 This package aims at creating an Open Source alternative to vendor specific
-OpenCL ICD driver demultiplexers.  It can do so in two fashion:
- - by creating a dummy OpenCL implementation using available headers on the
-   system. This implementation is compatible with existing ICDs
-   demultiplexers. A test program then calls every function defined in the
-   headers and thus obtains the function mapping inside the demultiplexer.
-   This mapping in then used to create an Open Source demultiplexer.
- - by using a provided database of API entries and their order in the
-   demultiplexer table.
+OpenCL ICD loaders.
 
-Using the first alternative automatically add new functions to the
-database. Nonetheless it has some drawbacks:
- - you avec to install the file dummy.icd in /etc/OpenCL/vendors/ which can
-   only be done if root.
- - if new API entry in headers are not canonical or have strange structure
-   the giant ruby script can mess things up. In this case happy have fun
-   with regular expressions, or custom function writing. For now 3
-   functions are treated differently: clCreateContext,
-   clCreateContextFromType and clWaitForEvents. This is because the parameter
-   relevant for the ICD demultiplexer is hidden inside lists.
+The main difficulties to create such software is that the order of
+function pointers in a structure is not publicy available.
+  This software maintains a YAML database of all known and guessed
+entries.
+
+  If the configure script is called with --enable-update-database,
+then:
+- a dummy OpenCL implementation using available headers on the system
+  is created
+- this dummy OpenCL implementation is installed system-wide (root
+  access needed) with the file dummy.icd in /etc/OpenCL/vendors/
+- a test program then calls every function defined in the
+  headers and thus obtains the function mapping inside the demultiplexer
+So, if an other OpenCL ICD loader is installed on the system, this
+allows us to discover the mapping of new entries in the structure,
+entries that are then recoreded in the YAML database.
+  Of course, if the currently installed OpenCL ICD loader is this one,
+there wont be any problems but no new mapping will be discovered.
 
 This package also delivers a skeleton of bindings to incorporate inside an
 OpenCL implementation to give it ICD functionalities.
 
-Main targets:
-make : builds the library and bindings from database
-make update-database : adds new functions to the database from the currently
-  installed OpenCL installed library. Needs root permission.
+Main Make targets:
+all/check/install/...: builds the library and bindings from database
+update-database: adds new functions to the database from the currently
+  installed OpenCL ICD Loader. Needs root permission.

@@ -7,11 +7,18 @@ AM_CPPFLAGS = -Wall -Werror
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= OpenCL.pc
 
-EXTRA_DIST=icd_generator.rb ocl_interface.yaml tests-env.sh
+TESTFILES=tests/01-no-icd.sh tests/02-LIG-icd.sh \
+  tests/03-check-own-ICD-loader.sh
+
+EXTRA_DIST=icd_generator.rb ocl_interface.yaml \
+	$(TESTFILES)
 
 ##################################################################
 # Main OpenCL ICD Loader library
 lib_LTLIBRARIES = libOpenCL.la
+include_HEADERS = ocl_icd.h
+pkgexampledir = $(docdir)/examples
+pkgexample_DATA = ocl_icd_loader.map ocl_icd_bindings.c
 
 FILES_FROM_DATABASE = ocl_icd.h ocl_icd_loader.h \
 	ocl_icd_loader_gen.c ocl_icd_bindings.c \
@@ -30,7 +37,7 @@ stamp-generator: icd_generator.rb
 libOpenCL_la_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
 
 libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_loader_gen.c \
-	ocl_icd_debug.h
+	ocl_icd_debug.h ocl_icd.h
 libOpenCL_la_LDFLAGS = -version-info 1:0:0
 if USE_MAP
 libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader.map
@@ -43,20 +50,17 @@ check_PROGRAMS=ocl_test
 ocl_test_SOURCES = ocl_test.c
 ocl_test_LDADD = libOpenCL.la
 
-TESTS=ocl_test
-## AM_TESTS_ENVIRONMENT is only supported from automake 1.12
-TESTS_ENVIRONMENT = \
-## Some environment initializations are kept in a separate shell
-## file `tests-env.sh', which can make it easier to also run tests
-## from the command line.
-  . $(srcdir)/tests-env.sh;
+check_DATA = vendors/dummycl.icd
+CLEANFILES += vendors/dummycl.icd
+vendors/dummycl.icd:
+	$(MKDIR_P) vendors
+	echo "$(CURDIR)/.libs/libdummycl.so" > $@
+
+TESTS= $(TESTFILES)
 
 ##################################################################
-# rules to update the database from an already installed ICD Loader
-
-if UPDATE_DATABASE
-
-FILES_FROM_GENERATOR = run_dummy_icd.c run_dummy_icd_weak.c \
+# dummy OpenCL ICD
+FILES_FROM_GENERATOR = run_dummy_icd_gen.c run_dummy_icd_weak.c \
 	libdummy_icd_gen.c libdummy_icd_gen.h
 BUILT_SOURCES += $(FILES_FROM_GENERATOR)
 CLEANFILES += $(FILES_FROM_GENERATOR) stamp-generator-dummy
@@ -68,17 +72,36 @@ stamp-generator-dummy: icd_generator.rb
 	$(RUBY) $< --mode generate --file $(srcdir)/ocl_interface.yaml
 	echo "timestamp" > $@
 
-
-noinst_PROGRAMS=run_dummy_icd
-run_dummy_icd_SOURCES = run_dummy_icd.c run_dummy_icd_weak.c
-# ignore the warning in OpenCL headers when using old interface
-run_dummy_icd_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
-# we do not want to link to our implementation here
-run_dummy_icd_LDADD = -lOpenCL
-
-lib_LTLIBRARIES += libdummycl.la
+# noinst_LTLIBRARIES would be the correct thing but then libtool
+# only built non shared version :-( So, declaring the lib as
+# pkglib_LTLIBRARIES and using an install hook to remove it.
+pkglib_LTLIBRARIES = libdummycl.la
+install-exec-hook::
+	$(RM) -r $(DESTDIR)$(pkglibdir)
 libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h \
 	libdummy_icd_gen.c libdummy_icd_gen.h
+
+
+noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
+run_dummy_icd_through_our_ICDL_SOURCES = \
+	run_dummy_icd.c run_dummy_icd_gen.c run_dummy_icd_weak.c
+# ignore the warning in OpenCL headers when using old interface
+run_dummy_icd_through_our_ICDL_CPPFLAGS= -Wno-cpp $(AM_CPPFLAGS)
+# we want to link to our implementation here
+run_dummy_icd_through_our_ICDL_LDADD = libOpenCL.la
+
+##################################################################
+# rules to update the database from an already installed ICD Loader
+if UPDATE_DATABASE
+
+noinst_PROGRAMS += run_dummy_icd
+run_dummy_icd_SOURCES = \
+	$(run_dummy_icd_through_our_ICDL_SOURCES)
+run_dummy_icd_CPPFLAGS= \
+	$(run_dummy_icd_through_our_ICDL_CPPFLAGS)
+# we do not want to link to our implementation here
+run_dummy_icd_LDADD = -lOpenCL
+run_dummy_icd_LINK = $(AM_V_CCLD)$(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 # run the test program and update the database
 .PHONY: update-database

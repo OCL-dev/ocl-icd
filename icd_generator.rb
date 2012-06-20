@@ -470,46 +470,11 @@ EOF
     run_dummy_icd += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
     run_dummy_icd += "#include <CL/opencl.h>\n"
     run_dummy_icd += self.include_headers
-    run_dummy_icd += "#include <string.h>\n"
-    run_dummy_icd += <<EOF
-
-int main(void) {
-  int i;
-  cl_uint num_platforms;
-  clGetPlatformIDs( 0, NULL, &num_platforms);
-  cl_platform_id *platforms = malloc(sizeof(cl_platform_id) * num_platforms);
-  clGetPlatformIDs(num_platforms, platforms, NULL);
-#ifdef DEBUG
-  fprintf(stderr, "Found %d platforms.\\n", num_platforms);
-#endif
-  cl_platform_id chosen_platform=NULL;
-  CL_API_ENTRY cl_int (CL_API_CALL* oclFuncPtr)(cl_platform_id platform);
-  typedef CL_API_ENTRY cl_int (CL_API_CALL* oclFuncPtr_fn)(cl_platform_id platform);
-
-   for(i=0; i<num_platforms; i++){
-     char *platform_vendor;
-     size_t param_value_size_ret;
-
-     clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &param_value_size_ret );
-     platform_vendor = (char *)malloc(param_value_size_ret);
-     clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, param_value_size_ret, platform_vendor, NULL );
-
-#ifdef DEBUG
-     fprintf(stderr, "%s\\n",platform_vendor);
-#endif
-     if( strcmp(platform_vendor, "LIG") == 0)
-       chosen_platform = platforms[i];
-     free(platform_vendor);
-  }
-  if( chosen_platform == NULL ) {
-    fprintf(stderr,"Error LIG platform not found!\\n");
-    return -1;
-  }
-
-  cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)chosen_platform, 0 };
-  printf("---\\n");
-  fflush(NULL);
-EOF
+    run_dummy_icd += "\n\n"
+    run_dummy_icd += "typedef CL_API_ENTRY cl_int (CL_API_CALL* oclFuncPtr_fn)(cl_platform_id platform);\n\n"
+    run_dummy_icd += "void call_all_OpenCL_functions(cl_platform_id chosen_platform) {\n"
+    run_dummy_icd += "  oclFuncPtr_fn oclFuncPtr;\n"
+    run_dummy_icd += "  cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)chosen_platform, 0 };\n"
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
        if func_name == "clCreateContext" then
@@ -529,7 +494,7 @@ EOF
        run_dummy_icd += "  printf(\"%s\\n\", \"#{func_name}\");"
        run_dummy_icd += "  fflush(NULL);\n"
     }
-    run_dummy_icd += "  return 0;\n}\n"
+    run_dummy_icd += "  return;\n}\n"
     return run_dummy_icd
   end
 
@@ -560,7 +525,7 @@ EOF
     File.open('libdummy_icd_gen.c','w') { |f|
       f.puts generate_libdummy_icd_source
     }
-    File.open('run_dummy_icd.c','w') { |f|
+    File.open('run_dummy_icd_gen.c','w') { |f|
       f.puts generate_run_dummy_icd_source
     }
     File.open('run_dummy_icd_weak.c','w') { |f|

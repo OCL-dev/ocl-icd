@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocl_icd_loader.h"
 #include "ocl_icd_debug.h"
 
-#define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors/"
+#define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors"
 
 int debug_ocl_icd_mask=0;
 
@@ -160,8 +160,6 @@ static inline cl_uint _find_num_icds(DIR *dir) {
   cl_uint num_icds = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    if( strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0 )
-      continue;
     cl_uint d_name_len = strlen(ent->d_name);
     if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
@@ -175,16 +173,14 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
   cl_uint num_icds = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    if( strcmp(ent->d_name,".") == 0 || strcmp(ent->d_name,"..") == 0 )
-      continue;
     cl_uint d_name_len = strlen(ent->d_name);
     if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
       continue;
     char * lib_path;
     char * err;
-    unsigned int lib_path_length = strlen(dir_path) + strlen(ent->d_name) + 1;
+    unsigned int lib_path_length = strlen(dir_path) + strlen(ent->d_name) + 2;
     lib_path = malloc(lib_path_length*sizeof(char));
-    sprintf(lib_path,"%s%s", dir_path, ent->d_name);
+    sprintf(lib_path,"%s/%s", dir_path, ent->d_name);
     debug(D_LOG, "Considering file '%s'", lib_path);
     FILE *f = fopen(lib_path,"r");
     free(lib_path);
@@ -193,6 +189,7 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
     lib_path_length = ftell(f)+1;
     fseek(f, 0, SEEK_SET);
     if(lib_path_length == 1) {
+      debug(D_WARN, "File contents too short, skipping ICD");
       fclose(f);
       continue;
     }
@@ -201,6 +198,7 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
     fclose(f);
     if( err == NULL ) {
       free(lib_path);
+      debug(D_WARN, "Error while loading file contents, skipping ICD");
       continue;
     }
 
@@ -209,10 +207,14 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
     if( lib_path[lib_path_length-1] == '\n' )
       lib_path[lib_path_length-1] = '\0';
 
+    debug(D_LOG, "Loading ICD '%s'", lib_path);
+
     _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
     if(_icds[num_icds].dl_handle != NULL) {
       debug(D_LOG, "ICD[%i] loaded", num_icds);
       num_icds++;
+    } else {
+      debug(D_WARN, "error while dlopening the IDL, skipping ICD");
     }
     free(lib_path);
   }

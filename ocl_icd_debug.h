@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern int debug_ocl_icd_mask;
 #  define debug(mask, fmt, ...) do {\
 	if (debug_ocl_icd_mask & (mask)) {			\
-		fprintf(stderr, "ocl-icd: %s: " fmt "\n", __func__, ##__VA_ARGS__); \
+		fprintf(stderr, "ocl-icd(%s:%i): %s: " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 	} \
    } while(0)
 #  define RETURN(val) do { \
