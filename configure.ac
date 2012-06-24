@@ -57,5 +57,6 @@ AM_CONDITIONAL([USE_MAP], [true])
 AC_CONFIG_FILES([
   Makefile
   OpenCL.pc
+  ocl-icd.pc
 ])
 AC_OUTPUT

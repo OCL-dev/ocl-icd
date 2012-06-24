@@ -5,7 +5,7 @@ RUBY=ruby
 AM_CPPFLAGS = -Wall -Werror
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA= OpenCL.pc
+pkgconfig_DATA= OpenCL.pc ocl-icd.pc
 
 TESTFILES=tests/01-no-icd.sh tests/02-LIG-icd.sh \
   tests/03-check-own-ICD-loader.sh
