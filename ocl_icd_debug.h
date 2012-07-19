@@ -25,6 +25,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef OCL_ICD_LOADER_DEBUG_H
 #define OCL_ICD_LOADER_DEBUG_H
 
+#ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#endif
 #include <CL/cl.h>
 
 #pragma GCC visibility push(hidden)
@@ -59,7 +62,10 @@ extern int debug_ocl_icd_mask;
 	debug(D_TRACE, "return: %s", ret);	\
 	return ret; \
    } while(0)
-void dump_platform(cl_platform_id pid);
+#  ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+typedef __typeof__(clGetExtensionFunctionAddress) *clGEFA_t;
+void dump_platform(clGEFA_t f, cl_platform_id pid);
+#  endif
 static inline void debug_init(void) {
   static int done=0;
   if (!done) {
@@ -72,6 +78,10 @@ static inline void debug_init(void) {
     done=1;
   }
 }
+
+#  define dump_field(pid, f, name) \
+    debug(D_DUMP, "%40s=%p [%p/%p]", #name, pid->dispatch->name, f(#name), ((long)(pid->dispatch->clGetExtensionFunctionAddressForPlatform)>10)?pid->dispatch->clGetExtensionFunctionAddressForPlatform(pid, #name):NULL)
+
 #else
 #  define debug(...) (void)0
 #  define RETURN(val) return (val)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export OCL_ICD_DEBUG=15
+export OCL_ICD_DEBUG=7
 export OCL_ICD_VENDORS=vendors
 
 NAME="$(basename "$0")"

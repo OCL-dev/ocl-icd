@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC visibility push(hidden)
 
 #include "ocl_icd_loader.h"
+#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
 #include "ocl_icd_debug.h"
 
 #define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors"
@@ -223,6 +224,7 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
 
 static void* _get_function_addr(void* dlh, clGetExtensionFunctionAddress_fn fn, const char*name) {
   void *addr1;
+  debug(D_LOG,"Looking for function %s",name);
   addr1=dlsym(dlh, name);
   if (addr1 == NULL) {
     debug(D_WARN, "Missing global symbol '%s' in ICD, should be skipped", name);
@@ -332,7 +334,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->pid=platforms[j];
 #if DEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
-	dump_platform(p->pid);
+	dump_platform(p->vicd->ext_fn_ptr, p->pid);
       }
 #endif
       char *param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
