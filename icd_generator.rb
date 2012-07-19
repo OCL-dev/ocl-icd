@@ -118,10 +118,13 @@ EOF
 
   def self.generate_ocl_icd_header
     ocl_icd_header = "/**\n#{$license}\n*/\n\n"
-    ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    ocl_icd_header += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    ocl_icd_header += "#include <CL/opencl.h>\n"
+    ocl_icd_header += "#pragma GCC diagnostic push\n"
+    ocl_icd_header += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
+    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    ocl_icd_header += "#  include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
+    ocl_icd_header += "#pragma GCC diagnostic pop\n"
     ocl_icd_header += <<EOF
 
 #define OCL_ICD_API_VERSION	1
@@ -421,10 +424,13 @@ EOF
     run_dummy_icd = "/**\n#{$license}\n*/\n"
     run_dummy_icd += "#include <stdlib.h>\n"
     run_dummy_icd += "#include <stdio.h>\n"
-    run_dummy_icd += "#define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    run_dummy_icd += "#define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    run_dummy_icd += "#include <CL/opencl.h>\n"
+    run_dummy_icd += "#pragma GCC diagnostic push\n"
+    run_dummy_icd += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
+    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    run_dummy_icd += "#  include <CL/opencl.h>\n"
     run_dummy_icd += self.include_headers
+    run_dummy_icd += "#pragma GCC diagnostic pop\n"
     run_dummy_icd += "\n\n"
     run_dummy_icd += "typedef CL_API_ENTRY cl_int (CL_API_CALL* oclFuncPtr_fn)(cl_platform_id platform);\n\n"
     run_dummy_icd += "void call_all_OpenCL_functions(cl_platform_id chosen_platform) {\n"

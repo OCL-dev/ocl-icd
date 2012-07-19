@@ -26,9 +26,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define OCL_ICD_LOADER_DEBUG_H
 
 #ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcpp"
 #  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #endif
 #include <CL/cl.h>
+#ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+#  pragma GCC diagnostic pop
+#endif
 
 #pragma GCC visibility push(hidden)
 

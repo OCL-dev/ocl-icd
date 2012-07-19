@@ -25,13 +25,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdlib.h>
 #include <stdio.h>
-#define CL_USE_DEPRECATED_OPENCL_1_0_APIS
-#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
-#include <CL/opencl.h>
-#include <CL/cl.h>
-#include <CL/cl_gl.h>
-#include <CL/cl_ext.h>
-#include <CL/cl_gl_ext.h>
+#pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcpp"
+#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS
+#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#  include <CL/opencl.h>
+#  include <CL/cl.h>
+#  include <CL/cl_gl.h>
+#  include <CL/cl_ext.h>
+#  include <CL/cl_gl_ext.h>
+#pragma GCC diagnostic pop
 #include <string.h>
 #include "ocl_icd_debug.h"
 

@@ -34,7 +34,6 @@ stamp-generator: icd_generator.rb
 	echo "timestamp" > $@
 
 # ignore the warning in OpenCL headers when using old interface
-libOpenCL_la_CPPFLAGS= $(NO_CPP_FLAGS) $(AM_CPPFLAGS)
 libOpenCL_la_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) $(AM_CFLAGS)
 
 libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_debug.h
@@ -90,7 +89,6 @@ run_dummy_icd_through_our_ICDL_SOURCES = run_dummy_icd.c
 nodist_run_dummy_icd_through_our_ICDL_SOURCES = \
 	run_dummy_icd_gen.c run_dummy_icd_weak.c
 # ignore the warning in OpenCL headers when using old interface
-run_dummy_icd_through_our_ICDL_CPPFLAGS= $(NO_CPP_FLAGS) $(AM_CPPFLAGS)
 run_dummy_icd_through_our_ICDL_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) $(AM_CFLAGS)
 # we want to link to our implementation here
 run_dummy_icd_through_our_ICDL_LDADD = libOpenCL.la
@@ -104,8 +102,6 @@ run_dummy_icd_SOURCES = \
 	$(run_dummy_icd_through_our_ICDL_SOURCES)
 nodist_run_dummy_icd_SOURCES = \
 	$(nodist_run_dummy_icd_through_our_ICDL_SOURCES)
-run_dummy_icd_CPPFLAGS= \
-	$(run_dummy_icd_through_our_ICDL_CPPFLAGS)
 run_dummy_icd_CFLAGS= \
 	$(run_dummy_icd_through_our_ICDL_CFLAGS)
 # we do not want to link to our implementation here

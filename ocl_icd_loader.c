@@ -29,8 +29,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
-#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
-#include <CL/opencl.h>
+#pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wcpp"
+#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#  include <CL/opencl.h>
+#pragma GCC diagnostic pop
 
 #pragma GCC visibility push(hidden)
 
