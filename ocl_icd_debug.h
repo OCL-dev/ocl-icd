@@ -68,7 +68,10 @@ extern int debug_ocl_icd_mask;
 	return ret; \
    } while(0)
 #  ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+#    pragma GCC diagnostic push
+#      pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 typedef __typeof__(clGetExtensionFunctionAddress) *clGEFA_t;
+#    pragma GCC diagnostic pop
 void dump_platform(clGEFA_t f, cl_platform_id pid);
 #  endif
 static inline void debug_init(void) {
