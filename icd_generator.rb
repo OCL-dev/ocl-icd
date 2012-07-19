@@ -31,9 +31,19 @@ module IcdGenerator
   $api_entries_array = []
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
   $known_entries= { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
-  $forbidden_funcs = ["clGetPlatformInfo", "clUnloadCompiler", "clGetExtensionFunctionAddress","clGetPlatformIDs", "clGetGLContextInfoKHR"]
-  $noweak_funcs = ["clWaitForEvents", "clCreateContextFromType", "clCreateContext" ]
-  $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
+  # do not call these functions when trying to discover the mapping
+  $forbidden_funcs = ["clGetExtensionFunctionAddress","clGetPlatformIDs",
+     "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler"]
+  # do not create weak functions for these ones in the discovering program
+  $noweak_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
+    "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler",
+    "clCreateContext", "clCreateContextFromType", "clWaitForEvents"]
+  # functions written specifically in the loader
+  $specific_loader_funcs = ["clGetExtensionFunctionAddress","clGetPlatformIDs",
+                         "clGetGLContextInfoKHR", "clUnloadCompiler",
+    "clCreateContext", "clCreateContextFromType", "clWaitForEvents"]
+  $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h",
+    "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
   $versions_entries = []
   $buff=20
   $license = <<EOF
@@ -264,94 +274,42 @@ EOF
   end
  
   def self.generate_ocl_icd_loader_gen_source
-    forbidden_funcs = $forbidden_funcs[2..-2]
+    skip_funcs = $specific_loader_funcs
     ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
+    ocl_icd_loader_gen_source += "#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
     ocl_icd_loader_gen_source += ""
     $api_entries.each { |func_name, entry|
-      next if forbidden_funcs.include?(func_name)
+      next if skip_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
       parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
       parameters.gsub!(/\[.*?\]/,"")
       parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/,'\1')
       ocl_icd_loader_gen_source += clean_entry.gsub(/\[.*?\]/,"")
-      if func_name == "clCreateContext" then
-        ocl_icd_loader_gen_source += <<EOF
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM )
-        return ((struct _cl_platform_id *) properties[i+1])->dispatch->clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
-      i += 2;
-    }
-  }
-  if(devices == NULL || num_devices == 0) {
-    *errcode_ret = CL_INVALID_VALUE;
-    return NULL;
-  }
-  return ((struct _cl_device_id *)devices[0])->dispatch->clCreateContext(properties, num_devices, devices, pfn_notify, user_data, errcode_ret);
-EOF
-      elsif func_name == "clGetGLContextInfoKHR" then
-        ocl_icd_loader_gen_source += <<EOF
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM )
-        return ((struct _cl_platform_id *) properties[i+1])->dispatch->clGetGLContextInfoKHR(properties, param_name, param_value_size, param_value, param_value_size_ret);
-      i += 2;
-    }
-  }
-  return CL_INVALID_PLATFORM;
-EOF
-      elsif func_name == "clCreateContextFromType" then
-        ocl_icd_loader_gen_source += <<EOF
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM )
-        return ((struct _cl_platform_id *) properties[i+1])->dispatch->clCreateContextFromType(properties, device_type, pfn_notify, user_data, errcode_ret);
-      i += 2;
-    }
-  }
-  *errcode_ret = CL_INVALID_PLATFORM;
-  return NULL;
-EOF
-      elsif func_name == "clWaitForEvents" then
-        ocl_icd_loader_gen_source += <<EOF
-  if( num_events == 0 || event_list == NULL )
-    return CL_INVALID_VALUE;
-  return ((struct _cl_event *)event_list[0])->dispatch->clWaitForEvents(num_events, event_list);
-EOF
-      elsif func_name == "clUnloadCompiler" then
-        ocl_icd_loader_gen_source += <<EOF
-  return CL_SUCCESS;
-EOF
+      first_parameter = parameters.match(/.*?\,/m)
+      if not first_parameter then
+        first_parameter =  parameters.match(/.*/m)[0]
       else
-        first_parameter = parameters.match(/.*?\,/m)
-        if not first_parameter then
-          first_parameter =  parameters.match(/.*/m)[0]
-        else
-          first_parameter = first_parameter[0][0..-2]
-        end
-        fps = first_parameter.split
-        ocl_icd_loader_gen_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
-        ps = parameters.split(",")
-        ps = ps.collect { |p|
-          p = p.split
-          p = p[-1].gsub("*","")
-        }
-        ocl_icd_loader_gen_source += ps.join(", ")
-        ocl_icd_loader_gen_source += ");\n"
+        first_parameter = first_parameter[0][0..-2]
       end
+      fps = first_parameter.split
+      ocl_icd_loader_gen_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+      ps = parameters.split(",")
+      ps = ps.collect { |p|
+        p = p.split
+        p = p[-1].gsub("*","")
+      }
+      ocl_icd_loader_gen_source += ps.join(", ")
+      ocl_icd_loader_gen_source += ");\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
-    forbidden_funcs = $forbidden_funcs[2..-1]
+    skip_funcs = $specific_loader_funcs
     $api_entries.each { |func_name, entry|
-      next if func_name.match(/EXT$/)
-      next if func_name.match(/KHR$/)
-      if (forbidden_funcs.include?(func_name)) then
+      #next if func_name.match(/EXT$/)
+      #next if func_name.match(/KHR$/)
+      if (skip_funcs.include?(func_name)) then
         ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_hid;\n"
       else
         ocl_icd_loader_gen_source += "typeof(#{func_name}) #{func_name}_hid __attribute__ ((alias (\"#{func_name}\"), visibility(\"hidden\")));\n"
@@ -359,8 +317,8 @@ EOF
     }
     ocl_icd_loader_gen_source += "\n\nstruct func_desc const function_description[]= {\n"
     $api_entries.each { |func_name, entry|
-      next if func_name.match(/EXT$/)
-      next if func_name.match(/KHR$/)
+      #next if func_name.match(/EXT$/)
+      #next if func_name.match(/KHR$/)
       ocl_icd_loader_gen_source += "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
     }
     ocl_icd_loader_gen_source += <<EOF
@@ -368,15 +326,13 @@ EOF
 };
 
 #if DEBUG_OCL_ICD
-void dump_platform(cl_platform_id pid) {
+void dump_platform(clGEFA_t f, cl_platform_id pid) {
   debug(D_DUMP, "platform @%p", pid);
 EOF
     $api_entries_array.each { |entry|
       e = entry.gsub("\r"," ").gsub("\n"," ").gsub("\t"," ").
         sub(/.*CL_API_CALL *([^ ()]*)[ ()].*$/m, '\1')
-      ocl_icd_loader_gen_source += "  debug(D_DUMP, \"  "
-      ocl_icd_loader_gen_source += " "*(40-e.size())
-      ocl_icd_loader_gen_source += "#{e}=%p\", pid->dispatch->#{e});\n"
+      ocl_icd_loader_gen_source += "  dump_field(pid, f, #{e});\n"
     }
 
     ocl_icd_loader_gen_source += <<EOF
@@ -456,7 +412,6 @@ __attribute__((weak)) int f (void* arg, void* arg2) { \\
 
 EOF
     $api_entries.each_key { |func_name|
-       next if $forbidden_funcs.include?(func_name)
        next if $noweak_funcs.include?(func_name)
        run_dummy_icd_weak += "F(#{func_name})\n"
     }

@@ -451,8 +451,11 @@ abort:
 }
 
 #pragma GCC visibility pop
+#define hidden_alias(name) \
+  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
 
-CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
+CL_API_ENTRY void * CL_API_CALL
+clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   if( !_initialized )
     _initClIcd();
   if( func_name == NULL )
@@ -475,7 +478,7 @@ CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(const char * func_
   }
   return return_value;
 }
-typeof(clGetExtensionFunctionAddress) clGetExtensionFunctionAddress_hid __attribute__ ((alias ("clGetExtensionFunctionAddress"), visibility("hidden")));
+hidden_alias(clGetExtensionFunctionAddress);
 
 CL_API_ENTRY cl_int CL_API_CALL
 clGetPlatformIDs(cl_uint          num_entries,
@@ -502,5 +505,96 @@ clGetPlatformIDs(cl_uint          num_entries,
   }
   return CL_SUCCESS;
 }
-typeof(clGetPlatformIDs) clGetPlatformIDs_hid __attribute__ ((alias ("clGetPlatformIDs"), visibility("hidden")));
+hidden_alias(clGetPlatformIDs);
 
+CL_API_ENTRY cl_context CL_API_CALL
+clCreateContext(const cl_context_properties *  properties ,
+                cl_uint                        num_devices ,
+                const cl_device_id *           devices ,
+                void (CL_CALLBACK *  pfn_notify )(const char *, const void *, size_t, void *),
+                void *                         user_data ,
+                cl_int *                       errcode_ret ){
+  cl_uint i=0;
+  if( properties != NULL){
+    while( properties[i] != 0 ) {
+      if( properties[i] == CL_CONTEXT_PLATFORM )
+        return ((struct _cl_platform_id *) properties[i+1])
+          ->dispatch->clCreateContext(properties, num_devices, devices,
+                        pfn_notify, user_data, errcode_ret);
+      i += 2;
+    }
+  }
+  if(devices == NULL || num_devices == 0) {
+    if(errcode_ret) {
+      *errcode_ret = CL_INVALID_VALUE;
+    }
+    return NULL;
+  }
+  return ((struct _cl_device_id *)devices[0])
+    ->dispatch->clCreateContext(properties, num_devices, devices,
+                  pfn_notify, user_data, errcode_ret);
+}
+hidden_alias(clCreateContext);
+
+CL_API_ENTRY cl_context CL_API_CALL
+clCreateContextFromType(const cl_context_properties *  properties ,
+                        cl_device_type                 device_type ,
+                        void (CL_CALLBACK *      pfn_notify )(const char *, const void *, size_t, void *),
+                        void *                         user_data ,
+                        cl_int *                       errcode_ret ){
+  cl_uint i=0;
+  if( properties != NULL){
+    while( properties[i] != 0 ) {
+      if( properties[i] == CL_CONTEXT_PLATFORM )
+	if (properties[i+1] == 0) {
+	  goto out;
+        }
+        return ((struct _cl_platform_id *) properties[i+1])
+          ->dispatch->clCreateContextFromType(properties, device_type,
+                        pfn_notify, user_data, errcode_ret);
+      i += 2;
+    }
+  }
+ out:
+  if(errcode_ret) {
+    *errcode_ret = CL_INVALID_PLATFORM;
+  }
+  return NULL;
+}
+hidden_alias(clCreateContextFromType);
+
+CL_API_ENTRY cl_int CL_API_CALL
+clGetGLContextInfoKHR(const cl_context_properties *  properties ,
+                      cl_gl_context_info             param_name ,
+                      size_t                         param_value_size ,
+                      void *                         param_value ,
+                      size_t *                       param_value_size_ret ){
+  cl_uint i=0;
+  if( properties != NULL){
+    while( properties[i] != 0 ) {
+      if( properties[i] == CL_CONTEXT_PLATFORM )
+        return ((struct _cl_platform_id *) properties[i+1])
+	  ->dispatch->clGetGLContextInfoKHR(properties, param_name,
+                        param_value_size, param_value, param_value_size_ret);
+      i += 2;
+    }
+  }
+  return CL_INVALID_PLATFORM;
+}
+hidden_alias(clGetGLContextInfoKHR);
+
+CL_API_ENTRY cl_int CL_API_CALL
+clWaitForEvents(cl_uint              num_events ,
+                const cl_event *     event_list ){
+  if( num_events == 0 || event_list == NULL )
+    return CL_INVALID_VALUE;
+  return ((struct _cl_event *)event_list[0])
+    ->dispatch->clWaitForEvents(num_events, event_list);
+}
+hidden_alias(clWaitForEvents);
+
+CL_API_ENTRY cl_int CL_API_CALL
+clUnloadCompiler( void ){
+  return CL_SUCCESS;
+}
+hidden_alias(clUnloadCompiler);
