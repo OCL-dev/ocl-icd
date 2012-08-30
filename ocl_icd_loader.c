@@ -517,6 +517,8 @@ clCreateContext(const cl_context_properties *  properties ,
                 void (CL_CALLBACK *  pfn_notify )(const char *, const void *, size_t, void *),
                 void *                         user_data ,
                 cl_int *                       errcode_ret ){
+  if( !_initialized )
+    _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -545,6 +547,8 @@ clCreateContextFromType(const cl_context_properties *  properties ,
                         void (CL_CALLBACK *      pfn_notify )(const char *, const void *, size_t, void *),
                         void *                         user_data ,
                         cl_int *                       errcode_ret ){
+  if( !_initialized )
+    _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -572,6 +576,8 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
                       size_t                         param_value_size ,
                       void *                         param_value ,
                       size_t *                       param_value_size_ret ){
+  if( !_initialized )
+    _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
