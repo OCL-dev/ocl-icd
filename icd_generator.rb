@@ -297,14 +297,15 @@ EOF
         first_parameter = first_parameter[0][0..-2]
       end
       fps = first_parameter.split
-      ocl_icd_loader_gen_source += "return ((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+      ocl_icd_loader_gen_source += "  debug_trace();\n"
+      ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
       ps = parameters.split(",")
       ps = ps.collect { |p|
         p = p.split
         p = p[-1].gsub("*","")
       }
       ocl_icd_loader_gen_source += ps.join(", ")
-      ocl_icd_loader_gen_source += ");\n"
+      ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
@@ -330,7 +331,7 @@ EOF
 
 #if DEBUG_OCL_ICD
 void dump_platform(clGEFA_t f, cl_platform_id pid) {
-  debug(D_DUMP, "platform @%p", pid);
+  debug(D_DUMP, "platform @%p:  name=field_in_struct [clGetExtensionFunctionAddress(name)/clGetExtensionFunctionAddressForPlatform(name)]", pid);
 EOF
     $api_entries_array.each { |entry|
       e = entry.gsub("\r"," ").gsub("\n"," ").gsub("\t"," ").

@@ -409,6 +409,7 @@ static void _initClIcd( void ) {
   DIR *dir;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
   if (! dir_path || dir_path[0]==0) {
+    debug(D_DUMP, "OCL_ICD_VENDORS empty or not defined, using %s", ETC_OPENCL_VENDORS);
     dir_path=ETC_OPENCL_VENDORS;
   }
   debug(D_LOG,"Reading icd list from '%s'", dir_path);
@@ -459,6 +460,7 @@ abort:
 
 CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
+  debug_trace();
   if( !_initialized )
     _initClIcd();
   if( func_name == NULL )
@@ -469,7 +471,7 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
   struct func_desc const * fn=&function_description[0];
   while (fn->name != NULL) {
     if (strcmp(func_name, fn->name)==0)
-      return fn->addr;
+      RETURN(fn->addr);
     fn++;
   }
   for(i=0; i<_num_picds; i++) {
@@ -477,9 +479,9 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
     if( suffix_length > strlen(func_name) )
       continue;
     if(strcmp(_picds[i].extension_suffix, &func_name[strlen(func_name)-suffix_length]) == 0)
-      return (*_picds[i].vicd->ext_fn_ptr)(func_name);
+      RETURN((*_picds[i].vicd->ext_fn_ptr)(func_name));
   }
-  return return_value;
+  RETURN(return_value);
 }
 hidden_alias(clGetExtensionFunctionAddress);
 
@@ -487,14 +489,15 @@ CL_API_ENTRY cl_int CL_API_CALL
 clGetPlatformIDs(cl_uint          num_entries,
                  cl_platform_id * platforms,
                  cl_uint *        num_platforms) CL_API_SUFFIX__VERSION_1_0 {
+  debug_trace();
   if( !_initialized )
     _initClIcd();
   if( platforms == NULL && num_platforms == NULL )
-    return CL_INVALID_VALUE;
+    RETURN(CL_INVALID_VALUE);
   if( num_entries == 0 && platforms != NULL )
-    return CL_INVALID_VALUE;
+    RETURN(CL_INVALID_VALUE);
   if( _num_icds == 0)
-    return CL_PLATFORM_NOT_FOUND_KHR;
+    RETURN(CL_PLATFORM_NOT_FOUND_KHR);
 
   cl_uint i;
   if( num_platforms != NULL ){
@@ -517,15 +520,16 @@ clCreateContext(const cl_context_properties *  properties ,
                 void (CL_CALLBACK *  pfn_notify )(const char *, const void *, size_t, void *),
                 void *                         user_data ,
                 cl_int *                       errcode_ret ){
+  debug_trace();
   if( !_initialized )
     _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM )
-        return ((struct _cl_platform_id *) properties[i+1])
+        RETURN(((struct _cl_platform_id *) properties[i+1])
           ->dispatch->clCreateContext(properties, num_devices, devices,
-                        pfn_notify, user_data, errcode_ret);
+                        pfn_notify, user_data, errcode_ret));
       i += 2;
     }
   }
@@ -533,11 +537,11 @@ clCreateContext(const cl_context_properties *  properties ,
     if(errcode_ret) {
       *errcode_ret = CL_INVALID_VALUE;
     }
-    return NULL;
+    RETURN(NULL);
   }
-  return ((struct _cl_device_id *)devices[0])
+  RETURN(((struct _cl_device_id *)devices[0])
     ->dispatch->clCreateContext(properties, num_devices, devices,
-                  pfn_notify, user_data, errcode_ret);
+                  pfn_notify, user_data, errcode_ret));
 }
 hidden_alias(clCreateContext);
 
@@ -547,6 +551,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
                         void (CL_CALLBACK *      pfn_notify )(const char *, const void *, size_t, void *),
                         void *                         user_data ,
                         cl_int *                       errcode_ret ){
+  debug_trace();
   if( !_initialized )
     _initClIcd();
   cl_uint i=0;
@@ -578,7 +583,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
   if(errcode_ret) {
     *errcode_ret = CL_INVALID_PLATFORM;
   }
-  return NULL;
+  RETURN(NULL);
 }
 hidden_alias(clCreateContextFromType);
 
@@ -588,34 +593,37 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
                       size_t                         param_value_size ,
                       void *                         param_value ,
                       size_t *                       param_value_size_ret ){
+  debug_trace();
   if( !_initialized )
     _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM )
-        return ((struct _cl_platform_id *) properties[i+1])
+        RETURN(((struct _cl_platform_id *) properties[i+1])
 	  ->dispatch->clGetGLContextInfoKHR(properties, param_name,
-                        param_value_size, param_value, param_value_size_ret);
+                        param_value_size, param_value, param_value_size_ret));
       i += 2;
     }
   }
-  return CL_INVALID_PLATFORM;
+  RETURN(CL_INVALID_PLATFORM);
 }
 hidden_alias(clGetGLContextInfoKHR);
 
 CL_API_ENTRY cl_int CL_API_CALL
 clWaitForEvents(cl_uint              num_events ,
                 const cl_event *     event_list ){
+  debug_trace();
   if( num_events == 0 || event_list == NULL )
-    return CL_INVALID_VALUE;
-  return ((struct _cl_event *)event_list[0])
-    ->dispatch->clWaitForEvents(num_events, event_list);
+    RETURN(CL_INVALID_VALUE);
+  RETURN(((struct _cl_event *)event_list[0])
+    ->dispatch->clWaitForEvents(num_events, event_list));
 }
 hidden_alias(clWaitForEvents);
 
 CL_API_ENTRY cl_int CL_API_CALL
 clUnloadCompiler( void ){
-  return CL_SUCCESS;
+  debug_trace();
+  RETURN(CL_SUCCESS);
 }
 hidden_alias(clUnloadCompiler);
