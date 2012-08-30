@@ -1,4 +1,18 @@
 
+Version 1.4
+=============
+
+Vincent Danjean (9):
+      [debug] improve platform dump
+      [build] cleanup code
+      [build] ignore warnings of OpenCL headers even with -Werror
+      [build] avoid deprecated function warning in debug
+      [fix] Use OpenCL supported version as version in OpenCL.pc
+      [bug fix] Initialize the library in all possible first functions
+      [bug fix] clCreateContextFromType can have a NULL properties
+      [debug] More debug info
+      New release
+
 Version 1.3
 =============
 
