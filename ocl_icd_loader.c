@@ -561,6 +561,18 @@ clCreateContextFromType(const cl_context_properties *  properties ,
                         pfn_notify, user_data, errcode_ret);
       i += 2;
     }
+  } else {
+    /* if properties is null, the selected platform is implementation dependant
+     * We will use the first one if any
+     */
+    if(_num_picds == 0) {
+      if(errcode_ret) {
+        *errcode_ret = CL_INVALID_VALUE;
+      }
+      RETURN(NULL);
+    }
+    RETURN(_picds[0].pid->dispatch->clCreateContextFromType
+	(properties, device_type, pfn_notify, user_data, errcode_ret));
   }
  out:
   if(errcode_ret) {
