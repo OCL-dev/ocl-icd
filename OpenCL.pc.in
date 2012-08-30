@@ -5,6 +5,6 @@ includedir=@includedir@
 
 Name: OpenCL
 Description: Open Computing Language generic Installable Client Driver Loader
-Version: @VERSION@
+Version: @OPENCL_VERSION@
 Libs: -L${libdir} -lOpenCL
 Cflags: -I${includedir}

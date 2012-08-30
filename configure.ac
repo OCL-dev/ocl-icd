@@ -11,6 +11,9 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9 tar-pax check-news color-tests paral
 AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=0])
 LT_INIT([disable-static])
 
+OPENCL_VERSION="1.2"
+AC_SUBST([OPENCL_VERSION])
+
 # Checks for programs.
 AC_PROG_CC_C89
 AC_PROG_INSTALL
