@@ -1,4 +1,16 @@
 
+Version 1.5
+=============
+
+Brice Videau (1):
+      Code factoring and race condition reduction.
+
+Vincent Danjean (4):
+      Merge branch 'master'
+      Fix race in initialization on pthread programs
+      Make initialisation more robust
+      New release
+
 Version 1.4
 =============
 
