@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <pthread.h>
 #pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wcpp"
 #  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
@@ -401,10 +402,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
   }
 }
 
-static void _initClIcd( void ) {
-  if( _initialized )
-    return;
-  _initialized = 1;
+static void __initClIcd( void ) {
   debug_init();
   cl_uint num_icds = 0;
   DIR *dir;
@@ -444,13 +442,26 @@ static void _initClIcd( void ) {
   }
   debug(D_WARN, "%d valid vendor(s)!", _num_icds);
   return;
-abort:
+ abort:
   _num_icds = 0;
   if (_icds) {
     free(_icds);
     _icds = NULL;
   }
   return;
+}
+
+static pthread_once_t once_init = PTHREAD_ONCE_INIT;
+static inline void _initClIcd( void ) {
+  if( _initialized )
+    return;
+#ifdef HAVE_PTHREAD
+  pthread_once(&once_init, &__initClIcd);
+#else
+  /* No pthread, assuming no concurrency */
+  __initClIcd();
+#endif
+  _initialized = 1;
 }
 
 #pragma GCC visibility pop
@@ -460,8 +471,7 @@ abort:
 CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
-  if( !_initialized )
-    _initClIcd();
+  _initClIcd();
   if( func_name == NULL )
     return NULL;
   cl_uint suffix_length;
@@ -489,8 +499,7 @@ clGetPlatformIDs(cl_uint          num_entries,
                  cl_platform_id * platforms,
                  cl_uint *        num_platforms) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
-  if( !_initialized )
-    _initClIcd();
+  _initClIcd();
   if( platforms == NULL && num_platforms == NULL )
     RETURN(CL_INVALID_VALUE);
   if( num_entries == 0 && platforms != NULL )
@@ -520,8 +529,7 @@ clCreateContext(const cl_context_properties *  properties ,
                 void *                         user_data ,
                 cl_int *                       errcode_ret ){
   debug_trace();
-  if( !_initialized )
-    _initClIcd();
+  _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -551,8 +559,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
                         void *                         user_data ,
                         cl_int *                       errcode_ret ){
   debug_trace();
-  if( !_initialized )
-    _initClIcd();
+  _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -593,8 +600,7 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
                       void *                         param_value ,
                       size_t *                       param_value_size_ret ){
   debug_trace();
-  if( !_initialized )
-    _initClIcd();
+  _initClIcd();
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {

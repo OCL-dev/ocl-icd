@@ -40,6 +40,15 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strstr])
 
+AX_PTHREAD([
+  AC_DEFINE([HAVE_PTHREAD], [1],
+            [pthreads are available])
+  HAVE_PTHREAD=1
+], [
+  HAVE_PTHREAD=0
+  AC_MSG_WARN([No pthread detected on this platform!])
+])
+
 # --disable-debug
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--disable-debug],

@@ -34,11 +34,13 @@ stamp-generator: icd_generator.rb
 	echo "timestamp" > $@
 
 # ignore the warning in OpenCL headers when using old interface
-libOpenCL_la_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) $(AM_CFLAGS)
+libOpenCL_la_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) \
+	$(AM_CFLAGS) $(PTHREAD_CFLAGS)
 
 libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_debug.h
 nodist_libOpenCL_la_SOURCES = ocl_icd_loader_gen.c ocl_icd.h
-libOpenCL_la_LDFLAGS = -version-info 1:0:0
+libOpenCL_la_LDFLAGS = -version-info 1:0:0 $(PTHREAD_CFLAGS)
+libOpenCL_la_LIBADD = $(PTHREAD_LIBS)
 if USE_MAP
 libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader.map
 libOpenCL_la_DEPENDS = ocl_icd_loader.map
