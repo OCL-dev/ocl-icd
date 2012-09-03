@@ -29,7 +29,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
-#include <pthread.h>
+#include "config.h"
+#ifdef USE_PTHREAD
+#  include <pthread.h>
+#endif
 #pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wcpp"
 #  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
@@ -68,8 +71,6 @@ struct vendor_icd *_icds=NULL;
 struct platform_icd *_picds=NULL;
 static cl_uint _num_icds = 0;
 static cl_uint _num_picds = 0;
-
-static cl_uint _initialized = 0;
 
 #if DEBUG_OCL_ICD
 #  define _clS(x) [-x] = #x
@@ -451,15 +452,25 @@ static void __initClIcd( void ) {
   return;
 }
 
+#ifdef USE_PTHREAD
 static pthread_once_t once_init = PTHREAD_ONCE_INIT;
-static inline void _initClIcd( void ) {
+#else
+static int gard=0;
+#endif
+volatile static cl_uint _initialized = 0;
+
+static inline void __attribute__((constructor)) _initClIcd( void ) {
   if( _initialized )
     return;
-#ifdef HAVE_PTHREAD
+#ifdef USE_PTHREAD
   pthread_once(&once_init, &__initClIcd);
 #else
-  /* No pthread, assuming no concurrency */
-  __initClIcd();
+  if (__sync_bool_compare_and_swap(&gard, 0, 1)) {
+    __initClIcd();
+  } else {
+    /* someone else started __initClIcd(). We wait until its end. */
+    while (!_initialized) ;
+  }
 #endif
   _initialized = 1;
 }

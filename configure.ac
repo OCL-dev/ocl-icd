@@ -40,14 +40,21 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strstr])
 
-AX_PTHREAD([
-  AC_DEFINE([HAVE_PTHREAD], [1],
-            [pthreads are available])
-  HAVE_PTHREAD=1
-], [
-  HAVE_PTHREAD=0
-  AC_MSG_WARN([No pthread detected on this platform!])
-])
+# --enable-pthread-once
+AC_ARG_ENABLE([pthread-once],
+  [AS_HELP_STRING([--enable-pthread-once],
+               [use pthread_once() to ensure correct initialisation without polling])],
+  [pthread_once=$enableval],
+  [pthread_once=no])
+
+if test "$pthread_once" = yes ; then
+  AX_PTHREAD([
+    AC_DEFINE([USE_PTHREAD], [1],
+              [pthreads are available])
+  ], [
+    AC_MSG_ERROR([No pthread detected on this platform!])
+  ])
+fi
 
 # --disable-debug
 AC_ARG_ENABLE([debug],
