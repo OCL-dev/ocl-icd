@@ -404,6 +404,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 static void _initClIcd( void ) {
   if( _initialized )
     return;
+  _initialized = 1;
   debug_init();
   cl_uint num_icds = 0;
   DIR *dir;
@@ -442,11 +443,9 @@ static void _initClIcd( void ) {
     _icds = (struct vendor_icd*)realloc(_icds, _num_icds * sizeof(struct vendor_icd));
   }
   debug(D_WARN, "%d valid vendor(s)!", _num_icds);
-  _initialized = 1;
   return;
 abort:
   _num_icds = 0;
-  _initialized = 1;
   if (_icds) {
     free(_icds);
     _icds = NULL;
