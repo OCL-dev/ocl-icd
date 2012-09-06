@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if DEBUG_OCL_ICD
 #  pragma GCC visibility push(default)
 #  include <stdio.h>
+#  include <stdlib.h>
 #  pragma GCC visibility pop
 extern int debug_ocl_icd_mask;
 #  define debug(mask, fmt, ...) do {\
