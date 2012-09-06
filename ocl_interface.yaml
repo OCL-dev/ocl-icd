@@ -636,6 +636,11 @@
 91: |-
   CL_API_ENTRY cl_int CL_API_CALL
       clReleaseDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+92: |-
+  CL_API_ENTRY cl_event CL_API_CALL
+  clCreateEventFromGLsyncKHR(cl_context           /* context */,
+                             cl_GLsync            /* cl_GLsync */,
+                             cl_int *             /* errcode_ret */) CL_EXT_SUFFIX__VERSION_1_1;
 93: |-
   CL_API_ENTRY cl_int CL_API_CALL
   clCreateSubDevices(cl_device_id                         /* in_device */,
