@@ -29,6 +29,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "config.h"
 #ifdef USE_PTHREAD
 #  include <pthread.h>
@@ -175,6 +179,20 @@ static inline cl_uint _find_num_icds(DIR *dir) {
   RETURN(num_icds);
 }
 
+static inline cl_uint _load_icd(int num_icds, const char* lib_path) {
+  int ret=0;
+  debug(D_LOG, "Loading ICD '%s'", lib_path);
+
+  _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
+  if(_icds[num_icds].dl_handle != NULL) {
+    debug(D_LOG, "ICD[%i] loaded", num_icds);
+    ret=1;
+  } else {
+    debug(D_WARN, "error while dlopening the IDL, skipping ICD");
+  }
+  return ret;
+}
+
 static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
   cl_uint num_icds = 0;
   struct dirent *ent;
@@ -213,15 +231,8 @@ static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
     if( lib_path[lib_path_length-1] == '\n' )
       lib_path[lib_path_length-1] = '\0';
 
-    debug(D_LOG, "Loading ICD '%s'", lib_path);
+    num_icds += _load_icd(num_icds, lib_path);
 
-    _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
-    if(_icds[num_icds].dl_handle != NULL) {
-      debug(D_LOG, "ICD[%i] loaded", num_icds);
-      num_icds++;
-    } else {
-      debug(D_WARN, "error while dlopening the IDL, skipping ICD");
-    }
     free(lib_path);
   }
   RETURN(num_icds);
@@ -406,21 +417,44 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 static void __initClIcd( void ) {
   debug_init();
   cl_uint num_icds = 0;
+  int is_dir = 0;
   DIR *dir;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
   if (! dir_path || dir_path[0]==0) {
     debug(D_DUMP, "OCL_ICD_VENDORS empty or not defined, using %s", ETC_OPENCL_VENDORS);
     dir_path=ETC_OPENCL_VENDORS;
+    is_dir=1;
   }
-  debug(D_LOG,"Reading icd list from '%s'", dir_path);
-  dir = opendir(dir_path);
-  if(dir == NULL) {
-    goto abort;
+  if (!is_dir) {
+    struct stat buf;
+    int ret=stat(dir_path, &buf);
+    if (ret != 0 && errno != ENOENT) {
+      debug(D_WARN, "Cannot stat '%s'. Aborting", dir_path);
+    }
+    if (ret == 0 && S_ISDIR(buf.st_mode)) {
+      is_dir=1;
+    }
   }
+  
+  if (!is_dir) {
+    debug(D_LOG,"Only loading '%s' as an ICD", dir_path);
+    num_icds = 1;
+    dir=NULL;
+  } else {
+    debug(D_LOG,"Reading icd list from '%s'", dir_path);
+    dir = opendir(dir_path);
+    if(dir == NULL) {
+      if (errno == ENOTDIR) {
+        debug(D_DUMP, "%s is not a directory, trying to use it as a ICD libname",
+  	dir_path);
+      }
+      goto abort;
+    }
 
-  num_icds = _find_num_icds(dir);
-  if(num_icds == 0) {
-    goto abort;
+    num_icds = _find_num_icds(dir);
+    if(num_icds == 0) {
+      goto abort;
+    }
   }
 
   _icds = (struct vendor_icd*)malloc(num_icds * sizeof(struct vendor_icd));
@@ -428,7 +462,11 @@ static void __initClIcd( void ) {
     goto abort;
   }
   
-  num_icds = _open_drivers(dir, dir_path);
+  if (!is_dir) {
+    num_icds = _load_icd(0, dir_path);
+  } else {
+    num_icds = _open_drivers(dir, dir_path);
+  }
   if(num_icds == 0) {
     goto abort;
   }

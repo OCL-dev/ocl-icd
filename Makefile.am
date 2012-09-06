@@ -8,6 +8,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= OpenCL.pc ocl-icd.pc
 
 TESTFILES=tests/01-no-icd.sh tests/02-LIG-icd.sh \
+  tests/02-bis-LIG-icd.sh \
   tests/03-check-own-ICD-loader.sh
 
 EXTRA_DIST=icd_generator.rb ocl_interface.yaml bootstrap \

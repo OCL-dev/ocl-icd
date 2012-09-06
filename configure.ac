@@ -113,4 +113,7 @@ AC_CONFIG_FILES([
   OpenCL.pc
   ocl-icd.pc
 ])
+AC_CONFIG_FILES([
+  tests/02-bis-LIG-icd.sh
+], [chmod +x tests/02-bis-LIG-icd.sh])
 AC_OUTPUT
