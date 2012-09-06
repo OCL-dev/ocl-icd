@@ -24,6 +24,36 @@ AC_CHECK_LIB([dl], [dlopen])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h])
+cl_h=no
+case $host_os in
+  darwin* )
+    AC_CHECK_HEADER([OpenCL/opencl.h],[cl_h=yes])
+    ;;
+  * )
+    AC_CHECK_HEADER([CL/opencl.h],[cl_h=yes])
+    ;;
+esac
+if test $cl_h = no; then
+  AC_MSG_ERROR([OpenCL headers are required])
+fi
+AC_MSG_CHECKING([whether OpenCL headers 1.2 are available])
+AC_PREPROC_IFELSE([
+  AC_LANG_PROGRAM([[
+#if defined(__APPLE__) || defined(__MACOSX)
+#  include <OpenCL/opencl.h>
+#else
+#  include <CL/opencl.h>
+#endif
+#ifndef CL_VERSION_1_2
+#  error Cannot find CL_VERSION_1_2 symbol
+#endif
+    ]], [[
+    ]])],[
+  AC_MSG_RESULT([yes])
+],[
+  AC_MSG_RESULT([no])
+  AC_MSG_FAILURE([OpenCL headers for OpenCL 1.2 are required])
+])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
