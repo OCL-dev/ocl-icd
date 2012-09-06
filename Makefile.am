@@ -1,15 +1,13 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
+SUBDIRS = tests
+
 RUBY=ruby
 AM_CPPFLAGS = -Wall -Werror
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= OpenCL.pc ocl-icd.pc
-
-TESTFILES=tests/01-no-icd.sh tests/02-LIG-icd.sh \
-  tests/02-bis-LIG-icd.sh \
-  tests/03-check-own-ICD-loader.sh
 
 EXTRA_DIST=icd_generator.rb ocl_interface.yaml bootstrap \
 	$(TESTFILES)
@@ -59,10 +57,8 @@ vendors/dummycl.icd:
 	$(MKDIR_P) vendors
 	echo "$(CURDIR)/.libs/libdummycl.so" > $@
 
-TESTS= $(TESTFILES)
-
 clean-local: mostlyclean-generic clean-generic
-	-rmdir vendors tests
+	-rmdir vendors
 
 ##################################################################
 # dummy OpenCL ICD
@@ -123,5 +119,10 @@ install_test_lib:
 uninstall_test_lib:
 	sudo rm -f /etc/OpenCL/vendors/dummycl.icd
 
+else
+.PHONY: update-database
+update-database:
+	@echo You need to reconfigure this software with --enable-update-database
+	@exit 1
 endif
 ##################################################################

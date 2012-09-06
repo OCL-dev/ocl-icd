@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9 tar-pax check-news color-tests parallel-tests])
 AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=0])
 LT_INIT([disable-static])
+AC_CONFIG_TESTDIR([tests], [.])
 
 OPENCL_VERSION="1.2"
 AC_SUBST([OPENCL_VERSION])
@@ -110,10 +111,10 @@ AM_CONDITIONAL([USE_MAP], [true])
 
 AC_CONFIG_FILES([
   Makefile
+  tests/Makefile
+
   OpenCL.pc
   ocl-icd.pc
+  tests/atlocal
 ])
-AC_CONFIG_FILES([
-  tests/02-bis-LIG-icd.sh
-], [chmod +x tests/02-bis-LIG-icd.sh])
 AC_OUTPUT

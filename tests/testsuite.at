@@ -1,0 +1,43 @@
+# Testsuite for ocl-icd
+
+m4_include([atenv.m4])
+
+AT_INIT()
+AT_COLOR_TESTS
+
+AT_BANNER([ocl-icd loading])
+
+AT_SETUP([invalid OCL_ICD_VENDORS])
+AT_SETENV([OCL_ICD_DEBUG],[15],
+          [OCL_ICD_VENDORS],[unexisting-vendors-dir])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^No platforms found!$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([OCL_ICD_VENDORS as directory])
+AT_SETENV([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
+AT_CHECK([grep "^LIG$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([OCL_ICD_VENDORS as file])
+AT_SETENV([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
+AT_CHECK([grep "^LIG$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([Our dummy ICD through our ICD loader])
+AT_SETENV([OCL_ICD_DEBUG],[15],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_CHECK([run_dummy_icd_through_our_ICDL], 0, [stdout], [stderr])
+AT_CHECK([grep "^-1" stdout], 0,
+[-1 : clSetPrintfCallback
+-1 : clIcdGetPlatformIDsKHR
+-1 : clCreateEventFromGLsyncKHR
+])
+AT_CLEANUP
+
