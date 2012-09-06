@@ -37,7 +37,6 @@ AT_CHECK([run_dummy_icd_through_our_ICDL], 0, [stdout], [stderr])
 AT_CHECK([grep "^-1" stdout], 0,
 [-1 : clSetPrintfCallback
 -1 : clIcdGetPlatformIDsKHR
--1 : clCreateEventFromGLsyncKHR
 ])
 AT_CLEANUP
 
