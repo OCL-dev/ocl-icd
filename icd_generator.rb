@@ -331,7 +331,7 @@ EOF
 
 #if DEBUG_OCL_ICD
 void dump_platform(clGEFA_t f, cl_platform_id pid) {
-  debug(D_DUMP, "platform @%p:  name=field_in_struct [clGetExtensionFunctionAddress(name)/clGetExtensionFunctionAddressForPlatform(name)]", pid);
+  debug(D_ALWAYS, "platform @%p:  name=field_in_struct [clGetExtensionFunctionAddress(name)/clGetExtensionFunctionAddressForPlatform(name)]", pid);
 EOF
     $api_entries_array.each { |entry|
       e = entry.gsub("\r"," ").gsub("\n"," ").gsub("\t"," ").

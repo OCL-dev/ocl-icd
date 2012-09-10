@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  define DEBUG_OCL_ICD 0
 #endif
 
+#define D_ALWAYS 0
 #define D_WARN 1
 #define D_LOG 2
 #define D_TRACE 4
@@ -54,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma GCC visibility pop
 extern int debug_ocl_icd_mask;
 #  define debug(mask, fmt, ...) do {\
-	if (debug_ocl_icd_mask & (mask)) {			\
+	if ((!(mask)) || (debug_ocl_icd_mask & (mask))) {			\
 		fprintf(stderr, "ocl-icd(%s:%i): %s: " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 	} \
    } while(0)
@@ -89,7 +90,7 @@ static inline void debug_init(void) {
 }
 
 #  define dump_field(pid, f, name) \
-    debug(D_DUMP, "%40s=%p [%p/%p]", #name, pid->dispatch->name, f(#name), ((long)(pid->dispatch->clGetExtensionFunctionAddressForPlatform)>10)?pid->dispatch->clGetExtensionFunctionAddressForPlatform(pid, #name):NULL)
+    debug(D_ALWAYS, "%40s=%p [%p/%p]", #name, pid->dispatch->name, f(#name), ((long)(pid->dispatch->clGetExtensionFunctionAddressForPlatform)>10)?pid->dispatch->clGetExtensionFunctionAddressForPlatform(pid, #name):NULL)
 
 #else
 #  define debug(...) (void)0
