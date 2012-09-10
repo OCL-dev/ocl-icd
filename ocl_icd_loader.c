@@ -188,7 +188,7 @@ static inline cl_uint _load_icd(int num_icds, const char* lib_path) {
     debug(D_LOG, "ICD[%i] loaded", num_icds);
     ret=1;
   } else {
-    debug(D_WARN, "error while dlopening the IDL, skipping ICD");
+    debug(D_WARN, "error while dlopening the IDL: '%s',\n  => skipping ICD", dlerror());
   }
   return ret;
 }
@@ -350,7 +350,10 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->pid=platforms[j];
 #if DEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
+        int log=debug_ocl_icd_mask & D_TRACE;
+        debug_ocl_icd_mask &= ~D_TRACE;
 	dump_platform(p->vicd->ext_fn_ptr, p->pid);
+        debug_ocl_icd_mask |= log;
       }
 #endif
       char *param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
@@ -495,19 +498,38 @@ static pthread_once_t once_init = PTHREAD_ONCE_INIT;
 #else
 static int gard=0;
 #endif
+volatile static __thread int in_init = 0;
 volatile static cl_uint _initialized = 0;
 
 static inline void __attribute__((constructor)) _initClIcd( void ) {
   if( _initialized )
     return;
 #ifdef USE_PTHREAD
-  pthread_once(&once_init, &__initClIcd);
+  if (in_init) {
+    /* probably reentrency */
+  } else {
+    in_init=1;
+    __sync_synchronize();
+    pthread_once(&once_init, &__initClIcd);
+    __sync_synchronize();
+    in_init=0;
+  }
 #else
   if (__sync_bool_compare_and_swap(&gard, 0, 1)) {
+    in_init=1;
+    __sync_synchronize();
     __initClIcd();
+    __sync_synchronize();
+    in_init=0;
   } else {
-    /* someone else started __initClIcd(). We wait until its end. */
-    while (!_initialized) ;
+    if (in_init) {
+      /* probably reentrency (could also be user threads). */
+    } else {
+      /* someone else started __initClIcd(). We wait until its end. */
+      debug(D_WARN, "Waiting end of init");
+      while (!_initialized) ;
+      debug(D_WARN, "Wait done");
+   }
   }
 #endif
   _initialized = 1;
