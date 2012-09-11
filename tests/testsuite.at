@@ -22,9 +22,17 @@ AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
 AT_CHECK([grep "^LIG$" stdout], 0, [ignore])
 AT_CLEANUP
 
-AT_SETUP([OCL_ICD_VENDORS as file])
+AT_SETUP([OCL_ICD_VENDORS as library file])
 AT_SETENV([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
+AT_CHECK([grep "^LIG$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([OCL_ICD_VENDORS as ICD file (.icd)])
+AT_SETENV([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors/dummycl.icd])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
 AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
 AT_CHECK([grep "^LIG$" stdout], 0, [ignore])

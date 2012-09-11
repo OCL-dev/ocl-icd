@@ -166,21 +166,32 @@ static char* _clerror2string (cl_int error) {
 #endif
 }
 
-static inline cl_uint _find_num_icds(DIR *dir) {
-  cl_uint num_icds = 0;
+static inline int _string_end_with_icd(const char* str) {
+  size_t len = strlen(str);
+  if( len<5 || strcmp(str + len - 4, ".icd" ) != 0 ) {
+    return 0;
+  }
+  return 1;
+}
+
+static inline int _string_with_slash(const char* str) {
+  return strchr(str, '/') != NULL;
+}
+
+static inline unsigned int _find_num_icds(DIR *dir) {
+  unsigned int num_icds = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    cl_uint d_name_len = strlen(ent->d_name);
-    if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
-      continue;
-    num_icds++;
+    if (_string_end_with_icd(ent->d_name)) {
+      num_icds++;
+    }
   }
   rewinddir(dir);
   RETURN(num_icds);
 }
 
-static inline cl_uint _load_icd(int num_icds, const char* lib_path) {
-  int ret=0;
+static inline unsigned int _load_icd(int num_icds, const char* lib_path) {
+  unsigned int ret=0;
   debug(D_LOG, "Loading ICD '%s'", lib_path);
 
   _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
@@ -193,47 +204,64 @@ static inline cl_uint _load_icd(int num_icds, const char* lib_path) {
   return ret;
 }
 
-static inline cl_uint _open_drivers(DIR *dir, const char* dir_path) {
-  cl_uint num_icds = 0;
+static inline unsigned int _open_driver(unsigned int num_icds,
+					const char*dir_path, const char*file_path) {
+  char * lib_path;
+  char * err;
+  unsigned int lib_path_length;
+  if (dir_path != NULL) {
+    lib_path_length = strlen(dir_path) + strlen(file_path) + 2;
+    lib_path = malloc(lib_path_length*sizeof(char));
+    sprintf(lib_path,"%s/%s", dir_path, file_path);
+  } else {
+    lib_path_length = strlen(file_path) + 1;
+    lib_path = malloc(lib_path_length*sizeof(char));
+    sprintf(lib_path,"%s", file_path);
+  }
+  debug(D_LOG, "Considering file '%s'", lib_path);
+  FILE *f = fopen(lib_path,"r");
+  free(lib_path);
+  if (f==NULL) {
+    RETURN(num_icds);
+  }
+  
+  fseek(f, 0, SEEK_END);
+  lib_path_length = ftell(f)+1;
+  fseek(f, 0, SEEK_SET);
+  if(lib_path_length == 1) {
+    debug(D_WARN, "File contents too short, skipping ICD");
+    fclose(f);
+    RETURN(num_icds);
+  }
+  lib_path = malloc(lib_path_length*sizeof(char));
+  err = fgets(lib_path, lib_path_length, f);
+  fclose(f);
+  if( err == NULL ) {
+    free(lib_path);
+    debug(D_WARN, "Error while loading file contents, skipping ICD");
+    RETURN(num_icds);
+  }
+
+  lib_path_length = strlen(lib_path);
+  
+  if( lib_path[lib_path_length-1] == '\n' )
+    lib_path[lib_path_length-1] = '\0';
+
+  num_icds += _load_icd(num_icds, lib_path);
+
+  free(lib_path);
+  RETURN(num_icds);
+}
+
+static inline unsigned int _open_drivers(DIR *dir, const char* dir_path) {
+  unsigned int num_icds = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    cl_uint d_name_len = strlen(ent->d_name);
-    if( d_name_len<5 || strcmp(ent->d_name + d_name_len - 4, ".icd" ) != 0 )
-      continue;
-    char * lib_path;
-    char * err;
-    unsigned int lib_path_length = strlen(dir_path) + strlen(ent->d_name) + 2;
-    lib_path = malloc(lib_path_length*sizeof(char));
-    sprintf(lib_path,"%s/%s", dir_path, ent->d_name);
-    debug(D_LOG, "Considering file '%s'", lib_path);
-    FILE *f = fopen(lib_path,"r");
-    free(lib_path);
-
-    fseek(f, 0, SEEK_END);
-    lib_path_length = ftell(f)+1;
-    fseek(f, 0, SEEK_SET);
-    if(lib_path_length == 1) {
-      debug(D_WARN, "File contents too short, skipping ICD");
-      fclose(f);
+    if(! _string_end_with_icd(ent->d_name)) {
       continue;
     }
-    lib_path = malloc(lib_path_length*sizeof(char));
-    err = fgets(lib_path, lib_path_length, f);
-    fclose(f);
-    if( err == NULL ) {
-      free(lib_path);
-      debug(D_WARN, "Error while loading file contents, skipping ICD");
-      continue;
-    }
+    num_icds = _open_driver(num_icds, dir_path, ent->d_name);
 
-    lib_path_length = strlen(lib_path);
-    
-    if( lib_path[lib_path_length-1] == '\n' )
-      lib_path[lib_path_length-1] = '\0';
-
-    num_icds += _load_icd(num_icds, lib_path);
-
-    free(lib_path);
   }
   RETURN(num_icds);
 }
@@ -466,7 +494,17 @@ static void __initClIcd( void ) {
   }
   
   if (!is_dir) {
-    num_icds = _load_icd(0, dir_path);
+    if (_string_end_with_icd(dir_path)) {
+      num_icds = 0;
+      if (! _string_with_slash(dir_path)) {
+	num_icds = _open_driver(0, ETC_OPENCL_VENDORS, dir_path);
+      }
+      if (num_icds == 0) {
+	num_icds = _open_driver(0, NULL, dir_path);
+      }
+    } else {
+      num_icds = _load_icd(0, dir_path);
+    }
   } else {
     num_icds = _open_drivers(dir, dir_path);
   }
