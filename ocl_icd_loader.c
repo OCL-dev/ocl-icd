@@ -76,10 +76,10 @@ struct platform_icd *_picds=NULL;
 static cl_uint _num_icds = 0;
 static cl_uint _num_picds = 0;
 
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
 #  define _clS(x) [-x] = #x
-#  define MAX_CL_ERRORS CL_INVALID_DEVICE_PARTITION_COUNT
-static char const * const clErrorStr[-MAX_CL_ERRORS+1] = {
+#  define MAX_CL_ERRORS (-CL_INVALID_DEVICE_PARTITION_COUNT)
+static char const * const clErrorStr[MAX_CL_ERRORS+1] = {
   _clS(CL_SUCCESS),
   _clS(CL_DEVICE_NOT_FOUND),
   _clS(CL_DEVICE_NOT_AVAILABLE),
@@ -145,7 +145,7 @@ static char const * const clErrorStr[-MAX_CL_ERRORS+1] = {
 
 static char* _clerror2string (cl_int error) __attribute__((unused));
 static char* _clerror2string (cl_int error) {
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
   if (-error > MAX_CL_ERRORS || error > 0) {
     debug(D_WARN, "Unknown error code %d", error);
     RETURN_STR("OpenCL Error");
@@ -279,7 +279,7 @@ static void* _get_function_addr(void* dlh, clGetExtensionFunctionAddress_fn fn, 
     if (addr2 == NULL) {
       debug(D_WARN, "Missing function '%s' in ICD, should be skipped", name);
     }
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
     if (addr1 && addr2 && addr1!=addr2) {
       debug(D_WARN, "Function and symbol '%s' have different addresses!", name);
     }
@@ -373,10 +373,11 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
       struct platform_icd *p=&_picds[_num_picds];
+      char *param_value=NULL;
       p->extension_suffix=NULL;
       p->vicd=&_icds[i];
       p->pid=platforms[j];
-#if DEBUG_OCL_ICD
+#ifdef DDEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
         debug_ocl_icd_mask &= ~D_TRACE;
@@ -403,20 +404,18 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       }
       p->extension_suffix = param_value;
       debug(D_DUMP|D_LOG, "Extension suffix: %s", param_value);
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_PROFILE, "profile");
       if (param_value != NULL){
         debug(D_DUMP, "Profile: %s", param_value);
 	free(param_value);
       }
-#endif
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VERSION, "version");
       p->version = param_value;
       if (param_value != NULL){
         debug(D_DUMP, "Version: %s", param_value);
 	free(param_value);
       }
-#if DEBUG_OCL_ICD
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_NAME, "name");
       if (param_value != NULL){
         debug(D_DUMP, "Name: %s", param_value);

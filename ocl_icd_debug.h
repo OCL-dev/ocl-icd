@@ -39,16 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
 
-#ifndef DEBUG_OCL_ICD
-#  define DEBUG_OCL_ICD 0
-#endif
-
 #define D_ALWAYS 0
 #define D_WARN 1
 #define D_LOG 2
 #define D_TRACE 4
 #define D_DUMP 8
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
 #  pragma GCC visibility push(default)
 #  include <stdio.h>
 #  include <stdlib.h>

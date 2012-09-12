@@ -329,7 +329,7 @@ EOF
   {NULL, NULL}
 };
 
-#if DEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
 void dump_platform(clGEFA_t f, cl_platform_id pid) {
   debug(D_ALWAYS, "platform @%p:  name=field_in_struct [clGetExtensionFunctionAddress(name)/clGetExtensionFunctionAddressForPlatform(name)]", pid);
 EOF
