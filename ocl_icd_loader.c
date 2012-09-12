@@ -385,18 +385,26 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
         debug_ocl_icd_mask |= log;
       }
 #endif
-      char *param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
-      if (param_value == NULL){
-	debug(D_WARN, "Skipping platform %i", j);
-        continue;
+      {
+	      /* Allow to workaround a bug in the Intel ICD used
+	       * with optirun (search for NVidia Optimus for more info)
+	       */
+	      const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
+	      if (! str || str[0]==0) {
+		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
+		      if (param_value == NULL){
+			      debug(D_WARN, "Skipping platform %i", j);
+			      continue;
+		      }
+		      debug(D_DUMP, "Supported extensions: %s", param_value);
+		      if( strstr(param_value, "cl_khr_icd") == NULL){
+			      free(param_value); 
+			      debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
+			      continue;
+		      }
+		      free(param_value);
+	      }
       }
-      debug(D_DUMP, "Supported extensions: %s", param_value);
-      if( strstr(param_value, "cl_khr_icd") == NULL){
-        free(param_value);
-	debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
-        continue;
-      }
-      free(param_value);
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
       if (param_value == NULL){
 	debug(D_WARN, "Skipping platform %i", j);
