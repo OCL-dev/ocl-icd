@@ -26,11 +26,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <CL/opencl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int main(void) {
+int main(int argc, char* argv[]) {
   cl_platform_id *platforms;
   cl_uint num_platforms;
   cl_int error;
+
+  int show_extensions=0;
+  if (argc >= 2 && strcmp(argv[1], "--show-extensions")==0) {
+    show_extensions=1;
+  }
 
   error = clGetPlatformIDs(0, NULL, &num_platforms);
   if( error == CL_SUCCESS ) {
@@ -56,6 +62,17 @@ int main(void) {
 
     printf("%s\n",platform_vendor);
     free(platform_vendor);
+
+    if (show_extensions) {  
+      error = clGetPlatformInfo(platforms[i], CL_PLATFORM_EXTENSIONS, 0, NULL, &param_value_size_ret );
+      
+      platform_vendor = (char *)malloc(param_value_size_ret);
+      clGetPlatformInfo(platforms[i], CL_PLATFORM_EXTENSIONS, param_value_size_ret, platform_vendor, NULL );
+
+      printf("Extensions: %s\n",platform_vendor);
+      free(platform_vendor);
+    }
+
   }
   return 0;
 }

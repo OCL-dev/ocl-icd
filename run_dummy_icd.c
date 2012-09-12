@@ -60,7 +60,7 @@ int main(void) {
      clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, param_value_size_ret, platform_vendor, NULL );
 
      debug(D_LOG, "platform_vendor: %s",platform_vendor);
-     if( strcmp(platform_vendor, "LIG") == 0)
+     if( strcmp(platform_vendor, "ocl-icd ICD test") == 0)
        chosen_platform = platforms[i];
      free(platform_vendor);
   }

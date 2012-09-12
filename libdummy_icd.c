@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocl_icd_debug.h"
 #include "libdummy_icd.h"
 #include "libdummy_icd_gen.h"
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #define NUM_PLATFORMS 1
@@ -113,8 +114,18 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
   char cl_platform_profile[] = "FULL_PROFILE";
   char cl_platform_version[] = "OpenCL 1.2";
   char cl_platform_name[] = "DummyCL";
-  char cl_platform_vendor[] = "LIG";
-  char cl_platform_extensions[] = "cl_khr_icd";
+  char cl_platform_vendor[] = "ocl-icd ICD test"
+#ifdef ICD_WITHOUT_EXTENSION
+	  " (no ext)"
+#endif
+	  ;
+  char cl_platform_extensions[] =
+#ifdef ICD_WITHOUT_EXTENSION
+	  "private_ext"
+#else
+	  "cl_khr_icd"
+#endif
+	  ;
   char cl_platform_icd_suffix_khr[] = "LIG";
   size_t size_string;
   char * string_p;
@@ -146,6 +157,11 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
       size_string = sizeof(cl_platform_vendor);
       break;
     case CL_PLATFORM_EXTENSIONS:
+#ifdef ICD_WITHOUT_EXTENSION
+      if (getenv("EMULATE_INTEL_ICD")) {
+        exit(3);
+      }
+#endif
       string_p = cl_platform_extensions;
       size_string = sizeof(cl_platform_extensions);
       break;

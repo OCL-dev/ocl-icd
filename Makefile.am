@@ -51,11 +51,15 @@ check_PROGRAMS=ocl_test
 ocl_test_SOURCES = ocl_test.c
 ocl_test_LDADD = libOpenCL.la
 
-check_DATA = vendors/dummycl.icd
-CLEANFILES += vendors/dummycl.icd
+check_DATA = vendors/dummycl.icd vendors/dummycl-noext.icd
+CLEANFILES += vendors/dummycl.icd vendors/dummycl-noext.icd
 vendors/dummycl.icd:
 	$(MKDIR_P) vendors
 	echo "$(CURDIR)/.libs/libdummycl.so" > $@
+
+vendors/dummycl-noext.icd:
+	$(MKDIR_P) vendors
+	echo "$(CURDIR)/.libs/libdummycl-noext.so" > $@
 
 clean-local: mostlyclean-generic clean-generic
 	-rmdir vendors
@@ -75,13 +79,16 @@ stamp-generator-dummy: icd_generator.rb
 	echo "timestamp" > $@
 
 # noinst_LTLIBRARIES would be the correct thing but then libtool
-# only built non shared version :-( So, declaring the lib as
-# pkglib_LTLIBRARIES and using an install hook to remove it.
-pkglib_LTLIBRARIES = libdummycl.la
+# only built non shared version :-( So, declaring the libs as
+# pkglib_LTLIBRARIES and using an install hook to remove them.
+pkglib_LTLIBRARIES = libdummycl.la libdummycl-noext.la
 install-exec-hook::
 	$(RM) -r $(DESTDIR)$(pkglibdir)
 libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h
 nodist_libdummycl_la_SOURCES = libdummy_icd_gen.c libdummy_icd_gen.h
+libdummycl_noext_la_SOURCES = $(libdummycl_la_SOURCES)
+nodist_libdummycl_noext_la_SOURCES = $(nodist_libdummycl_la_SOURCES)
+libdummycl_noext_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_WITHOUT_EXTENSION
 
 noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
 run_dummy_icd_through_our_ICDL_SOURCES = run_dummy_icd.c

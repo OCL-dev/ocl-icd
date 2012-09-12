@@ -1,0 +1,29 @@
+AT_BANNER([ocl-icd with workaround for intel bug])
+
+
+AT_SETUP([OCL_ICD_VENDORS as directory, two ICD])
+AT_EXPORT([OCL_ICD_ASSUME_ICD_EXTENSION], [1],
+	  [OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^Found 2 platforms!$" stdout], 0, [ignore])
+AT_CHECK([grep "^ocl-icd ICD test$" stdout], 0, [ignore])
+AT_CHECK([grep "^ocl-icd ICD test (no ext)$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([OCL_ICD_VENDORS as file, buggy ICD with workaround])
+AT_EXPORT([OCL_ICD_ASSUME_ICD_EXTENSION], [1],
+	  [OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors/dummycl-noext.icd],
+	  [EMULATE_INTEL_ICD], [1])
+AT_CHECK([ocl_test], 0, [stdout], [stderr])
+AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
+AT_CHECK([grep "^ocl-icd ICD test (no ext)$" stdout], 0, [ignore])
+AT_CLEANUP
+
+AT_SETUP([OCL_ICD_VENDORS as file, buggy ICD without workaround])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors/dummycl-noext.icd],
+	  [EMULATE_INTEL_ICD], [1])
+AT_CHECK([ocl_test], 3, [stdout], [stderr])
+AT_CLEANUP
