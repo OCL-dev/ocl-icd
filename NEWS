@@ -1,4 +1,28 @@
 
+Version 2.0
+=============
+
+Brice Videau (1):
+      Found entry 92, clCreateEventFromGLsyncKHR.
+
+Vincent Danjean (16):
+      Check the avaibility of OpenCL headers (version 1.2)
+      include stdlib.h for getenv and atoi
+      Allow OCL_ICD_VENDORS to directly provide the ICD library name to load
+      Migrate to autotest
+      Update testsuite with the new entry
+      Fix re-entrancy in DEBUG mode while initializing.
+      Fix log with strange behavior of clGetExtensionFunctionAddressForPlatform on Intel
+      Build test programs before entering tests/ subdir
+      fix 'make distcheck'
+      Force order in output of check programs
+      Improve OCL_ICD_VENDORS envvar
+      Cleanup and fix debug ifdef
+      Workaround for a bug in intel ICD with optimus
+      Add a test for the Intel workaround
+      Add documentation, mainly for envvar
+      New release
+
 Version 1.5
 =============
 
