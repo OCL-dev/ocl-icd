@@ -1,7 +1,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = . tests
+SUBDIRS = . doc tests
 
 RUBY=ruby
 AM_CPPFLAGS = -Wall -Werror

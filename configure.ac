@@ -20,6 +20,14 @@ AC_PROG_CC_C89
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
+AC_PATH_PROG([ASCIIDOC], [asciidoc], [])
+AC_PATH_PROG([A2X], [a2x], [])
+AC_PATH_PROG([XMLTO], [xmlto], [])
+AM_CONDITIONAL([GEN_DOC], [\
+	test x"$ASCIIDOC" != x && \
+	test x"$A2X" != x && \
+	test x"$XMLTO" != x ])
+
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen])
 
@@ -111,6 +119,7 @@ AM_CONDITIONAL([USE_MAP], [true])
 
 AC_CONFIG_FILES([
   Makefile
+  doc/Makefile
   tests/Makefile
 
   OpenCL.pc
