@@ -36,7 +36,7 @@ Some environment variables can be used modify the default behavior of
 libOpenCL.
 
 *OCL_ICD_VENDORS*::
-This variable allows to change the way ICD are searched on the system.
+This variable allows one to change the way ICD are searched on the system.
 Several cases are considerated:
 
 a. if *$OCL_ICD_VENDORS* is a directory path, then this path replaces the
