@@ -10,10 +10,6 @@ NAME
 ----
 libOpenCL, libOpenCL.so - OCL-ICD implementation of OpenCL ICD loader
 
-SYNOPSIS
---------
-Nothing special
-
 DESCRIPTION
 -----------
 `libOpenCL.so` is the library linked by OpenCL programs. It does not contains
