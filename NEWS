@@ -1,4 +1,13 @@
 
+Version 2.0.1
+=============
+
+Vincent Danjean (4):
+      [doc] fix typo found by lintian
+      [doc] remove unused synopsis
+      [doc] fix another typo found by lintian
+      New release
+
 Version 2.0
 =============
 
