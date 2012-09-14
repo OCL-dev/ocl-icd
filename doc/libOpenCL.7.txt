@@ -68,7 +68,7 @@ values are:
 * *4*: entering/exiting for some OpenCL functions
 * *8*: dump of the internal structure of loaded ICDs
 
-*OCL_ICD_DEBUG* is mainly useful for ocl-icd developement itself and/or for ICD
+*OCL_ICD_DEBUG* is mainly useful for ocl-icd development itself and/or for ICD
 development.
 --
 
