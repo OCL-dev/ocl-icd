@@ -377,7 +377,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->extension_suffix=NULL;
       p->vicd=&_icds[i];
       p->pid=platforms[j];
-#ifdef DDEBUG_OCL_ICD
+#ifdef DEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
         debug_ocl_icd_mask &= ~D_TRACE;
