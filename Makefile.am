@@ -47,9 +47,11 @@ endif
 
 ####################################
 # A very small program test
-check_PROGRAMS=ocl_test
+check_PROGRAMS=ocl_test ocl_test_icdl
 ocl_test_SOURCES = ocl_test.c
 ocl_test_LDADD = libOpenCL.la
+ocl_test_icdl_SOURCES = ocl_test_icdl.c
+ocl_test_icdl_LDADD = libOpenCL.la
 
 check_DATA = vendors/dummycl.icd vendors/dummycl-noext.icd
 CLEANFILES += vendors/dummycl.icd vendors/dummycl-noext.icd

@@ -584,6 +584,52 @@ static inline void __attribute__((constructor)) _initClIcd( void ) {
 #define hidden_alias(name) \
   typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
 
+typedef enum {
+  CL_ICDL_OCL_VERSION=1,
+  CL_ICDL_VERSION=2,
+  CL_ICDL_NAME=3,
+  CL_ICDL_VENDOR=4,
+} cl_icdl_info;
+
+static cl_int clGetICDLoaderInfoOCLICD(
+  cl_icdl_info     param_name,
+  size_t           param_value_size, 
+  void *           param_value,
+  size_t *         param_value_size_ret)
+{
+  char cl_icdl_ocl_version[] = "OpenCL 1.2";
+  char cl_icdl_version[] = PACKAGE_VERSION;
+  char cl_icdl_name[] = PACKAGE_NAME;
+  char cl_icdl_vendor[] = "OCL Icd free software";
+
+  size_t size_string;
+  char * string_p;
+#define oclcase(name, NAME) \
+  case CL_ICDL_##NAME: \
+    string_p = cl_icdl_##name; \
+    size_string = sizeof(cl_icdl_##name); \
+    break
+
+  switch ( param_name ) {
+    oclcase(ocl_version,OCL_VERSION);
+    oclcase(version,VERSION);
+    oclcase(name,NAME);
+    oclcase(vendor,VENDOR);
+    default:
+      return CL_INVALID_VALUE;
+      break;
+  }
+#undef oclcase
+  if( param_value != NULL ) {
+    if( size_string > param_value_size )
+      return CL_INVALID_VALUE;
+    memcpy(param_value, string_p, size_string);
+  }
+  if( param_value_size_ret != NULL )
+    *param_value_size_ret = size_string;
+  return CL_SUCCESS;
+}
+
 CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
@@ -609,6 +655,9 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
       continue;
     if(strcmp(_picds[i].extension_suffix, &func_name[strlen(func_name)-suffix_length]) == 0)
       RETURN((*_picds[i].vicd->ext_fn_ptr)(func_name));
+  }
+  if(strcmp(func_name, "clGetICDLoaderInfoOCLICD") == 0) {
+    return (void*)(void*(*)(void))(&clGetICDLoaderInfoOCLICD);
   }
   RETURN(return_value);
 }

@@ -42,3 +42,11 @@ AT_CHECK([grep "^-1" stdout | sort], 0,
 ])
 AT_CLEANUP
 
+AT_SETUP([ICD Loader extension])
+AT_CHECK([ocl_test_icdl], 0,
+[ocl_version: OpenCL 1.2
+version: AT_PACKAGE_VERSION
+name: OpenCL ICD Loader
+vendor: OCL Icd free software
+], [])
+AT_CLEANUP
