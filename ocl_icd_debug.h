@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma GCC visibility pop
 extern int debug_ocl_icd_mask;
 #  define debug(mask, fmt, ...) do {\
-	if ((!(mask)) || (debug_ocl_icd_mask & (mask))) {			\
+	if (((mask)==D_ALWAYS) || (debug_ocl_icd_mask & (mask))) {			\
 		fprintf(stderr, "ocl-icd(%s:%i): %s: " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__); \
 	} \
    } while(0)
