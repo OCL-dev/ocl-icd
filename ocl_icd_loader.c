@@ -594,10 +594,14 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
   cl_uint i;
   void * return_value=NULL;
   struct func_desc const * fn=&function_description[0];
-  while (fn->name != NULL) {
-    if (strcmp(func_name, fn->name)==0)
-      RETURN(fn->addr);
-    fn++;
+  int lenfn=strlen(func_name);
+  if (lenfn > 3 &&
+      (strcmp(func_name+lenfn-3, "KHR")==0 || strcmp(func_name+lenfn-3, "EXT")==0)) {
+    while (fn->name != NULL) {
+      if (strcmp(func_name, fn->name)==0)
+        RETURN(fn->addr);
+      fn++;
+    }
   }
   for(i=0; i<_num_picds; i++) {
     suffix_length = strlen(_picds[i].extension_suffix);
