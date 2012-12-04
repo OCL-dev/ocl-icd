@@ -32,8 +32,16 @@ module IcdGenerator
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
   $known_entries= { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
   # do not call these functions when trying to discover the mapping
-  $forbidden_funcs = ["clGetExtensionFunctionAddress","clGetPlatformIDs",
-     "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler"]
+  $forbidden_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
+    "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler"]
+  $windows_funcs = ["clGetDeviceIDsFromD3D10KHR", "clCreateFromD3D10BufferKHR",
+    "clCreateFromD3D10Texture2DKHR", "clCreateFromD3D10Texture3DKHR",
+    "clEnqueueAcquireD3D10ObjectsKHR", "clEnqueueReleaseD3D10ObjectsKHR",
+    "clGetDeviceIDsFromD3D11KHR", "clCreateFromD3D11BufferKHR",
+    "clCreateFromD3D11Texture2DKHR", "clCreateFromD3D11Texture3DKHR",
+    "clEnqueueAcquireD3D11ObjectsKHR", "clEnqueueReleaseD3D11ObjectsKHR",
+    "clGetDeviceIDsFromDX9MediaAdapterKHR", "clCreateFromDX9MediaSurfaceKHR",
+    "clEnqueueAcquireDX9MediaSurfacesKHR", "clEnqueueReleaseDX9MediaSurfacesKHR"]
   # do not create weak functions for these ones in the discovering program
   $noweak_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
     "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler",
@@ -44,6 +52,7 @@ module IcdGenerator
     "clCreateContext", "clCreateContextFromType", "clWaitForEvents"]
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h",
     "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
+  $windows_header_files = ["/usr/include/CL/cl_dx9_media_sharing.h", "/usr/include/CL/cl_d3d11.h", "/usr/include/CL/cl_d3d10.h"]
   $versions_entries = []
   $buff=20
   $license = <<EOF
@@ -583,6 +592,7 @@ EOF
       rescue
         entry_name = value.match(/(\S*?)\(/m)[1].strip
       end
+      next if $windows_funcs.include?(entry_name)
       version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
       $versions_entries[version].push(entry_name)
       $known_entries[key] = entry_name
