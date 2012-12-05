@@ -742,16 +742,27 @@ clCreateContextFromType(const cl_context_properties *  properties ,
       i += 2;
     }
   } else {
-    /* if properties is null, the selected platform is implementation dependant
-     * We will use the first one if any
-     */
     if(_num_picds == 0) {
       if(errcode_ret) {
         *errcode_ret = CL_INVALID_VALUE;
       }
       RETURN(NULL);
     }
-    RETURN(_picds[0].pid->dispatch->clCreateContextFromType
+    const char *default_platform = getenv("OPENCL_ICD_DEFAULT_PLATFORM");
+    int num_default_platform;
+    char *end_scan;
+    if (! default_platform) {
+      num_default_platform = 0;
+    } else {
+      num_default_platform = strtol(default_platform, &end_scan, 10);
+      if (*default_platform == '\0' || *end_scan != '\0') {
+	goto out;
+      }
+    }
+    if (num_default_platform < 0 || num_default_platform >= _num_picds) {
+      goto out;
+    }
+    RETURN(_picds[num_default_platform].pid->dispatch->clCreateContextFromType
 	(properties, device_type, pfn_notify, user_data, errcode_ret));
   }
  out:
