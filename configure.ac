@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.67])
 AC_INIT([OpenCL ICD Loader], [2.0.1], [ocl-icd-devel@lists.forge.imag.fr], [ocl-icd])
 AC_CONFIG_SRCDIR([ocl_icd_loader.c])
 AC_CONFIG_AUX_DIR([build-aux])
