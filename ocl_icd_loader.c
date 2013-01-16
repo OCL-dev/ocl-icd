@@ -64,6 +64,11 @@ struct vendor_icd {
   clGetExtensionFunctionAddress_fn ext_fn_ptr;
 };
 
+inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
+  debug(D_DUMP, "%s %p={ num=%i, first=%i, handle=%p, f=%p}\n", info,
+	v, v->num_platforms, v->first_platform, v->dl_handle, v->ext_fn_ptr);
+}
+
 struct platform_icd {
   char *	 extension_suffix;
   char *	 version;
@@ -334,8 +339,9 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
   cl_uint i;
   _num_icds = 0;
   for( i=0; i<num_icds; i++){
-    debug(D_LOG, "Checking ICD %i", i);
-    struct vendor_icd *picd = &_icds[_num_icds];
+    debug(D_LOG, "Checking ICD %i/%i", i, num_icds);
+    dump_vendor_icd("before looking for platforms", &_icds[i]);
+    struct vendor_icd *picd = &_icds[i];
     void* dlh = _icds[i].dl_handle;
     picd->ext_fn_ptr = _get_function_addr(dlh, NULL, "clGetExtensionFunctionAddress");
     clIcdGetPlatformIDsKHR_fn plt_fn_ptr = 
@@ -442,6 +448,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       if ( _num_icds != i ) {
         picd->dl_handle = dlh;
       }
+      dump_vendor_icd("after looking for platforms", &_icds[_num_icds]);
       _num_icds++;
       picd->num_platforms = num_valid_platforms;
       _icds[i].first_platform = _num_picds - num_valid_platforms;
