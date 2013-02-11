@@ -557,23 +557,12 @@ EOF
     }
   end
 
-  def self.finalize(yamlfile)
+  def self.updatedb_from_input(dbfile, inputfile)
     parse_headers
-    doc = YAML::load(`./run_dummy_icd`)
+    doc = YAML::load_file(inputfile)
     doc.delete(-1)
     $known_entries.merge!(doc)
-    self.savedb(yamlfile)
-    unknown=0
-    $api_entries_array = []
-    ($known_entries.length+$buff).times { |i|
-      #puts $known_entries[i]
-      if $known_entries[i] then
-        $api_entries_array.push( $api_entries[$known_entries[i]] )
-      else
-        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{i}(void);" )
-        unknown += 1
-      end
-    }
+    self.savedb(dbfile)
   end
   
   def self.generate_from_database(yamlfile)
@@ -633,17 +622,22 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: cd_generator.rb [options] mode"
 
-  opts.on("-f", "--file FILE", String, "YAML file (default ocl_interface.yaml)") do |v|
-    options[:file] = v
+  opts.on("-d", "--database FILE", String, "YAML file (default ocl_interface.yaml)") do |v|
+    options[:database] = v
   end
-  opts.on("-m", "--mode [MODE]", [:database, :generate, :finalize],
-          "Select mode (database, generate, finalize)") do |m|
+  opts.on("-i", "--input FILE", String,
+          "binding between OpenCL functions and entry number (required for update-database)") \
+  do |v|
+    options[:input] = v
+  end
+  opts.on("-m", "--mode [MODE]", [:database, :generate, :"update-database"],
+          "Select mode (database, generate, update-database)") do |m|
     options[:mode] = m
   end
 end.parse!
 
-if !options[:file] then
-  options[:file] = "ocl_interface.yaml"
+if !options[:database] then
+  options[:database] = "ocl_interface.yaml"
 end
 
 if !options[:mode] then
@@ -651,11 +645,14 @@ if !options[:mode] then
 end
 if options[:mode] == :generate then
   IcdGenerator.generate_sources
-elsif options[:mode] == :finalize then
-  IcdGenerator.finalize(options[:file])
+elsif options[:mode] == :"update-database" then
+  if !options[:input] then
+    raise "--input option required"
+  end
+  IcdGenerator.updatedb_from_input(options[:database], options[:input])
 elsif options[:mode] == :database then
-  IcdGenerator.generate_from_database(options[:file])
+  IcdGenerator.generate_from_database(options[:database])
 else
-  raise "Mode must be one of generate, database or finalize not #{options[:mode]}" 
+  raise "Mode must be one of generate, database or update-database not #{options[:mode]}" 
 end
 

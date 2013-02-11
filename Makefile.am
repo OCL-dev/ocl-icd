@@ -29,7 +29,7 @@ CLEANFILES = $(FILES_FROM_DATABASE) stamp-generator
 stamp-generator: ocl_interface.yaml
 $(FILES_FROM_DATABASE): stamp-generator
 stamp-generator: icd_generator.rb
-	$(RUBY) $< --mode database --file $(srcdir)/ocl_interface.yaml
+	$(RUBY) $< --mode database --database $(srcdir)/ocl_interface.yaml
 	echo "timestamp" > $@
 
 # ignore the warning in OpenCL headers when using old interface
@@ -77,7 +77,7 @@ CLEANFILES += $(FILES_FROM_GENERATOR) stamp-generator-dummy
 $(FILES_FROM_GENERATOR): stamp-generator-dummy
 stamp-generator-dummy: icd_generator.rb
 stamp-generator-dummy: icd_generator.rb
-	$(RUBY) $< --mode generate --file $(srcdir)/ocl_interface.yaml
+	$(RUBY) $< --mode generate --database $(srcdir)/ocl_interface.yaml
 	echo "timestamp" > $@
 
 # noinst_LTLIBRARIES would be the correct thing but then libtool
@@ -117,9 +117,14 @@ run_dummy_icd_LDADD = -lOpenCL
 run_dummy_icd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
 # run the test program and update the database
+run_dummy_icd_output.yaml: run_dummy_icd install_test_lib libdummycl.la
+	"$$(dirname $<)/$$(basename $<)" > $@
+CLEANFILES += run_dummy_output.yaml
 .PHONY: update-database
-update-database: icd_generator.rb libdummycl.la run_dummy_icd install_test_lib
-	$(RUBY) $< --mode finalize --file $(srcdir)/ocl_interface.yaml
+update-database: icd_generator.rb run_dummy_icd_output.yaml
+	$(RUBY) $< --mode update-database \
+		--database $(srcdir)/ocl_interface.yaml \
+		--input run_dummy_icd_output.yaml
 
 .PHONY: install_test_lib uninstall_test_lib
 install_test_lib:
