@@ -30,10 +30,12 @@ module IcdGenerator
   $api_entries = {}
   $api_entries_array = []
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
-  $known_entries= { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
+  $know_entries = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
+  $use_name_in_test = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
   # do not call these functions when trying to discover the mapping
   $forbidden_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
-    "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler"]
+    "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler",
+    "clSetCommandQueueProperty"]
   $windows_funcs = ["clGetDeviceIDsFromD3D10KHR", "clCreateFromD3D10BufferKHR",
     "clCreateFromD3D10Texture2DKHR", "clCreateFromD3D10Texture3DKHR",
     "clEnqueueAcquireD3D10ObjectsKHR", "clEnqueueReleaseD3D10ObjectsKHR",
@@ -98,22 +100,48 @@ EOF
 #      puts entry
       begin 
         entry_name = entry.match(/CL_API_CALL(.*?)\(/m)[1].strip
-        next if entry_name.match('\*')
-        next if entry_name.match("INTEL")
-        next if entry_name.match("APPLE")
-        $api_entries[entry_name] = entry
-       
       rescue
         entry_name = entry.match(/(\S*?)\(/m)[1].strip
-        next if entry_name.match('\*')
-        next if entry_name.match("INTEL")
-        next if entry_name.match("APPLE")
-        $api_entries[entry_name] = entry
       end
+      next if entry_name.match('\*')
+      next if entry_name.match("INTEL")
+      next if entry_name.match("APPLE")
+      $api_entries[entry_name] = entry.gsub("\r","")
     }
 #    $api_entries.each{ |key, value|
 #      puts "#{key}: #{value}"
 #    }
+  end
+
+  def self.load_database(yamlfile, with_windows=false)
+    doc = YAML::load_file(yamlfile)
+    $known_entries = {}
+    $api_entries ||= {}
+    $versions_entries = Hash::new { |hash,key| hash[key]=[] }
+    entry_name = ""
+    version = ""
+    doc.each { |key, value|
+      #puts (key.to_s+":: "+value)
+      begin
+        entry_name = value.match(/CL_API_CALL(.*?)\(/m)[1].strip
+      rescue
+        entry_name = value.match(/(\S*?)\(/m)[1].strip
+      end
+      next if (!with_windows) && $windows_funcs.include?(entry_name)
+      version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
+      $versions_entries[version].push(entry_name)
+      $known_entries[key] = entry_name
+      $api_entries[entry_name] = value
+    }
+    $api_entries_array = []
+    ($known_entries.length+$buff).times { |i|
+      #puts (i.to_s+": "+$known_entries[i])
+      if $known_entries[i] then
+        $api_entries_array.push( $api_entries[$known_entries[i]] )
+      else
+        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{i}(void);" )
+      end
+    }
   end
 
   def self.include_headers
@@ -148,7 +176,7 @@ EOF
     libdummy_icd_structures += "};\n\n"
     libdummy_icd_structures += "#pragma GCC visibility push(hidden)\n\n"
     libdummy_icd_structures += "struct _cl_icd_dispatch master_dispatch; \n\n"
-    $known_entries.each { |k, f|
+    $use_name_in_test.each { |k, f|
       libdummy_icd_structures += "typeof(#{f}) INT#{f};\n"
     }
     libdummy_icd_structures += "#pragma GCC visibility pop\n\n"
@@ -167,7 +195,7 @@ EOF
     comma=","
     ($api_entries.length+$buff).times { |i|
       comma="" if (i == $api_entries.length+$buff-1)
-      if( $known_entries[i] ) then 
+      if( $use_name_in_test[i] ) then 
         libdummy_icd_source += "  (void(*)(void))& INT#{$known_entries[i]}#{comma}\n"
       else
         libdummy_icd_source += "  (void(*)(void))& dummyFunc#{i}#{comma}\n"
@@ -243,8 +271,13 @@ EOF
     return run_dummy_icd_weak
   end
 
-  def self.generate_sources
-    parse_headers
+  def self.generate_sources(from_headers=true, from_database=false, database=nil)
+    if from_headers then        
+      parse_headers
+    end
+    if from_database then
+      load_database(database)
+    end
     File.open('libdummy_icd_gen.h','w') { |f|
       f.puts generate_libdummy_icd_header
     }
@@ -515,38 +548,7 @@ EOF
   end
   
   def self.generate_from_database(yamlfile)
-    doc={}
-    File::open(yamlfile) { |f|
-      doc = YAML:: load(f.read)
-    }
-    $known_entries = {}
-    $api_entries = {}
-    $versions_entries = Hash::new { |hash,key| hash[key]=[] }
-    entry_name = ""
-    version = ""
-    doc.each { |key, value|
-      begin
-        entry_name = value.match(/CL_API_CALL(.*?)\(/m)[1].strip
-      rescue
-        entry_name = value.match(/(\S*?)\(/m)[1].strip
-      end
-      next if $windows_funcs.include?(entry_name)
-      version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
-      $versions_entries[version].push(entry_name)
-      $known_entries[key] = entry_name
-      $api_entries[entry_name] = value
-    }
-    $api_entries_array = []
-    unknown=0
-    ($known_entries.length+$buff).times { |i|
-      #puts $known_entries[i]
-      if $known_entries[i] then
-        $api_entries_array.push( $api_entries[$known_entries[i]] )
-      else
-        $api_entries_array.push( "CL_API_ENTRY cl_int CL_API_CALL clUnknown#{i}(void);" )
-        unknown += 1
-      end
-    }
+    load_database(yamlfile)
     File.open('ocl_icd.h','w') { |f|
       f.puts generate_ocl_icd_header
     }
@@ -568,19 +570,6 @@ EOF
   ##########################################################
   # update-database mode
   def self.savedb(yamlfile)
-    api_db = {}
-    begin
-      File::open(yamlfile,"r") { |f|
-        api_db = YAML::load(f.read)
-#        puts api_db.inspect
-      }
-    rescue
-      api_db = {}
-    end
-    $known_entries.each_key {|i|
-      next if api_db[i]
-      api_db[i] = $api_entries[$known_entries[i]].gsub("\r","")
-    }
     File::open(yamlfile,"w") { |f|
       f.write($license.gsub(/^/,"# "))
       f.write( <<EOF
@@ -612,9 +601,9 @@ EOF
       # * it is very easy to do it ourself
       #f.write(YAML::dump(api_db))
       f.write("--- ")
-      api_db.keys.sort.each { |k|
+      $known_entries.keys.sort.each { |k|
         f.write("\n#{k}: |-\n  ")
-        f.write(api_db[k].gsub("\n","\n  "))
+        f.write($api_entries[$known_entries[k]].gsub("\n","\n  "))
       }
       f.write("\n")
     }
@@ -622,9 +611,13 @@ EOF
 
   def self.updatedb_from_input(dbfile, inputfile)
     parse_headers
+    load_database(dbfile, with_windows=true)
     doc = YAML::load_file(inputfile)
     doc.delete(-1)
-    $known_entries.merge!(doc)
+    doc.each_key {|i|
+      next if $known_entries[i]
+      $known_entries[i]=doc[i]
+    }
     self.savedb(dbfile)
   end
 
@@ -650,6 +643,11 @@ OptionParser.new do |opts|
   do |v|
     options[:input] = v
   end
+  opts.on("-s", "--[no-]system-headers", 
+          "Look for OpenCL functions in system header files") \
+  do |v|
+    options[:"system-headers"] = v
+  end
   opts.on("-m", "--mode [MODE]", [:database, :generate, :"update-database"],
           "Select mode (database, generate, update-database)") do |m|
     options[:mode] = m
@@ -664,7 +662,11 @@ if !options[:mode] then
   raise "--mode option required"
 end
 if options[:mode] == :generate then
-  IcdGenerator.generate_sources
+  if !options[:"system-headers"] then
+    IcdGenerator.generate_sources(from_headers=false, from_database=true, database=options[:database])
+  else
+    IcdGenerator.generate_sources(from_headers=true, from_database=false)
+  end
 elsif options[:mode] == :"update-database" then
   if !options[:input] then
     raise "--input option required"

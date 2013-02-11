@@ -25,11 +25,18 @@ FILES_FROM_DATABASE = ocl_icd.h ocl_icd_loader.h \
 BUILT_SOURCES = $(FILES_FROM_DATABASE)
 CLEANFILES = $(FILES_FROM_DATABASE) stamp-generator
 
+if UPDATE_DATABASE
+use_system_headers=--system-headers
+else
+use_system_headers=
+endif
+
 # Generate sources and headers from the database
 stamp-generator: ocl_interface.yaml
 $(FILES_FROM_DATABASE): stamp-generator
 stamp-generator: icd_generator.rb
-	$(RUBY) $< --mode database --database $(srcdir)/ocl_interface.yaml
+	$(RUBY) $< --mode database --database $(srcdir)/ocl_interface.yaml \
+		$(use_system_headers)
 	echo "timestamp" > $@
 
 # ignore the warning in OpenCL headers when using old interface

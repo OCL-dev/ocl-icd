@@ -36,11 +36,7 @@ AT_SETUP([Our dummy ICD through our ICD loader])
 AT_EXPORT([OCL_ICD_DEBUG],[15],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
 AT_CHECK([run_dummy_icd_through_our_ICDL], 0, [stdout], [stderr])
-AT_CHECK([grep "^-1" stdout | sort], 0,
-[-1 : clIcdGetPlatformIDsKHR
--1 : clSetPrintfCallback
--1 : clTerminateContextKHR
-])
+AT_CHECK([grep "^-1" stdout | sort], 0, [])
 AT_CLEANUP
 
 AT_SETUP([ICD Loader extension])
