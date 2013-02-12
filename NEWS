@@ -1,4 +1,25 @@
 
+Version 2.0.2
+=============
+
+Brice Videau (3):
+      Added windows specific functions to the table
+      fix bug when loading a correct icd *after* rejecting one
+      New version
+
+Vincent Danjean (10):
+      Fix bug for dumping the internal ICD structure
+      clGetExtensionFunctionAddress should return only extensions
+      cleanup code
+      Implement clGetICDLoaderInfoOCLICD extension with a test case
+      [build] lower requirement on autoconf
+      Default platform is now specified
+      Add clTerminateContextKHR in testsuite
+      cleanup icd_generator
+      refactor icd_generator
+      icd_generator: still cleanup
+      Update NEWS file
+
 Version 2.0.1
 =============
 
