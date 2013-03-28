@@ -680,8 +680,11 @@ clGetPlatformIDs(cl_uint          num_entries,
     RETURN(CL_INVALID_VALUE);
   if( num_entries == 0 && platforms != NULL )
     RETURN(CL_INVALID_VALUE);
-  if( _num_icds == 0)
+  if( _num_icds == 0 || _num_picds == 0 ) {
+    if ( num_platforms != NULL )
+      *num_platforms = 0;
     RETURN(CL_PLATFORM_NOT_FOUND_KHR);
+  }
 
   cl_uint i;
   if( num_platforms != NULL ){
