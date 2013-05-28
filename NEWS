@@ -1,4 +1,14 @@
 
+Version 2.0.3
+=============
+
+Brice Videau (1):
+      Small potential bugfix and hopefull norm interpretation.
+
+Vincent Danjean (2):
+      Fix PATH for "make installcheck"
+      Release 2.0.3
+
 Version 2.0.2
 =============
 
