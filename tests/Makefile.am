@@ -26,7 +26,7 @@ check-local: atconfig atlocal $(TESTSUITE)
 	$(SHELL) '$(TESTSUITE)' $(TESTSUITEFLAGS)
 
 installcheck-local: atconfig atlocal $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir):..' \
+	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir):$(abs_top_builddir)' \
 	$(TESTSUITEFLAGS)
 
 clean-local:
