@@ -297,6 +297,8 @@ EOF
   # database mode
   def self.generate_ocl_icd_header
     ocl_icd_header = "/**\n#{$license}\n*/\n\n"
+    ocl_icd_header += "#ifndef OCL_ICD_H\n"
+    ocl_icd_header += "#define OCL_ICD_H\n"
     ocl_icd_header += "#pragma GCC diagnostic push\n"
     ocl_icd_header += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
     ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
@@ -317,7 +319,8 @@ EOF
 	gsub(/\) (CL_API_SUFFIX__VERSION)/m,"\n) \\1").gsub(/\s*$/,'').
 	gsub(/^[\t ]+/,"    ").gsub(/^([^\t ])/, '  \1') + "\n\n"
     }
-    ocl_icd_header += "};\n\n"
+    ocl_icd_header += "};\n"
+    ocl_icd_header += "#endif\n\n"
     return ocl_icd_header
   end
 
