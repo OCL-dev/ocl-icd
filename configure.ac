@@ -9,6 +9,8 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9 tar-pax check-news color-tests parallel-tests])
 AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=0])
+# AM_PROG_AR must be called before LT_INIT...
+AM_PROG_AR
 LT_INIT([disable-static])
 AC_CONFIG_TESTDIR([tests], [.])
 
@@ -19,6 +21,7 @@ AC_SUBST([OPENCL_VERSION])
 AC_PROG_CC_C89
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AM_PROG_CC_C_O
 
 AC_PATH_PROG([ASCIIDOC], [asciidoc], [])
 AC_PATH_PROG([A2X], [a2x], [])
