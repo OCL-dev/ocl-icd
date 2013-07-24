@@ -1,4 +1,15 @@
 
+Version 2.0.4
+=============
+
+Brice Videau (1):
+      Include guard for ocl_icd.h
+
+Vincent Danjean (3):
+      Fix configure.ac for automake 1.13
+      By default, show all compile commands
+      Release 2.0.4
+
 Version 2.0.3
 =============
 
