@@ -8,7 +8,7 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9 tar-pax check-news color-tests parallel-tests])
-AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=0])
+AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=1])
 # AM_PROG_AR must be called before LT_INIT...
 AM_PROG_AR
 LT_INIT([disable-static])
