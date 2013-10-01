@@ -55,6 +55,16 @@ module IcdGenerator
   $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h",
     "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
   $windows_header_files = ["/usr/include/CL/cl_dx9_media_sharing.h", "/usr/include/CL/cl_d3d11.h", "/usr/include/CL/cl_d3d10.h"]
+  $cl_data_type_error = { "cl_platform_id"   => "CL_INVALID_PLATFORM",
+                          "cl_device_id"     => "CL_INVALID_DEVICE",
+                          "cl_context"       => "CL_INVALID_CONTEXT",
+                          "cl_command_queue" => "CL_INVALID_COMMAND_QUEUE",
+                          "cl_mem"           => "CL_INVALID_MEM_OBJECT",
+                          "cl_program"       => "CL_INVALID_PROGRAM",
+                          "cl_kernel"        => "CL_INVALID_KERNEL",
+                          "cl_event"         => "CL_INVALID_EVENT",
+                          "cl_sampler"       => "CL_INVALID_SAMPLER"}
+  $non_standard_error = [ "clGetExtensionFunctionAddressForPlatform" ]
   $versions_entries = []
   $buff=20
   $license = <<EOF
@@ -499,12 +509,23 @@ EOF
       end
       fps = first_parameter.split
       ocl_icd_loader_gen_source += "  debug_trace();\n"
-      ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+      raise "Unsupported data_type #{fps[0]}" if not $cl_data_type_error[fps[0]]
       ps = parameters.split(",")
       ps = ps.collect { |p|
         p = p.split
         p = p[-1].gsub("*","")
       }
+      if(ps.include?("errcode_ret")) then
+        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) {\n"
+        ocl_icd_loader_gen_source += "  if( errcode_ret != NULL ) *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
+        ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+        ocl_icd_loader_gen_source += "  }\n"
+      elsif ($non_standard_error.include?(func_name)) then
+        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) RETURN(NULL);\n"
+      else
+        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) RETURN(#{$cl_data_type_error[fps[0]]});\n"
+      end
+      ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
       ocl_icd_loader_gen_source += ps.join(", ")
       ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
