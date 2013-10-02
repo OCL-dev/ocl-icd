@@ -515,16 +515,18 @@ EOF
         p = p.split
         p = p[-1].gsub("*","")
       }
+      ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) {\n"
       if(ps.include?("errcode_ret")) then
-        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) {\n"
-        ocl_icd_loader_gen_source += "  if( errcode_ret != NULL ) *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
+        ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
+        ocl_icd_loader_gen_source += "      *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
+        ocl_icd_loader_gen_source += "    }\n"
         ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
-        ocl_icd_loader_gen_source += "  }\n"
       elsif ($non_standard_error.include?(func_name)) then
-        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) RETURN(NULL);\n"
+        ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
       else
-        ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) RETURN(#{$cl_data_type_error[fps[0]]});\n"
+        ocl_icd_loader_gen_source += "    RETURN(#{$cl_data_type_error[fps[0]]});\n"
       end
+      ocl_icd_loader_gen_source += "  }\n"
       ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
       ocl_icd_loader_gen_source += ps.join(", ")
       ocl_icd_loader_gen_source += "));\n"
