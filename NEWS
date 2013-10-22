@@ -1,4 +1,11 @@
 
+Version 2.1.1
+=============
+
+Vincent Danjean (2):
+      Fix missing NULL argument handling in clCreateContext
+      Release 2.1.1
+
 Version 2.1.0
 =============
 
