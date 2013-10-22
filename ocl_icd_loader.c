@@ -725,6 +725,12 @@ clCreateContext(const cl_context_properties *  properties ,
     }
     RETURN(NULL);
   }
+  if ((struct _cl_device_id *)devices[0] == NULL) {
+    if(errcode_ret) {
+      *errcode_ret = CL_INVALID_DEVICE;
+    }
+    RETURN(NULL);
+  }
   RETURN(((struct _cl_device_id *)devices[0])
     ->dispatch->clCreateContext(properties, num_devices, devices,
                   pfn_notify, user_data, errcode_ret));
