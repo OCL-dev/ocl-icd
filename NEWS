@@ -1,4 +1,18 @@
 
+Version 2.1.2
+=============
+
+Brice Videau (5):
+      Indentation fix
+      Check for platform validity. Could be improved.
+      Check cl_platform_id in clCreateContext and clCreateContextFromType
+      Code cleanup.
+      Added platform checking for clGetGLContextInfoKHR.
+
+Vincent Danjean (2):
+      Refactor code and compilation fix in clGetGLContextInfoKHR
+      Release 2.1.2
+
 Version 2.1.1
 =============
 
