@@ -776,7 +776,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
   if( properties != NULL){
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM ) {
-	if (properties[i+1] == 0) {
+	if( (struct _cl_platform_id *) properties[i+1] == NULL ) {
 	  goto out;
         } else {
           if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
@@ -830,7 +830,7 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
   if( properties != NULL){
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM ) {
-        if((struct _cl_platform_id *) properties[i+1] == NULL) {
+        if( (struct _cl_platform_id *) properties[i+1] == NULL ) {
 	  RETURN(CL_INVALID_PLATFORM);
         } else {
           if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
@@ -854,6 +854,8 @@ clWaitForEvents(cl_uint              num_events ,
   debug_trace();
   if( num_events == 0 || event_list == NULL )
     RETURN(CL_INVALID_VALUE);
+  if( (struct _cl_event *)event_list[0] == NULL )
+    RETURN(CL_INVALID_EVENT);
   RETURN(((struct _cl_event *)event_list[0])
     ->dispatch->clWaitForEvents(num_events, event_list));
 }
