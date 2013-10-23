@@ -779,10 +779,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
               good = 1;
           }
           if( !good ) {
-            if(errcode_ret) {
-              *errcode_ret = CL_INVALID_PLATFORM;
-            }
-            RETURN(NULL);
+            goto out;
           }
         }
         return ((struct _cl_platform_id *) properties[i+1])
