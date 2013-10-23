@@ -700,6 +700,28 @@ clGetPlatformIDs(cl_uint          num_entries,
 }
 hidden_alias(clGetPlatformIDs);
 
+#define RETURN_WITH_ERRCODE(errvar, errvalue, retvalue) \
+  do { \
+    if(errvar) { \
+      *errvar=errvalue; \
+    } \
+    RETURN(NULL); \
+  } while(0)
+
+#define CHECK_PLATFORM(__pid) \
+  ({ \
+    cl_platform_id _pid=(__pid); \
+    int good=0; \
+    cl_uint j; \
+    for( j=0; j<_num_picds; j++) { \
+      if( _picds[j].pid == _pid) { \
+        good=1; \
+        break; \
+      } \
+    } \
+    good; \
+  })
+
 CL_API_ENTRY cl_context CL_API_CALL
 clCreateContext(const cl_context_properties *  properties ,
                 cl_uint                        num_devices ,
@@ -719,17 +741,8 @@ clCreateContext(const cl_context_properties *  properties ,
           }
           RETURN(NULL);
         } else {
-          int good = 0;
-          cl_uint j;
-          for( j=0; j<_num_picds; j++) {
-            if( _picds[j].pid == (cl_platform_id) properties[i+1] )
-              good = 1;
-          }
-          if( !good ) {
-            if(errcode_ret) {
-              *errcode_ret = CL_INVALID_PLATFORM;
-            }
-            RETURN(NULL);
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
+	    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
           }
         }
         RETURN(((struct _cl_platform_id *) properties[i+1])
@@ -740,16 +753,10 @@ clCreateContext(const cl_context_properties *  properties ,
     }
   }
   if(devices == NULL || num_devices == 0) {
-    if(errcode_ret) {
-      *errcode_ret = CL_INVALID_VALUE;
-    }
-    RETURN(NULL);
+    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_VALUE, NULL);
   }
   if((struct _cl_device_id *)devices[0] == NULL) {
-    if(errcode_ret) {
-      *errcode_ret = CL_INVALID_DEVICE;
-    }
-    RETURN(NULL);
+    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_DEVICE, NULL);
   }
   RETURN(((struct _cl_device_id *)devices[0])
     ->dispatch->clCreateContext(properties, num_devices, devices,
@@ -772,13 +779,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
 	if (properties[i+1] == 0) {
 	  goto out;
         } else {
-          int good = 0;
-          cl_uint j;
-          for( j=0; j<_num_picds; j++) {
-            if( _picds[j].pid == (cl_platform_id) properties[i+1] )
-              good = 1;
-          }
-          if( !good ) {
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
             goto out;
           }
         }
@@ -813,10 +814,7 @@ clCreateContextFromType(const cl_context_properties *  properties ,
 	(properties, device_type, pfn_notify, user_data, errcode_ret));
   }
  out:
-  if(errcode_ret) {
-    *errcode_ret = CL_INVALID_PLATFORM;
-  }
-  RETURN(NULL);
+  RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
 }
 hidden_alias(clCreateContextFromType);
 
@@ -833,22 +831,10 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM ) {
         if((struct _cl_platform_id *) properties[i+1] == NULL) {
-          if(errcode_ret) {
-            *errcode_ret = CL_INVALID_PLATFORM;
-          }
-          RETURN(NULL);
+	  RETURN(CL_INVALID_PLATFORM);
         } else {
-          int good = 0;
-          cl_uint j;
-          for( j=0; j<_num_picds; j++) {
-            if( _picds[j].pid == (cl_platform_id) properties[i+1] )
-              good = 1;
-          }
-          if( !good ) {
-            if(errcode_ret) {
-              *errcode_ret = CL_INVALID_PLATFORM;
-            }
-            RETURN(NULL);
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
+	    RETURN(CL_INVALID_PLATFORM);
           }
         }
         RETURN(((struct _cl_platform_id *) properties[i+1])
