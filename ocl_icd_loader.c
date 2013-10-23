@@ -713,6 +713,12 @@ clCreateContext(const cl_context_properties *  properties ,
   if( properties != NULL){
     while( properties[i] != 0 ) {
       if( properties[i] == CL_CONTEXT_PLATFORM )
+        if((struct _cl_platform_id *) properties[i+1] == NULL) {
+          if(errcode_ret) {
+            *errcode_ret = CL_INVALID_PLATFORM;
+          }
+          RETURN(NULL);
+        }
         RETURN(((struct _cl_platform_id *) properties[i+1])
           ->dispatch->clCreateContext(properties, num_devices, devices,
                         pfn_notify, user_data, errcode_ret));
