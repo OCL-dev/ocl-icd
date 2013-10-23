@@ -831,10 +831,30 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties ,
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM )
+      if( properties[i] == CL_CONTEXT_PLATFORM ) {
+        if((struct _cl_platform_id *) properties[i+1] == NULL) {
+          if(errcode_ret) {
+            *errcode_ret = CL_INVALID_PLATFORM;
+          }
+          RETURN(NULL);
+        } else {
+          int good = 0;
+          cl_uint j;
+          for( j=0; j<_num_picds; j++) {
+            if( _picds[j].pid == (cl_platform_id) properties[i+1] )
+              good = 1;
+          }
+          if( !good ) {
+            if(errcode_ret) {
+              *errcode_ret = CL_INVALID_PLATFORM;
+            }
+            RETURN(NULL);
+          }
+        }
         RETURN(((struct _cl_platform_id *) properties[i+1])
 	  ->dispatch->clGetGLContextInfoKHR(properties, param_name,
                         param_value_size, param_value, param_value_size_ret));
+      }
       i += 2;
     }
   }
