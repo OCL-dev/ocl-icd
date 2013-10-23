@@ -725,7 +725,7 @@ clCreateContext(const cl_context_properties *  properties ,
     }
     RETURN(NULL);
   }
-  if ((struct _cl_device_id *)devices[0] == NULL) {
+  if((struct _cl_device_id *)devices[0] == NULL) {
     if(errcode_ret) {
       *errcode_ret = CL_INVALID_DEVICE;
     }
