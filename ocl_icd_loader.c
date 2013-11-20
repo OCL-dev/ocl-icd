@@ -756,6 +756,9 @@ clCreateContextFromType(const cl_context_properties *  properties ,
                         cl_int *                       errcode_ret ){
   debug_trace();
   _initClIcd();
+  if(_num_picds == 0) {
+    goto out;
+  }
   cl_uint i=0;
   if( properties != NULL){
     while( properties[i] != 0 ) {
@@ -774,12 +777,6 @@ clCreateContextFromType(const cl_context_properties *  properties ,
       i += 2;
     }
   } else {
-    if(_num_picds == 0) {
-      if(errcode_ret) {
-        *errcode_ret = CL_INVALID_VALUE;
-      }
-      RETURN(NULL);
-    }
     const char *default_platform = getenv("OPENCL_ICD_DEFAULT_PLATFORM");
     int num_default_platform;
     char *end_scan;
