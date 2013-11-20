@@ -505,7 +505,8 @@ EOF
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
     ocl_icd_loader_gen_source += "#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
-    ocl_icd_loader_gen_source += ""
+    ocl_icd_loader_gen_source += "extern struct platform_icd *_picds;\n"
+    ocl_icd_loader_gen_source += "extern cl_uint _num_picds;\n"
     $api_entries.each { |func_name, entry|
       next if skip_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
@@ -527,16 +528,45 @@ EOF
         p = p.split
         p = p[-1].gsub("*","")
       }
+      error_handler = lambda {
+         if(ps.include?("errcode_ret")) then
+          ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
+          ocl_icd_loader_gen_source += "      *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
+          ocl_icd_loader_gen_source += "    }\n"
+          ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+        elsif ($non_standard_error.include?(func_name)) then
+          ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+        else
+          ocl_icd_loader_gen_source += "    RETURN(#{$cl_data_type_error[fps[0]]});\n"
+        end
+      }
+      if(fps[0] == "cl_platform_id") then
+        ocl_icd_loader_gen_source += "  if(_num_picds == 0) {\n"
+        error_handler.call
+        ocl_icd_loader_gen_source += "  }\n"
+      end
+       
       ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) {\n"
-      if(ps.include?("errcode_ret")) then
-        ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
-        ocl_icd_loader_gen_source += "      *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
+      if(fps[0] == "cl_platform_id") then
+        ocl_icd_loader_gen_source += "    const char *default_platform = getenv(\"OPENCL_ICD_DEFAULT_PLATFORM\");\n"
+        ocl_icd_loader_gen_source += "    int num_default_platform;\n"
+        ocl_icd_loader_gen_source += "    char *end_scan;\n"
+        ocl_icd_loader_gen_source += "    if (! default_platform) {\n"
+        ocl_icd_loader_gen_source += "      num_default_platform = 0;\n"
+        ocl_icd_loader_gen_source += "    } else {\n"
+        ocl_icd_loader_gen_source += "      num_default_platform = strtol(default_platform, &end_scan, 10);\n"
+        ocl_icd_loader_gen_source += "      if (*default_platform == '\\0' || *end_scan != '\\0') {\n"
+        error_handler.call
+        ocl_icd_loader_gen_source += "      }\n"
         ocl_icd_loader_gen_source += "    }\n"
-        ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
-      elsif ($non_standard_error.include?(func_name)) then
-        ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+        ocl_icd_loader_gen_source += "    if (num_default_platform < 0 || num_default_platform >= _num_picds) {\n"
+        error_handler.call
+        ocl_icd_loader_gen_source += "    }\n"
+        ocl_icd_loader_gen_source += "    RETURN(_picds[num_default_platform].pid->dispatch->#{func_name}("
+        ocl_icd_loader_gen_source += ps.join(", ")
+        ocl_icd_loader_gen_source += "));\n"
       else
-        ocl_icd_loader_gen_source += "    RETURN(#{$cl_data_type_error[fps[0]]});\n"
+        error_handler.call
       end
       ocl_icd_loader_gen_source += "  }\n"
       ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
