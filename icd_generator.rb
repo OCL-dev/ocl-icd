@@ -343,8 +343,20 @@ struct func_desc {
   const char* name;
   void(*const addr)(void);
 };
-
+typedef __typeof__(clGetExtensionFunctionAddress) *clGetExtensionFunctionAddress_fn;
 extern const struct func_desc function_description[];
+struct vendor_icd {
+  cl_uint	num_platforms;
+  cl_uint	first_platform;
+  void *	dl_handle;
+  clGetExtensionFunctionAddress_fn ext_fn_ptr;
+};
+struct platform_icd {
+  char *	 extension_suffix;
+  char *	 version;
+  struct vendor_icd *vicd;
+  cl_platform_id pid;
+};
 
 EOF
     ocl_icd_header += "extern struct _cl_icd_dispatch master_dispatch;\n"

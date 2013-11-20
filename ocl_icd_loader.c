@@ -53,33 +53,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int debug_ocl_icd_mask=0;
 
-typedef __typeof__(clGetExtensionFunctionAddress) *clGetExtensionFunctionAddress_fn;
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
-
-
-struct vendor_icd {
-  cl_uint	num_platforms;
-  cl_uint	first_platform;
-  void *	dl_handle;
-  clGetExtensionFunctionAddress_fn ext_fn_ptr;
-};
 
 inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, first=%i, handle=%p, f=%p}\n", info,
 	v, v->num_platforms, v->first_platform, v->dl_handle, v->ext_fn_ptr);
 }
 
-struct platform_icd {
-  char *	 extension_suffix;
-  char *	 version;
-  struct vendor_icd *vicd;
-  cl_platform_id pid;
-};
-
 struct vendor_icd *_icds=NULL;
 struct platform_icd *_picds=NULL;
 static cl_uint _num_icds = 0;
-static cl_uint _num_picds = 0;
+cl_uint _num_picds = 0;
 
 #ifdef DEBUG_OCL_ICD
 #  define _clS(x) [-x] = #x
