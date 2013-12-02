@@ -17,11 +17,11 @@ EXTRA_DIST=icd_generator.rb ocl_interface.yaml bootstrap \
 lib_LTLIBRARIES = libOpenCL.la
 nodist_include_HEADERS = ocl_icd.h
 pkgexampledir = $(docdir)/examples
-pkgexample_DATA = ocl_icd_loader.map ocl_icd_bindings.c
+pkgexample_DATA = ocl_icd_bindings.c
 
-FILES_FROM_DATABASE = ocl_icd.h ocl_icd_loader.h \
+FILES_FROM_DATABASE = ocl_icd.h ocl_icd_loader_gen.h \
 	ocl_icd_loader_gen.c ocl_icd_bindings.c \
-	ocl_icd_loader.map
+	ocl_icd_loader_gen.map
 BUILT_SOURCES = $(FILES_FROM_DATABASE)
 CLEANFILES = $(FILES_FROM_DATABASE) stamp-generator
 
@@ -43,13 +43,13 @@ stamp-generator: icd_generator.rb
 libOpenCL_la_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) \
 	$(AM_CFLAGS) $(PTHREAD_CFLAGS)
 
-libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_debug.h
+libOpenCL_la_SOURCES = ocl_icd_loader.c ocl_icd_loader.h ocl_icd_debug.h
 nodist_libOpenCL_la_SOURCES = ocl_icd_loader_gen.c ocl_icd.h
 libOpenCL_la_LDFLAGS = -version-info 1:0:0 $(PTHREAD_CFLAGS)
 libOpenCL_la_LIBADD = $(PTHREAD_LIBS)
 if USE_MAP
-libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader.map
-libOpenCL_la_DEPENDS = ocl_icd_loader.map
+libOpenCL_la_LDFLAGS += -Wl,--version-script,ocl_icd_loader_gen.map
+libOpenCL_la_DEPENDS = ocl_icd_loader_gen.map
 endif
 
 ####################################
@@ -75,7 +75,7 @@ clean-local: mostlyclean-generic clean-generic
 
 ##################################################################
 # dummy OpenCL ICD
-FILES_FROM_GENERATOR = run_dummy_icd_gen.c run_dummy_icd_weak.c \
+FILES_FROM_GENERATOR = run_dummy_icd_gen.c run_dummy_icd_weak_gen.c \
 	libdummy_icd_gen.c libdummy_icd_gen.h
 BUILT_SOURCES += $(FILES_FROM_GENERATOR)
 CLEANFILES += $(FILES_FROM_GENERATOR) stamp-generator-dummy
@@ -102,7 +102,7 @@ libdummycl_noext_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_WITHOUT_EXTENSION
 noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
 run_dummy_icd_through_our_ICDL_SOURCES = run_dummy_icd.c
 nodist_run_dummy_icd_through_our_ICDL_SOURCES = \
-	run_dummy_icd_gen.c run_dummy_icd_weak.c
+	run_dummy_icd_gen.c run_dummy_icd_weak_gen.c
 # ignore the warning in OpenCL headers when using old interface
 run_dummy_icd_through_our_ICDL_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) $(AM_CFLAGS)
 # we want to link to our implementation here

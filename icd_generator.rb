@@ -297,7 +297,7 @@ EOF
     File.open('run_dummy_icd_gen.c','w') { |f|
       f.puts generate_run_dummy_icd_source
     }
-    File.open('run_dummy_icd_weak.c','w') { |f|
+    File.open('run_dummy_icd_weak_gen.c','w') { |f|
       f.puts generate_run_dummy_icd_weak_source
     }
   end
@@ -620,10 +620,10 @@ EOF
     File.open('ocl_icd.h','w') { |f|
       f.puts generate_ocl_icd_header
     }
-    File.open('ocl_icd_loader.h','w') { |f|
+    File.open('ocl_icd_loader_gen.h','w') { |f|
       f.puts generate_ocl_icd_loader_header
     }
-    File.open('ocl_icd_loader.map','w') { |f|
+    File.open('ocl_icd_loader_gen.map','w') { |f|
       f.puts generate_ocl_icd_loader_map
     }
     File.open('ocl_icd_bindings.c','w') { |f|
