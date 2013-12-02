@@ -542,7 +542,8 @@ static inline void __attribute__((constructor)) _initClIcd( void ) {
     return;
 #ifdef USE_PTHREAD
   if (in_init) {
-    /* probably reentrency */
+    /* probably reentrency, in_init is a __thread variable */
+    debug(D_WARN, "Executing init while already in init!");
   } else {
     in_init=1;
     __sync_synchronize();
@@ -559,11 +560,13 @@ static inline void __attribute__((constructor)) _initClIcd( void ) {
     in_init=0;
   } else {
     if (in_init) {
-      /* probably reentrency (could also be user threads). */
+      /* probably reentrency (could also be preemptive user-level threads). */
     } else {
-      /* someone else started __initClIcd(). We wait until its end. */
+      /* someone else started __initClIcd(). We wait until it ends. */
       debug(D_WARN, "Waiting end of init");
-      while (!_initialized) ;
+      while (!_initialized) {
+	__sync_synchronize();
+      }
       debug(D_WARN, "Wait done");
    }
   }
