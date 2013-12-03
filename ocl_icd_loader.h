@@ -31,4 +31,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocl_icd.h"
 #include "ocl_icd_loader_gen.h"
 
+cl_platform_id __attribute__((visibility("internal")))
+getDefaultPlatformID();
+
+static inline
+cl_platform_id selectPlatformID(cl_platform_id pid) {
+  if (pid) return pid;
+  return getDefaultPlatformID();
+}
+
 #endif

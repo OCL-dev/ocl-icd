@@ -574,6 +574,36 @@ static inline void __attribute__((constructor)) _initClIcd( void ) {
   _initialized = 1;
 }
 
+cl_platform_id __attribute__((visibility("internal")))
+getDefaultPlatformID() {
+  static cl_platform_id defaultPlatformID=NULL;
+  static int defaultSet=0;
+  if (! defaultSet) {
+    do {
+      if(_num_picds == 0) {
+	break;
+      }
+      const char *default_platform = getenv("OPENCL_ICD_DEFAULT_PLATFORM");
+      int num_default_platform;
+      char *end_scan;
+      if (! default_platform) {
+	num_default_platform = 0;
+      } else {
+	num_default_platform = strtol(default_platform, &end_scan, 10);
+	if (*default_platform == '\0' || *end_scan != '\0') {
+	  break;
+	}
+      }
+      if (num_default_platform < 0 || num_default_platform >= _num_picds) {
+	break;
+      }
+      defaultPlatformID=_picds[num_default_platform].pid;
+    } while(0);
+    defaultSet=1;
+  }
+  return defaultPlatformID;
+}
+
 #pragma GCC visibility pop
 #define hidden_alias(name) \
   typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
