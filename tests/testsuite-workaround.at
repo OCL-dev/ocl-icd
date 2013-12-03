@@ -6,9 +6,12 @@ AT_EXPORT([OCL_ICD_ASSUME_ICD_EXTENSION], [1],
 	  [OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
-AT_CHECK([grep "^Found 2 platforms!$" stdout], 0, [ignore])
-AT_CHECK([grep "^ocl-icd ICD test$" stdout], 0, [ignore])
-AT_CHECK([grep "^ocl-icd ICD test (no ext)$" stdout], 0, [ignore])
+AT_CHECK([env LC_ALL=C sort stdout], 0, 
+[Found 3 platforms!
+ocl-icd ICD test
+ocl-icd ICD test (no ext)
+ocl-icd ICD test2
+])
 AT_CLEANUP
 
 AT_SETUP([OCL_ICD_VENDORS as file, buggy ICD with workaround])

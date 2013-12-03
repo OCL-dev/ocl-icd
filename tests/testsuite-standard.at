@@ -4,7 +4,9 @@ AT_SETUP([invalid OCL_ICD_VENDORS])
 AT_EXPORT([OCL_ICD_DEBUG],[15],
           [OCL_ICD_VENDORS],[unexisting-vendors-dir])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
-AT_CHECK([grep "^No platforms found!$" stdout], 0, [ignore])
+AT_CHECK([cat stdout], 0, 
+[No platforms found!
+])
 AT_CLEANUP
 
 AT_SETUP([OCL_ICD_VENDORS as directory])
@@ -12,24 +14,32 @@ AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
-AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
-AT_CHECK([grep "^ocl-icd ICD test$" stdout], 0, [ignore])
+dnl platforms can be listed in any order
+AT_CHECK([env LC_ALL=C sort stdout], 0, 
+[Found 2 platforms!
+ocl-icd ICD test
+ocl-icd ICD test2
+])
 AT_CLEANUP
 
 AT_SETUP([OCL_ICD_VENDORS as library file])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
-AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
-AT_CHECK([grep "^ocl-icd ICD test$" stdout], 0, [ignore])
+AT_CHECK([cat stdout], 0, 
+[Found 1 platforms!
+ocl-icd ICD test
+])
 AT_CLEANUP
 
 AT_SETUP([OCL_ICD_VENDORS as ICD file (.icd)])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors/dummycl.icd])
 AT_CHECK([ocl_test], 0, [stdout], [stderr])
-AT_CHECK([grep "^Found 1 platforms!$" stdout], 0, [ignore])
-AT_CHECK([grep "^ocl-icd ICD test$" stdout], 0, [ignore])
+AT_CHECK([cat stdout], 0, 
+[Found 1 platforms!
+ocl-icd ICD test
+])
 AT_CLEANUP
 
 AT_SETUP([Our dummy ICD through our ICD loader])
@@ -47,3 +57,4 @@ name: OpenCL ICD Loader
 vendor: OCL Icd free software
 ], [])
 AT_CLEANUP
+

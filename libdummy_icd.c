@@ -101,6 +101,10 @@ CL_API_ENTRY void * CL_API_CALL INTclGetExtensionFunctionAddress(
 }
 SYMB(clGetExtensionFunctionAddress);
 
+#ifndef ICD_SUFFIX
+#  define ICD_SUFFIX ""
+#endif
+
 CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
              cl_platform_id   platform, 
              cl_platform_info param_name,
@@ -113,8 +117,8 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
 
   char cl_platform_profile[] = "FULL_PROFILE";
   char cl_platform_version[] = "OpenCL 1.2";
-  char cl_platform_name[] = "DummyCL";
-  char cl_platform_vendor[] = "ocl-icd ICD test"
+  char cl_platform_name[] = "DummyCL" ICD_SUFFIX;
+  char cl_platform_vendor[] = "ocl-icd ICD test" ICD_SUFFIX
 #ifdef ICD_WITHOUT_EXTENSION
 	  " (no ext)"
 #endif

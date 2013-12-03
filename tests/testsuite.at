@@ -6,4 +6,5 @@ AT_INIT()
 AT_COLOR_TESTS
 
 m4_include([testsuite-standard.at])
+m4_include([testsuite-default-platform.at])
 m4_include([testsuite-workaround.at])

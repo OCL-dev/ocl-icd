@@ -1,0 +1,125 @@
+AT_BANNER([Default platform selection])
+
+AT_SETUP([No choice, among 0 => CL_INVALID_PLATFORM])
+AT_EXPORT([OCL_ICD_DEBUG],[15],
+          [OCL_ICD_VENDORS],[unexisting-vendors-dir])
+AT_UNSET([OPENCL_ICD_DEFAULT_PLATFORM])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+dnl TODO check errcode when no platforms are available
+AT_CHECK([cat stdout], 0, 
+[No platforms found!
+Invalid platform
+])
+AT_CLEANUP
+
+AT_SETUP([Choice 0, among 0 => CL_INVALID_PLATFORM])
+AT_EXPORT([OCL_ICD_DEBUG],[15],
+          [OCL_ICD_VENDORS],[unexisting-vendors-dir],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[0])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+AT_CHECK([cat stdout], 0, 
+[No platforms found!
+Invalid platform
+])
+AT_CLEANUP
+
+AT_SETUP([Choice 1, among 0 => CL_INVALID_PLATFORM])
+AT_EXPORT([OCL_ICD_DEBUG],[15],
+          [OCL_ICD_VENDORS],[unexisting-vendors-dir],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[1])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+AT_CHECK([cat stdout], 0, 
+[No platforms found!
+Invalid platform
+])
+AT_CLEANUP
+
+AT_SETUP([No choice, among 1 => default platform])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so])
+AT_UNSET([OPENCL_ICD_DEFAULT_PLATFORM])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+AT_CHECK([cat stdout], 0, 
+[Found 1 platforms!
+ocl-icd ICD test
+ocl-icd ICD test
+])
+AT_CLEANUP
+
+AT_SETUP([Choice 0, among 1 => default platform])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[0])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+AT_CHECK([cat stdout], 0, 
+[Found 1 platforms!
+ocl-icd ICD test
+ocl-icd ICD test
+])
+AT_CLEANUP
+
+AT_SETUP([Choice 1, among 1 => CL_INVALID_PLATFORM])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[1])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+AT_CHECK([cat stdout], 0, 
+[Found 1 platforms!
+ocl-icd ICD test
+Invalid platform
+])
+AT_CLEANUP
+
+AT_SETUP([No choice, among 2 => one platform])
+AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_UNSET([OPENCL_ICD_DEFAULT_PLATFORM])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+dnl platforms can be listed in any order
+AT_CHECK([env LC_ALL=C sort -u stdout], 0, 
+[Found 2 platforms!
+ocl-icd ICD test
+ocl-icd ICD test2
+])
+AT_CHECK([wc -l < stdout], 0, 
+[4
+])
+AT_CLEANUP
+
+AT_SETUP([Choice 0, among 2 => first platform])
+AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[0])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+dnl platforms can be listed in any order
+AT_CHECK([head -n 2 stdout | tail -n 1 > expout], 0, [])
+AT_CHECK([tail -n 1 stdout], 0, [expout])
+AT_CLEANUP
+
+AT_SETUP([Choice 1, among 2 => second platform])
+AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[1])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+dnl platforms can be listed in any order
+AT_CHECK([head -n 3 stdout | tail -n 1 > expout], 0, [])
+AT_CHECK([tail -n 1 stdout], 0, [expout])
+AT_CLEANUP
+
+AT_SETUP([Choice 2, among 2 => CL_INVALID_PLATFORM])
+AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
+AT_EXPORT([OCL_ICD_DEBUG],[7],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OPENCL_ICD_DEFAULT_PLATFORM],[2])
+AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
+dnl platforms can be listed in any order
+AT_CHECK([env LC_ALL=C sort stdout], 0, 
+[Found 2 platforms!
+Invalid platform
+ocl-icd ICD test
+ocl-icd ICD test2
+])
+AT_CLEANUP

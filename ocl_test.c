@@ -28,6 +28,48 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
+void print_error(cl_int error) {
+  switch (error) {
+  case CL_SUCCESS: break ;
+  case CL_PLATFORM_NOT_FOUND_KHR:
+    printf("No platforms found!\n");
+    break;
+  case CL_INVALID_PLATFORM:
+    printf("Invalid platform\n");
+    break;
+  default:
+     printf("OpenCL error: %i\n", error);
+  }
+}
+
+void show_platform(cl_platform_id pid, int show_extensions) {
+  char *platform_vendor;
+  size_t param_value_size_ret;
+  cl_int error;
+
+  error = clGetPlatformInfo(pid, CL_PLATFORM_VENDOR, 0, NULL, &param_value_size_ret );
+  print_error(error);
+  if (error != CL_SUCCESS)
+    return;
+    
+  platform_vendor = (char *)malloc(param_value_size_ret);
+  clGetPlatformInfo(pid, CL_PLATFORM_VENDOR, param_value_size_ret, platform_vendor, NULL );
+
+  printf("%s\n",platform_vendor);
+  free(platform_vendor);
+
+  if (show_extensions) {  
+    error = clGetPlatformInfo(pid, CL_PLATFORM_EXTENSIONS, 0, NULL, &param_value_size_ret );
+    print_error(error);
+    
+    platform_vendor = (char *)malloc(param_value_size_ret);
+    clGetPlatformInfo(pid, CL_PLATFORM_EXTENSIONS, param_value_size_ret, platform_vendor, NULL );
+
+    printf("Extensions: %s\n",platform_vendor);
+    free(platform_vendor);
+  }
+}
+
 int main(int argc, char* argv[]) {
   cl_platform_id *platforms;
   cl_uint num_platforms;
@@ -36,43 +78,36 @@ int main(int argc, char* argv[]) {
   int show_extensions=0;
   if (argc >= 2 && strcmp(argv[1], "--show-extensions")==0) {
     show_extensions=1;
+    argv++;
+  }
+
+  int default_platform=0;
+  if (argc >= 2 && strcmp(argv[1], "--default-platform")==0) {
+    default_platform=1;
   }
 
   error = clGetPlatformIDs(0, NULL, &num_platforms);
   if( error == CL_SUCCESS ) {
     printf("Found %u platforms!\n", num_platforms);
   } else if( error == CL_PLATFORM_NOT_FOUND_KHR ) {
-    printf("No platforms found!\n");
+    print_error(error);
+    if (default_platform) {
+      show_platform(NULL, show_extensions);
+    }
     exit(0);
   } else {
-    printf("OpenCL error: %i\n", error);
+    print_error(error);
     exit(-1);
   }
   platforms = (cl_platform_id *)malloc(sizeof(cl_platform_id *) * num_platforms);
   error = clGetPlatformIDs(num_platforms, platforms, NULL);
+  print_error(error);
   cl_uint i;
   for(i=0; i<num_platforms; i++){
-    char *platform_vendor;
-    size_t param_value_size_ret;
-
-    error = clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, 0, NULL, &param_value_size_ret );
-    
-    platform_vendor = (char *)malloc(param_value_size_ret);
-    clGetPlatformInfo(platforms[i], CL_PLATFORM_VENDOR, param_value_size_ret, platform_vendor, NULL );
-
-    printf("%s\n",platform_vendor);
-    free(platform_vendor);
-
-    if (show_extensions) {  
-      error = clGetPlatformInfo(platforms[i], CL_PLATFORM_EXTENSIONS, 0, NULL, &param_value_size_ret );
-      
-      platform_vendor = (char *)malloc(param_value_size_ret);
-      clGetPlatformInfo(platforms[i], CL_PLATFORM_EXTENSIONS, param_value_size_ret, platform_vendor, NULL );
-
-      printf("Extensions: %s\n",platform_vendor);
-      free(platform_vendor);
-    }
-
+    show_platform(platforms[i], show_extensions);
+  }
+  if (default_platform) {
+    show_platform(NULL, show_extensions);
   }
   return 0;
 }

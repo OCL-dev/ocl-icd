@@ -17,7 +17,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	  echo '  [$(PACKAGE_URL)])'; \
 	} >'$(srcdir)/package.m4'
 
-TESTSUITES_SRC = testsuite.at testsuite-standard.at testsuite-workaround.at
+TESTSUITES_SRC = testsuite.at testsuite-standard.at testsuite-workaround.at testsuite-default-platform.at
 EXTRA_DIST = $(TESTSUITES_SRC) $(srcdir)/package.m4 $(TESTSUITE) atlocal.in atenv.m4
 TESTSUITE = $(srcdir)/testsuite
 DISTCLEANFILES = atconfig
