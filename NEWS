@@ -1,4 +1,21 @@
 
+Version 2.1.3
+=============
+
+Brice Videau (3):
+      Moved some declarations to the header as they are needed in the generated
+	part now.
+      If we have no valid platforms non can be valid.
+      In case a NULL platform is passed to the loader, the default platform is
+	selected if it exists and is valid.
+
+Vincent Danjean (5):
+      Rewrote initialization comments
+      All generated file ends with "_gen" suffix (but installed once)
+      [build] add tests for default platform selection
+      Refactor code for selection of default platform
+      Release 2.1.3
+
 Version 2.1.2
 =============
 
