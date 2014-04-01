@@ -4,7 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . doc tests
 
 RUBY=ruby
-AM_CPPFLAGS = -Wall -Werror
+AM_CPPFLAGS = -Wall
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= OpenCL.pc ocl-icd.pc
