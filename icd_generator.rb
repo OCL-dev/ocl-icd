@@ -64,7 +64,7 @@ module IcdGenerator
                           "cl_kernel"        => "CL_INVALID_KERNEL",
                           "cl_event"         => "CL_INVALID_EVENT",
                           "cl_sampler"       => "CL_INVALID_SAMPLER"}
-  $non_standard_error = [ "clGetExtensionFunctionAddressForPlatform" ]
+  $non_standard_error = [ "clGetExtensionFunctionAddressForPlatform", "clSVMAlloc" ]
   $versions_entries = []
   $buff=20
   $license = <<EOF
@@ -508,10 +508,11 @@ EOF
     $api_entries.each { |func_name, entry|
       next if skip_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
+      return_type = entry.match(/CL_API_ENTRY (.*) CL_API_CALL/)[1]
       parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
       parameters.gsub!(/\[.*?\]/,"")
-      parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/,'\1')
-      ocl_icd_loader_gen_source += clean_entry.gsub(/\[.*?\]/,"")
+      parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/m,'\1')
+      ocl_icd_loader_gen_source += clean_entry.gsub(/\*\[.*?\]/,"*  ").gsub(/\[.+?\]/,"")
       first_parameter = parameters.match(/.*?\,/m)
       if not first_parameter then
         first_parameter =  parameters.match(/.*/m)[0]
@@ -531,11 +532,23 @@ EOF
           ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
           ocl_icd_loader_gen_source += "      *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
           ocl_icd_loader_gen_source += "    }\n"
-          ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+          if return_type != "void" then
+            ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+          else
+            ocl_icd_loader_gen_source += "    return;\n"
+          end
         elsif ($non_standard_error.include?(func_name)) then
-          ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+          if return_type != "void" then
+            ocl_icd_loader_gen_source += "    RETURN(NULL);\n"
+          else
+            ocl_icd_loader_gen_source += "    return;\n"
+          end
         else
-          ocl_icd_loader_gen_source += "    RETURN(#{$cl_data_type_error[fps[0]]});\n"
+          if return_type != "void" then
+            ocl_icd_loader_gen_source += "    RETURN(#{$cl_data_type_error[fps[0]]});\n" if return_type != "void"
+          else
+            ocl_icd_loader_gen_source += "    return;\n"
+          end
         end
       }
        
@@ -545,9 +558,13 @@ EOF
       ocl_icd_loader_gen_source += "  if( (struct _#{fps[0]} *)#{fps[1]} == NULL) {\n"
       error_handler.call
       ocl_icd_loader_gen_source += "  }\n"
-      ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
-      ocl_icd_loader_gen_source += ps.join(", ")
-      ocl_icd_loader_gen_source += "));\n"
+      if return_type != "void" then
+        ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+        ocl_icd_loader_gen_source += ps.join(", ")
+        ocl_icd_loader_gen_source += "));\n"
+      else
+        ocl_icd_loader_gen_source += "  return;"
+      end
       ocl_icd_loader_gen_source += "}\n\n"
     }
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
