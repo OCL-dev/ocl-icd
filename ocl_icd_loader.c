@@ -447,7 +447,7 @@ static void __initClIcd( void ) {
   debug_init();
   cl_uint num_icds = 0;
   int is_dir = 0;
-  DIR *dir;
+  DIR *dir = NULL;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
   if (! dir_path || dir_path[0]==0) {
     debug(D_DUMP, "OCL_ICD_VENDORS empty or not defined, using %s", ETC_OPENCL_VENDORS);
@@ -519,12 +519,19 @@ static void __initClIcd( void ) {
     _icds = (struct vendor_icd*)realloc(_icds, _num_icds * sizeof(struct vendor_icd));
   }
   debug(D_WARN, "%d valid vendor(s)!", _num_icds);
+
+  if (dir != NULL){
+    closedir(dir);
+  }
   return;
  abort:
   _num_icds = 0;
   if (_icds) {
     free(_icds);
     _icds = NULL;
+  }
+  if (dir != NULL){
+    closedir(dir);
   }
   return;
 }
