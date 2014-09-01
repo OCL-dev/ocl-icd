@@ -231,7 +231,7 @@ static inline unsigned int _open_driver(unsigned int num_icds,
     RETURN(num_icds);
   }
 
-  lib_path_length = strlen(lib_path);
+  lib_path_length = strnlen(lib_path, lib_path_length);
   
   if( lib_path[lib_path_length-1] == '\n' )
     lib_path[lib_path_length-1] = '\0';
