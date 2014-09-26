@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.67])
-AC_INIT([OpenCL ICD Loader], [2.1.3], [ocl-icd-devel@lists.forge.imag.fr], [ocl-icd])
+AC_INIT([OpenCL ICD Loader], [2.2.0], [ocl-icd-devel@lists.forge.imag.fr], [ocl-icd])
 AC_CONFIG_SRCDIR([ocl_icd_loader.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
@@ -14,7 +14,7 @@ AM_PROG_AR
 LT_INIT([disable-static])
 AC_CONFIG_TESTDIR([tests], [.])
 
-OPENCL_VERSION="1.2"
+OPENCL_VERSION="2.0"
 AC_SUBST([OPENCL_VERSION])
 
 # Checks for programs.
@@ -48,7 +48,7 @@ esac
 if test $cl_h = no; then
   AC_MSG_ERROR([OpenCL headers are required])
 fi
-AC_MSG_CHECKING([whether OpenCL headers 1.2 are available])
+AC_MSG_CHECKING([whether OpenCL headers 2.0 are available])
 AC_PREPROC_IFELSE([
   AC_LANG_PROGRAM([[
 #if defined(__APPLE__) || defined(__MACOSX)
@@ -56,15 +56,15 @@ AC_PREPROC_IFELSE([
 #else
 #  include <CL/opencl.h>
 #endif
-#ifndef CL_VERSION_1_2
-#  error Cannot find CL_VERSION_1_2 symbol
+#ifndef CL_VERSION_2_0
+#  error Cannot find CL_VERSION_2_0 symbol
 #endif
     ]], [[
     ]])],[
   AC_MSG_RESULT([yes])
 ],[
   AC_MSG_RESULT([no])
-  AC_MSG_FAILURE([OpenCL headers for OpenCL 1.2 are required])
+  AC_MSG_FAILURE([OpenCL headers for OpenCL 2.0 are required])
 ])
 
 # Checks for typedefs, structures, and compiler characteristics.
