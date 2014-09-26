@@ -66,7 +66,7 @@ module IcdGenerator
                           "cl_sampler"       => "CL_INVALID_SAMPLER"}
   $non_standard_error = [ "clGetExtensionFunctionAddressForPlatform", "clSVMAlloc" ]
   $versions_entries = []
-  $buff=20
+  $buff=50
   $license = <<EOF
 Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
 Copyright (c) 2012, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
@@ -397,7 +397,7 @@ EOF
       end
     }
     if( $known_entries[$api_entries.length+$buff-1] ) then
-      ocl_icd_bindings_source += "  #{$known_entries[i]}\n"
+      ocl_icd_bindings_source += "  #{$known_entries[$api_entries.length+$buff-1]}\n"
     else
       ocl_icd_bindings_source += "  (void *) NULL\n"
     end
