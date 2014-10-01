@@ -45,12 +45,10 @@ case $host_os in
     AC_CHECK_HEADER([CL/opencl.h],[cl_h=yes])
     ;;
 esac
-if test $cl_h = no; then
-  AC_MSG_ERROR([OpenCL headers are required])
-fi
-AC_MSG_CHECKING([whether OpenCL headers 2.0 are available])
-AC_PREPROC_IFELSE([
-  AC_LANG_PROGRAM([[
+if test $cl_h = yes; then
+  AC_MSG_CHECKING([whether OpenCL headers 2.0 are available])
+  AC_PREPROC_IFELSE([
+    AC_LANG_PROGRAM([[
 #if defined(__APPLE__) || defined(__MACOSX)
 #  include <OpenCL/opencl.h>
 #else
@@ -59,13 +57,14 @@ AC_PREPROC_IFELSE([
 #ifndef CL_VERSION_2_0
 #  error Cannot find CL_VERSION_2_0 symbol
 #endif
-    ]], [[
-    ]])],[
-  AC_MSG_RESULT([yes])
-],[
-  AC_MSG_RESULT([no])
-  AC_MSG_FAILURE([OpenCL headers for OpenCL 2.0 are required])
-])
+      ]], [[
+      ]])],[
+    AC_MSG_RESULT([yes])
+  ],[
+    AC_MSG_RESULT([no])
+    cl_h=no
+  ])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
@@ -96,6 +95,28 @@ if test "$pthread_once" = yes ; then
   ], [
     AC_MSG_ERROR([No pthread detected on this platform!])
   ])
+fi
+
+# --enable-official-khronos-headers
+AC_ARG_ENABLE([official-khronos-headers],
+  [AS_HELP_STRING([--enable-official-khronos-headers],
+               [use official Khronos OpenCL headers provided in the sources instead of OpenCL headers installed on the system])],
+  [khronos_headers=$enableval],
+  [khronos_headers=may])
+
+AS_CASE([$cl_h,$khronos_headers],
+  [no,no], [AC_MSG_ERROR([No 2.0 OpenCL headers available and --disable-official-khronos-headers used])],
+  [no,*], [khronos_headers=yes],
+  [yes,yes], [AC_MSG_WARN([Using internal copy of OpenCL headers as requested, even if they are available on the system])],
+  [yes,*], [khronos_headers=no],
+  [AC_MSG_ERROR([Internal error. Please, report this bug])])
+
+if test $khronos_headers = no; then
+  AC_MSG_NOTICE([using system OpenCL headers])
+else
+  AC_MSG_NOTICE([using internal copy of OpenCL headers])
+  AM_CPPFLAGS="$AM_CPPFLAGS -I\${abs_top_srcdir}/khronos-headers"
+  AC_SUBST([AM_CPPFLAGS])
 fi
 
 # --disable-debug

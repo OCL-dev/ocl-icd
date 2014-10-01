@@ -4,13 +4,13 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = . doc tests
 
 RUBY=ruby
-AM_CPPFLAGS = -Wall
+AM_CPPFLAGS = -Wall @AM_CPPFLAGS@
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA= OpenCL.pc ocl-icd.pc
 
 EXTRA_DIST=icd_generator.rb ocl_interface.yaml bootstrap \
-	$(TESTFILES)
+	$(TESTFILES) khronos-headers
 
 ##################################################################
 # Main OpenCL ICD Loader library
