@@ -326,7 +326,6 @@ struct _cl_icd_dispatch {
 EOF
     nb=0
     $api_entries_array.each { |entry|
-      nb=nb+1
       version = entry.split("\n").
 	grep(/ CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_]/).join('').
 	gsub(/.* CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_].*$/, '\1')
@@ -343,6 +342,7 @@ EOF
 	ocl_icd_header += '#endif'+"\n"
       end
       ocl_icd_header += "\n"
+      nb=nb+1
     }
     ocl_icd_header += "};\n"
     ocl_icd_header += "#endif\n\n"
