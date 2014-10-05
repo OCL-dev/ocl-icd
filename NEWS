@@ -1,4 +1,12 @@
 
+Version 2.2.2
+=============
+
+Vincent Danjean (3):
+      Avoid warnings with 2.0 OpenCL headers when using 1.2 deprecated functions
+      Avoid using types not supported by OpenCL headers in ocl_icd.h
+      Release 2.2.2
+
 Version 2.2.1
 =============
 
