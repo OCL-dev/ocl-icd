@@ -313,6 +313,7 @@ EOF
     ocl_icd_header += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
     ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
     ocl_icd_header += "#  include <CL/opencl.h>\n"
     ocl_icd_header += self.include_headers
     ocl_icd_header += "#pragma GCC diagnostic pop\n"
