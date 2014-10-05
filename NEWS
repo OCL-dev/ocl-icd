@@ -1,4 +1,11 @@
 
+Version 2.2.3
+=============
+
+Vincent Danjean (2):
+      Fix numbers in unknown members of dispatch table to avoid to reuse one
+      Release 2.2.3
+
 Version 2.2.2
 =============
 
