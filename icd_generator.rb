@@ -324,11 +324,25 @@ EOF
 
 struct _cl_icd_dispatch {
 EOF
+    nb=0
     $api_entries_array.each { |entry|
+      nb=nb+1
+      version = entry.split("\n").
+	grep(/ CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_]/).join('').
+	gsub(/.* CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_].*$/, '\1')
+      if (version != '') then
+	ocl_icd_header += '#ifdef CL_'+version+"\n"
+      end
       ocl_icd_header += entry.gsub("\r","").
 	sub(/CL_API_CALL\n?(.*?)\(/m,'(CL_API_CALL*\1)('+"\n  ").
 	gsub(/\) (CL_API_SUFFIX__VERSION)/m,"\n) \\1").gsub(/\s*$/,'').
-	gsub(/^[\t ]+/,"    ").gsub(/^([^\t ])/, '  \1') + "\n\n"
+	gsub(/^[\t ]+/,"    ").gsub(/^([^\t ])/, '  \1') + "\n"
+      if (version != '') then
+	ocl_icd_header += '#else'+"\n"
+	ocl_icd_header += '  CL_API_ENTRY cl_int (CL_API_CALL* clUnknown'+nb.to_s+")(void);\n"
+	ocl_icd_header += '#endif'+"\n"
+      end
+      ocl_icd_header += "\n"
     }
     ocl_icd_header += "};\n"
     ocl_icd_header += "#endif\n\n"
