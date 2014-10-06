@@ -223,6 +223,7 @@ EOF
     run_dummy_icd += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
     run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
     run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
     run_dummy_icd += "#  include <CL/opencl.h>\n"
     run_dummy_icd += self.include_headers
     run_dummy_icd += "#pragma GCC diagnostic pop\n"
