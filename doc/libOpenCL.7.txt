@@ -17,7 +17,7 @@ any OpenCL implementation itself, but merly act as a dispatcher to real OpenCL
 implementations provided as OpenCL Installable Client Driver (ICD).
 An ICD loader should be able to load ICDs provided by any vendors.
 
-According to OpenCL specifications from Khronos (see [Kronos]), the ICD Loader
+According to OpenCL specifications from Khronos (see [Khronos]), the ICD Loader
 looks for files into '`/etc/OpenCL/vendors/`' directory and, for each file
 whose name ends with '`.icd`', the ICD Loader loads with **dlopen**(3) the
 shared library whose name is on the first line of the '`.icd`' file.
@@ -26,14 +26,14 @@ Shared library name in ".icd" files can have its path, or it can be a plain
 filename. In the latter case, the ICD shared library will be look for into the
 standard dynamic loader paths.
 
-ENVIRONNEMENT
+ENVIRONMENT
 -------------
 Some environment variables can be used modify the default behavior of
 libOpenCL.
 
 *OCL_ICD_VENDORS*::
 This variable allows one to change the way ICD are searched on the system.
-Several cases are considerated:
+Several cases are considered:
 
 a. if *$OCL_ICD_VENDORS* is a directory path, then this path replaces the
   "/etc/OpenCL/vendors" path in the standard behavior: the loader will use the
@@ -50,9 +50,9 @@ c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
 *OCL_ICD_ASSUME_ICD_EXTENSION*::
-  If set, contrary the the Kronos specification, the loader will not check that
+  If set, contrary the Khronos specification, the loader will not check that
   the loaded ICDs declare the `cl_khr_icd` extension. You may need to define
-  this environment variable if you are using the Intel ICD toguether with
+  this environment variable if you are using the Intel ICD together with
   *optirun*(1). Else, a bug into the Intel ICD will make the application crash.
 
 *OCL_ICD_DEBUG*::
@@ -74,4 +74,4 @@ development.
 
 SEE ALSO
 --------
-http://www.khronos.org/registry/cl/[Kronos OpenCL registry website]
+http://www.khronos.org/registry/cl/[Khronos OpenCL registry website]
