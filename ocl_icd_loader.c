@@ -319,6 +319,32 @@ static char* _malloc_clGetPlatformInfo(clGetPlatformInfo_fn plt_info_ptr,
   RETURN_STR(param_value);
 }
 
+static void _count_devices(struct platform_icd *p) {
+  cl_int error;
+
+  /* Ensure they are 0 in case of errors */
+  p->ngpus = p->ncpus = p->ndevs = 0;
+
+  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
+  if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
+    debug(D_WARN, "Error %s while counting GPU devices in platform %p",
+	  _clerror2string(error), p->pid);
+  }
+
+  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
+  if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
+    debug(D_WARN, "Error %s while counting CPU devices in platform %p",
+	  _clerror2string(error), p->pid);
+  }
+
+  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
+  if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
+    debug(D_WARN, "Error %s while counting ALL devices in platform %p",
+	  _clerror2string(error), p->pid);
+  }
+
+}
+
 static inline void _find_and_check_platforms(cl_uint num_icds) {
   cl_uint i;
   _num_icds = 0;
@@ -425,6 +451,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	free(param_value);
       }
 #endif
+      _count_devices(p);
       num_valid_platforms++;
       _num_picds++;
     }

@@ -366,11 +366,15 @@ struct vendor_icd {
   void *	dl_handle;
   clGetExtensionFunctionAddress_fn ext_fn_ptr;
 };
+
 struct platform_icd {
-  char *	 extension_suffix;
-  char *	 version;
+  char *	extension_suffix;
+  char *	version;
   struct vendor_icd *vicd;
   cl_platform_id pid;
+  cl_uint	ngpus; /* number of GPU devices */
+  cl_uint	ncpus; /* number of CPU devices */
+  cl_uint	ndevs; /* total number of devices, of all types */
 };
 
 EOF
