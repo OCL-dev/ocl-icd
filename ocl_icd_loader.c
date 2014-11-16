@@ -56,8 +56,8 @@ int debug_ocl_icd_mask=0;
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
 
 inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
-  debug(D_DUMP, "%s %p={ num=%i, first=%i, handle=%p, f=%p}\n", info,
-	v, v->num_platforms, v->first_platform, v->dl_handle, v->ext_fn_ptr);
+  debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
+	v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
 }
 
 struct vendor_icd *_icds=NULL;
@@ -435,7 +435,6 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       dump_vendor_icd("after looking for platforms", &_icds[_num_icds]);
       _num_icds++;
       picd->num_platforms = num_valid_platforms;
-      _icds[i].first_platform = _num_picds - num_valid_platforms;
     } else {
       dlclose(dlh);
     }

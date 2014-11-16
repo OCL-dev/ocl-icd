@@ -363,7 +363,6 @@ typedef __typeof__(clGetExtensionFunctionAddress) *clGetExtensionFunctionAddress
 extern const struct func_desc function_description[];
 struct vendor_icd {
   cl_uint	num_platforms;
-  cl_uint	first_platform;
   void *	dl_handle;
   clGetExtensionFunctionAddress_fn ext_fn_ptr;
 };
