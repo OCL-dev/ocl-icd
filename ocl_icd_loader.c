@@ -2,16 +2,16 @@
 Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
 Copyright (c) 2012, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
-      
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    
+
 1. Redistributions of source code must retain the above copyright notice, this
    list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
    and/or other materials provided with the distribution.
-        
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -213,7 +213,7 @@ static inline unsigned int _open_driver(unsigned int num_icds,
   if (f==NULL) {
     RETURN(num_icds);
   }
-  
+
   fseek(f, 0, SEEK_END);
   lib_path_length = ftell(f)+1;
   fseek(f, 0, SEEK_SET);
@@ -232,7 +232,7 @@ static inline unsigned int _open_driver(unsigned int num_icds,
   }
 
   lib_path_length = strnlen(lib_path, lib_path_length);
-  
+
   if( lib_path[lib_path_length-1] == '\n' )
     lib_path[lib_path_length-1] = '\0';
 
@@ -328,9 +328,9 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     struct vendor_icd *picd = &_icds[i];
     void* dlh = _icds[i].dl_handle;
     picd->ext_fn_ptr = _get_function_addr(dlh, NULL, "clGetExtensionFunctionAddress");
-    clIcdGetPlatformIDsKHR_fn plt_fn_ptr = 
+    clIcdGetPlatformIDsKHR_fn plt_fn_ptr =
       _get_function_addr(dlh, picd->ext_fn_ptr, "clIcdGetPlatformIDsKHR");
-    clGetPlatformInfo_fn plt_info_ptr = 
+    clGetPlatformInfo_fn plt_info_ptr =
       _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
     if( picd->ext_fn_ptr == NULL
 	|| plt_fn_ptr == NULL
@@ -388,7 +388,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 		      }
 		      debug(D_DUMP, "Supported extensions: %s", param_value);
 		      if( strstr(param_value, "cl_khr_icd") == NULL){
-			      free(param_value); 
+			      free(param_value);
 			      debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
 			      continue;
 		      }
@@ -464,7 +464,7 @@ static void __initClIcd( void ) {
       is_dir=1;
     }
   }
-  
+
   if (!is_dir) {
     debug(D_LOG,"Only loading '%s' as an ICD", dir_path);
     num_icds = 1;
@@ -475,7 +475,7 @@ static void __initClIcd( void ) {
     if(dir == NULL) {
       if (errno == ENOTDIR) {
         debug(D_DUMP, "%s is not a directory, trying to use it as a ICD libname",
-  	dir_path);
+	  dir_path);
       }
       goto abort;
     }
@@ -490,7 +490,7 @@ static void __initClIcd( void ) {
   if (_icds == NULL) {
     goto abort;
   }
-  
+
   if (!is_dir) {
     if (_string_end_with_icd(dir_path)) {
       num_icds = 0;
@@ -629,7 +629,7 @@ typedef enum {
 
 static cl_int clGetICDLoaderInfoOCLICD(
   cl_icdl_info     param_name,
-  size_t           param_value_size, 
+  size_t           param_value_size,
   void *           param_value,
   size_t *         param_value_size_ret)
 {
