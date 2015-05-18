@@ -1,4 +1,17 @@
 
+Version 2.2.4
+=============
+
+Brice Videau (1):
+      Consistency.
+
+Vincent Danjean (4):
+      Avoid using system-wide vendors files at test time
+      avoid loading ICD at library init time
+      Improve tests
+      Fix initialization in case of default platform use
+      Release 2.2.4
+
 Version 2.2.3
 =============
 
