@@ -589,6 +589,7 @@ cl_platform_id __attribute__((visibility("internal")))
 getDefaultPlatformID() {
   static cl_platform_id defaultPlatformID=NULL;
   static int defaultSet=0;
+  _initClIcd();
   if (! defaultSet) {
     do {
       if(_num_picds == 0) {
