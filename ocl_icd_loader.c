@@ -544,9 +544,7 @@ static int gard=0;
 volatile static __thread int in_init = 0;
 volatile static cl_uint _initialized = 0;
 
-static inline void __attribute__((constructor)) _initClIcd( void ) {
-  if( _initialized )
-    return;
+static void _initClIcd_real( void ) {
 #ifdef USE_PTHREAD
   if (in_init) {
     /* probably reentrency, in_init is a __thread variable */
@@ -579,6 +577,12 @@ static inline void __attribute__((constructor)) _initClIcd( void ) {
   }
 #endif
   _initialized = 1;
+}
+
+static inline void _initClIcd( void ) {
+  if( __builtin_expect (_initialized, 1) )
+    return;
+  _initClIcd_real();
 }
 
 cl_platform_id __attribute__((visibility("internal")))
