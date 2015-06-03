@@ -188,5 +188,37 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
 }
 SYMB(clGetPlatformInfo);
 
+CL_API_ENTRY cl_int CL_API_CALL
+INTclGetDeviceIDs(cl_platform_id   pid /* platform */,
+                  cl_device_type   ctype /* device_type */,
+                  cl_uint          num /* num_entries */,
+                  cl_device_id *   devid /* devices */,
+                  cl_uint *        res /* num_devices */) CL_API_SUFFIX__VERSION_1_0
+{
+	char* ENVNAME=NULL;
+	if (res == NULL) { return CL_SUCCESS; }
+	switch (ctype) {
+	case CL_DEVICE_TYPE_GPU:
+		ENVNAME="NB_GPU";
+		break;
+	case CL_DEVICE_TYPE_CPU:
+		ENVNAME="NB_CPU";
+		break;
+	case CL_DEVICE_TYPE_ALL:
+		ENVNAME="NB_ALL";
+		break;
+	}
+	if (ENVNAME==NULL) {
+		*res=0;
+	} else {
+		char* strnb=getenv(ENVNAME);
+		if (strnb) {
+			*res=atoi(getenv(ENVNAME));
+		} else {
+			*res=0;
+		}
+	}
+	return CL_SUCCESS;
+}
 #pragma GCC visibility pop
 

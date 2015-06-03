@@ -30,12 +30,12 @@ module IcdGenerator
   $api_entries = {}
   $api_entries_array = []
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
-  $know_entries = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
-  $use_name_in_test = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs" }
+  $know_entries = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs", 2 => "clGetDeviceIDs" }
+  $use_name_in_test = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs", 2 => "clGetDeviceIDs" }
   # do not call these functions when trying to discover the mapping
   $forbidden_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
     "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler",
-    "clSetCommandQueueProperty"]
+    "clSetCommandQueueProperty", "clGetDeviceIDs"]
   $windows_funcs = ["clGetDeviceIDsFromD3D10KHR", "clCreateFromD3D10BufferKHR",
     "clCreateFromD3D10Texture2DKHR", "clCreateFromD3D10Texture3DKHR",
     "clEnqueueAcquireD3D10ObjectsKHR", "clEnqueueReleaseD3D10ObjectsKHR",
@@ -244,6 +244,8 @@ EOF
          run_dummy_icd += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
        elsif func_name == "clGetExtensionFunctionAddressForPlatform" then
          run_dummy_icd += "  #{func_name}((cl_platform_id)chosen_platform, \"clIcdGetPlatformIDsKHR\");\n"
+       elsif func_name == "clGetDeviceIDs" then
+         run_dummy_icd += "  #{func_name}((cl_platform_id)chosen_platform,0,0,NULL,NULL);\n"
        else
          run_dummy_icd += "  oclFuncPtr = (oclFuncPtr_fn)" + func_name + ";\n"
          run_dummy_icd += "  oclFuncPtr(chosen_platform);\n"
@@ -263,16 +265,16 @@ EOF
 #include <dlfcn.h>
 
 #define F(f) \\
-__attribute__((weak)) int f (void* arg, void* arg2) { \\
-  void (* p)(void*, void*)=NULL; \\
+__attribute__((weak)) int f (void* arg, int arg2, int arg3, void* arg4, void* arg5) { \\
+  void (* p)(void*, int, int, void*, void*)=NULL; \\
   p=dlsym(RTLD_NEXT, #f); \\
   if (p) { \\
-    (*p)(arg, arg2); \\
+    (*p)(arg, arg2, arg3, arg4, arg5); \\
   } else { \\
     printf("-1 : "); \\
   } \\
   return 0; \\
-} 
+}
 
 EOF
     $api_entries.each_key { |func_name|
