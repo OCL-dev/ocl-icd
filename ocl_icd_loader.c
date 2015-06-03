@@ -345,6 +345,28 @@ static void _count_devices(struct platform_icd *p) {
 
 }
 
+static int _cmp_platforms(const void *_a, const void *_b) {
+	const struct platform_icd *a=(const struct platform_icd *)_a;
+	const struct platform_icd *b=(const struct platform_icd *)_b;
+
+	/* sort first platforms handling max gpu */
+	if (a->ngpus > b->ngpus) return -1;
+	if (a->ngpus < b->ngpus) return 1;
+	/* sort next platforms handling max cpu */
+	if (a->ncpus > b->ncpus) return -1;
+	if (a->ncpus < b->ncpus) return 1;
+	/* sort then platforms handling max devices */
+	if (a->ndevs > b->ndevs) return -1;
+	if (a->ndevs < b->ndevs) return 1;
+	/* else consider platforms equal */
+	return 0;
+}
+
+static void _sort_platforms(struct platform_icd *picds, int npicds) {
+	qsort(picds, npicds, sizeof(*picds),
+		&_cmp_platforms);
+}
+
 static inline void _find_and_check_platforms(cl_uint num_icds) {
   cl_uint i;
   _num_icds = 0;
@@ -388,20 +410,16 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     }
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
-      struct platform_icd p;
-      cl_uint sort_position = 0;
+      struct platform_icd *p=&_picds[_num_picds];
       char *param_value=NULL;
-      p.extension_suffix=NULL;
-      p.vicd=&_icds[i];
-      p.pid=platforms[j];
-      p.ngpus = 0;
-      p.ncpus = 0;
-      p.ndevs = 0;
+      p->extension_suffix=NULL;
+      p->vicd=&_icds[i];
+      p->pid=platforms[j];
 #ifdef DEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
         debug_ocl_icd_mask &= ~D_TRACE;
-	dump_platform(p.vicd->ext_fn_ptr, p.pid);
+	dump_platform(p->vicd->ext_fn_ptr, p->pid);
         debug_ocl_icd_mask |= log;
       }
 #endif
@@ -411,7 +429,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	       */
 	      const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
 	      if (! str || str[0]==0) {
-		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_EXTENSIONS, "extensions");
+		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
 		      if (param_value == NULL){
 			      debug(D_WARN, "Skipping platform %i", j);
 			      continue;
@@ -425,56 +443,37 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 		      free(param_value);
 	      }
       }
-      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
       if (param_value == NULL){
 	debug(D_WARN, "Skipping platform %i", j);
         continue;
       }
-      p.extension_suffix = param_value;
+      p->extension_suffix = param_value;
       debug(D_DUMP|D_LOG, "Extension suffix: %s", param_value);
 #ifdef DEBUG_OCL_ICD
-      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_PROFILE, "profile");
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_PROFILE, "profile");
       if (param_value != NULL){
         debug(D_DUMP, "Profile: %s", param_value);
 	free(param_value);
       }
-      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_VERSION, "version");
-      p.version = param_value;
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VERSION, "version");
+      p->version = param_value;
       if (param_value != NULL){
         debug(D_DUMP, "Version: %s", param_value);
 	free(param_value);
       }
-      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_NAME, "name");
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_NAME, "name");
       if (param_value != NULL){
         debug(D_DUMP, "Name: %s", param_value);
 	free(param_value);
       }
-      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p.pid, CL_PLATFORM_VENDOR, "vendor");
+      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VENDOR, "vendor");
       if (param_value != NULL){
         debug(D_DUMP, "Vendor: %s", param_value);
 	free(param_value);
       }
 #endif
-      _count_devices(&p);
-      /* The platform list is kept sorted lexicographically by (g, c, a)
-       * where g is the number of GPU devices in a platform, c the number of
-       * CPU devices and a the number of devices of all types.
-       * We keep it sorted at the moment of insertion of a new platform */
-      if (_num_picds > 0) {
-	while (sort_position < _num_picds) {
-	  /* platform to compare against */
-	  const struct platform_icd *o = _picds + sort_position;
-	  if ((p.ngpus > o->ngpus) || (p.ngpus == o->ngpus && p.ncpus > o->ncpus) ||
-	    (p.ngpus == o->ngpus && p.ncpus == o->ncpus && p.ndevs > o->ndevs))
-	    break;
-	  sort_position++;
-	}
-	/* shift lower-tier platforms down, if necessary */
-	if (sort_position < _num_picds)
-	  memmove(_picds + sort_position + 1, _picds + sort_position,
-	    (_num_picds - sort_position)*sizeof(*_picds));
-      }
-      memcpy(_picds + sort_position, &p, sizeof(p));
+      _count_devices(p);
       num_valid_platforms++;
       _num_picds++;
     }
@@ -490,6 +489,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     }
     free(platforms);
   }
+  _sort_platforms(&_picds[0], _num_picds);
 }
 
 static void __initClIcd( void ) {
