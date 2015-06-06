@@ -580,12 +580,13 @@ EOF
       error_handler.call
       ocl_icd_loader_gen_source += "  }\n"
       if return_type != "void" then
-        ocl_icd_loader_gen_source += "  RETURN(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
-        ocl_icd_loader_gen_source += ps.join(", ")
-        ocl_icd_loader_gen_source += "));\n"
+        return_debug="RETURN"
       else
-        ocl_icd_loader_gen_source += "  return;"
+        return_debug="return"
       end
+      ocl_icd_loader_gen_source += "  #{return_debug}(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+      ocl_icd_loader_gen_source += ps.join(", ")
+      ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
