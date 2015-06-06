@@ -1,4 +1,20 @@
 
+Version 2.2.5
+=============
+
+Giuseppe Bilotta (5):
+      Fix a few typos
+      Whitespace cleanup
+      Remove useless vendor_icd.first_platform
+      Count GPU, CPU and ALL devices on newly inserted platforms
+      Sort platforms by number of GPU, CPU and ALL devices
+
+Vincent Danjean (4):
+      Sort platforms in one pass
+      Correctly handle clGetDeviceIDs in generator and tests
+      [BUG] call the function when the return type is void
+      Release 2.2.5
+
 Version 2.2.4
 =============
 
