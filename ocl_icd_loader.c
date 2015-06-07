@@ -270,7 +270,7 @@ static void* _get_function_addr(void* dlh, clGetExtensionFunctionAddress_fn fn, 
     }
 #ifdef DEBUG_OCL_ICD
     if (addr1 && addr2 && addr1!=addr2) {
-      debug(D_WARN, "Function and symbol '%s' have different addresses!", name);
+      debug(D_WARN, "Function and symbol '%s' have different addresses (%p != %p)!", name, addr2, addr1);
     }
 #endif
   }

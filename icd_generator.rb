@@ -28,14 +28,17 @@ require 'yaml'
 
 module IcdGenerator
   $api_entries = {}
+  $key_entries = {}
   $api_entries_array = []
   $cl_objects = ["platform_id", "device_id", "context", "command_queue", "mem", "program", "kernel", "event", "sampler"]
   $know_entries = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs", 2 => "clGetDeviceIDs" }
   $use_name_in_test = { 1 => "clGetPlatformInfo", 0 => "clGetPlatformIDs", 2 => "clGetDeviceIDs" }
   # do not call these functions when trying to discover the mapping
-  $forbidden_funcs = ["clGetExtensionFunctionAddress", "clGetPlatformIDs",
-    "clGetPlatformInfo", "clGetGLContextInfoKHR", "clUnloadCompiler",
-    "clSetCommandQueueProperty", "clGetDeviceIDs"]
+  $forbidden_funcs = [
+    "clUnloadCompiler", # No parameters so no way to forward to an ICD, OpenCL 1.0
+    "clGetPlatformIDs", # Implemented directly within the ICD Loader, not forwarded to ICD
+  ]
+  # windows function to ignore when loading the database
   $windows_funcs = ["clGetDeviceIDsFromD3D10KHR", "clCreateFromD3D10BufferKHR",
     "clCreateFromD3D10Texture2DKHR", "clCreateFromD3D10Texture3DKHR",
     "clEnqueueAcquireD3D10ObjectsKHR", "clEnqueueReleaseD3D10ObjectsKHR",
@@ -141,6 +144,7 @@ EOF
       version = value.match(/SUFFIX__VERSION_(\d_\d)/m)[1]
       $versions_entries[version].push(entry_name)
       $known_entries[key] = entry_name
+      $key_entries[entry_name] = key
       $api_entries[entry_name] = value
     }
     $api_entries_array = []
@@ -228,9 +232,12 @@ EOF
     run_dummy_icd += self.include_headers
     run_dummy_icd += "#pragma GCC diagnostic pop\n"
     run_dummy_icd += "\n\n"
-    run_dummy_icd += "typedef CL_API_ENTRY cl_int (CL_API_CALL* oclFuncPtr_fn)(cl_platform_id platform);\n\n"
+    $api_entries.each_key { |func_name|
+       next if $forbidden_funcs.include?(func_name)
+       run_dummy_icd += $api_entries[func_name]+";\n"
+    }
+    run_dummy_icd += "\n\n"
     run_dummy_icd += "void call_all_OpenCL_functions(cl_platform_id chosen_platform) {\n"
-    run_dummy_icd += "  oclFuncPtr_fn oclFuncPtr;\n"
     run_dummy_icd += "  cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)chosen_platform, 0 };\n"
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
@@ -242,15 +249,32 @@ EOF
          run_dummy_icd += "  #{func_name}(properties,CL_DEVICE_TYPE_CPU,NULL,NULL,NULL);\n"
        elsif func_name == "clWaitForEvents" then
          run_dummy_icd += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
-       elsif func_name == "clGetExtensionFunctionAddressForPlatform" then
-         run_dummy_icd += "  #{func_name}((cl_platform_id)chosen_platform, \"clIcdGetPlatformIDsKHR\");\n"
-       elsif func_name == "clGetDeviceIDs" then
-         run_dummy_icd += "  #{func_name}((cl_platform_id)chosen_platform,0,0,NULL,NULL);\n"
+       elsif func_name == "clGetExtensionFunctionAddress" then
+         run_dummy_icd += "  #{func_name}(\"extLIG\");\n"
+       elsif func_name == "clUnloadCompiler" then
+         run_dummy_icd += "  #{func_name}();\n"
        else
-         run_dummy_icd += "  oclFuncPtr = (oclFuncPtr_fn)" + func_name + ";\n"
-         run_dummy_icd += "  oclFuncPtr(chosen_platform);\n"
+         params = $api_entries[func_name].gsub(/[[:space:]]+/, ' ')
+         params.gsub!(/[\/][*](([^*]*)[*][^\/])*[^*]*[*][\/]/,'')
+         params.gsub!(/^[^(]*[(] *(.*[^ ]) *[)][^)]*$/, '\1')
+         params = params.gsub(/[^,(]+([(][^)]*[)])*[^,]*/) { |p|
+           p.gsub!("[]", "*")
+           p.gsub!("user_func", "")
+           if false && p.match(/[*]/) then
+             "NULL"
+           else
+             "(#{p})0"
+           end
+         }
+         if func_name != "clGetPlatformIDs" then
+           params.gsub!(/^([^0]*)0/, '\1chosen_platform')
+         end
+         run_dummy_icd += "  #{func_name}(#{params});\n"
        end
-       run_dummy_icd += "  printf(\"%s\\n\", \"#{func_name}\");"
+       run_dummy_icd += "  printf(\"%s\\n\", \"#{func_name}\");\n"
+       run_dummy_icd += "#ifdef OCL_ICD_PRINT_EXPECTED\n"
+       run_dummy_icd += "  printf(\"#{$key_entries[func_name]}  : %s (expected)\\n\", \"#{func_name}\");\n"
+       run_dummy_icd += "#endif\n"
        run_dummy_icd += "  fflush(NULL);\n"
     }
     run_dummy_icd += "  return;\n}\n"

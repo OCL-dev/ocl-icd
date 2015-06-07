@@ -114,6 +114,8 @@ nodist_run_dummy_icd_through_our_ICDL_SOURCES = \
 run_dummy_icd_through_our_ICDL_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) $(AM_CFLAGS)
 # we want to link to our implementation here
 run_dummy_icd_through_our_ICDL_LDADD = libOpenCL.la
+#
+run_dummy_icd_through_our_ICDL_CPPFLAGS = $(AM_CPPFLAGS) -DOCL_ICD_PRINT_EXPECTED
 
 ##################################################################
 # rules to update the database from an already installed ICD Loader
@@ -133,6 +135,12 @@ run_dummy_icd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o 
 # run the test program and update the database
 run_dummy_icd_output.yaml: run_dummy_icd install_test_lib libdummycl.la
 	"$$(dirname $<)/$$(basename $<)" > $@
+	@if grep -v -E '^(---|([0-9]* *: .*))$$' $@ ; then \
+		echo "Invalid $@ file, trying to fix it" ; \
+		grep -E '^(---|([0-9]* *: .*))$$' $@ > $@.fix ;\
+		mv $@.fix $@ ;\
+	fi
+
 CLEANFILES += run_dummy_output.yaml
 .PHONY: update-database
 update-database: icd_generator.rb run_dummy_icd_output.yaml

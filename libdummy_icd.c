@@ -97,6 +97,9 @@ CL_API_ENTRY void * CL_API_CALL INTclGetExtensionFunctionAddress(
   debug(D_LOG, "request address for %s", func_name);
   if( func_name != NULL &&  strcmp("clIcdGetPlatformIDsKHR", func_name) == 0 )
     return (void *)_GetPlatformIDs;
+  if (func_name != NULL && strcmp("extLIG", func_name) == 0) {
+    printf("65  : ");
+  }
   return NULL;
 }
 SYMB(clGetExtensionFunctionAddress);
@@ -115,6 +118,10 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
   debug_trace();
   debug(D_LOG, "request info for 0x%x", param_name);
 
+  if (param_name==0 && param_value_size==0 
+      && param_value==NULL && param_value_size_ret==NULL) {
+    printf("1  : ");
+  }
   char cl_platform_profile[] = "FULL_PROFILE";
   char cl_platform_version[] = "OpenCL 1.2";
   char cl_platform_name[] = "DummyCL" ICD_SUFFIX;
@@ -195,17 +202,20 @@ INTclGetDeviceIDs(cl_platform_id   pid /* platform */,
                   cl_device_id *   devid /* devices */,
                   cl_uint *        res /* num_devices */) CL_API_SUFFIX__VERSION_1_0
 {
+	if (ctype==0 && num==0 && devid==NULL && res==NULL) {
+		printf("2  : ");
+	}
 	char* ENVNAME=NULL;
 	if (res == NULL) { return CL_SUCCESS; }
 	switch (ctype) {
 	case CL_DEVICE_TYPE_GPU:
-		ENVNAME="NB_GPU";
+		ENVNAME="NB_GPU" ICD_SUFFIX;
 		break;
 	case CL_DEVICE_TYPE_CPU:
-		ENVNAME="NB_CPU";
+		ENVNAME="NB_CPU" ICD_SUFFIX;
 		break;
 	case CL_DEVICE_TYPE_ALL:
-		ENVNAME="NB_ALL";
+		ENVNAME="NB_ALL" ICD_SUFFIX;
 		break;
 	}
 	if (ENVNAME==NULL) {
