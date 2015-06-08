@@ -288,22 +288,47 @@ EOF
 #include <stdio.h>
 #include <dlfcn.h>
 
-#define F(f) \\
-__attribute__((weak)) int f (void* arg, int arg2, int arg3, void* arg4, void* arg5) { \\
-  void (* p)(void*, int, int, void*, void*)=NULL; \\
-  p=dlsym(RTLD_NEXT, #f); \\
-  if (p) { \\
-    (*p)(arg, arg2, arg3, arg4, arg5); \\
-  } else { \\
-    printf("-1 : "); \\
-  } \\
-  return 0; \\
-}
-
 EOF
-    $api_entries.each_key { |func_name|
-       next if $noweak_funcs.include?(func_name)
-       run_dummy_icd_weak += "F(#{func_name})\n"
+    run_dummy_icd_weak += "#pragma GCC diagnostic push\n"
+    run_dummy_icd_weak += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
+    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
+    run_dummy_icd_weak += "#  include <CL/opencl.h>\n"
+    run_dummy_icd_weak += self.include_headers
+    run_dummy_icd_weak += "#pragma GCC diagnostic pop\n"
+
+    $api_entries.each { |func_name, entry|
+      next if $noweak_funcs.include?(func_name)
+      clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
+      return_type = entry.match(/CL_API_ENTRY (.*) CL_API_CALL/)[1]
+      parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
+      parameters.gsub!(/\[.*?\]/,"")
+      parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/m,'\1')
+      run_dummy_icd_weak += clean_entry.gsub(/\*\[.*?\]/,"*  ").gsub(/\[.+?\]/,"")
+      first_parameter = parameters.match(/.*?\,/m)
+      if not first_parameter then
+        first_parameter =  parameters.match(/.*/m)[0]
+      else
+        first_parameter = first_parameter[0][0..-2]
+      end
+      fps = first_parameter.split
+      run_dummy_icd_weak += "  void (*p)()=dlsym(RTLD_NEXT, \"#{func_name}\");\n"
+      ps = parameters.split(",")
+      ps = ps.collect { |p|
+        p = p.split
+        p = p[-1].gsub("*","")
+      }
+       
+      run_dummy_icd_weak += "  if(p) {\n"
+      run_dummy_icd_weak += "    return((*(typeof(#{func_name})*)p)("
+      run_dummy_icd_weak += ps.join(", ")
+      run_dummy_icd_weak += "));\n"
+      run_dummy_icd_weak += "  } else {\n"
+      run_dummy_icd_weak += "    printf(\"-1 : \");\n"
+      run_dummy_icd_weak += "    return (#{return_type})0;\n"
+      run_dummy_icd_weak += "  }\n"
+      run_dummy_icd_weak += "}\n\n"
     }
     return run_dummy_icd_weak
   end
