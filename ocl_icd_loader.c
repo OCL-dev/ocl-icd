@@ -363,8 +363,25 @@ static int _cmp_platforms(const void *_a, const void *_b) {
 }
 
 static void _sort_platforms(struct platform_icd *picds, int npicds) {
-	qsort(picds, npicds, sizeof(*picds),
-		&_cmp_platforms);
+	debug(D_WARN, "Nb platefroms: %i", npicds);
+	if (npicds > 1) {
+		char* ocl_sort=getenv("OCL_ICD_PLATFORM_SORT");
+		if (ocl_sort!=NULL && !strcmp(ocl_sort, "none")) {
+			debug(D_LOG, "Platform not sorted");
+		} else {
+			if (ocl_sort!=NULL && strcmp(ocl_sort, "devices")) {
+				debug(D_WARN, "Unknown platform sort algorithm requested: %s", ocl_sort);
+				debug(D_WARN, "Switching do the 'devices' algorithm");
+			}
+			int i;
+			debug(D_LOG, "Platform sorted by GPU, CPU, DEV");
+			for (i=0; i<npicds; i++) {
+				_count_devices(&picds[i]);
+			}
+			qsort(picds, npicds, sizeof(*picds),
+			      &_cmp_platforms);
+		}
+	}
 }
 
 static inline void _find_and_check_platforms(cl_uint num_icds) {
@@ -473,7 +490,6 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	free(param_value);
       }
 #endif
-      _count_devices(p);
       num_valid_platforms++;
       _num_picds++;
     }
@@ -644,7 +660,7 @@ getDefaultPlatformID() {
       if(_num_picds == 0) {
 	break;
       }
-      const char *default_platform = getenv("OPENCL_ICD_DEFAULT_PLATFORM");
+      const char *default_platform = getenv("OCL_ICD_DEFAULT_PLATFORM");
       int num_default_platform;
       char *end_scan;
       if (! default_platform) {
@@ -871,21 +887,8 @@ clCreateContextFromType(const cl_context_properties *  properties ,
       i += 2;
     }
   } else {
-    const char *default_platform = getenv("OPENCL_ICD_DEFAULT_PLATFORM");
-    int num_default_platform;
-    char *end_scan;
-    if (! default_platform) {
-      num_default_platform = 0;
-    } else {
-      num_default_platform = strtol(default_platform, &end_scan, 10);
-      if (*default_platform == '\0' || *end_scan != '\0') {
-	goto out;
-      }
-    }
-    if (num_default_platform < 0 || num_default_platform >= _num_picds) {
-      goto out;
-    }
-    RETURN(_picds[num_default_platform].pid->dispatch->clCreateContextFromType
+    cl_platform_id default_platform=getDefaultPlatformID();
+    RETURN(default_platform->dispatch->clCreateContextFromType
 	(properties, device_type, pfn_notify, user_data, errcode_ret));
   }
  out:
