@@ -1,4 +1,13 @@
 
+Version 2.2.6
+=============
+
+Vincent Danjean (4):
+      Fix and improve testsuite
+      allows to avoid the platform sort and extends the testsuite
+      Improve documentation (OCL_ICD_PLATFORM_SORT and OCL_ICD_DEFAULT_PLATFORM)
+      Release 2.2.6
+
 Version 2.2.5
 =============
 
