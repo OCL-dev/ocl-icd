@@ -52,14 +52,14 @@ c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
 *OCL_ICD_ASSUME_ICD_EXTENSION*::
-  If set, contrary the Khronos specification, the loader will not check that
-  the loaded ICDs declare the `cl_khr_icd` extension. You may need to define
-  this environment variable if you are using the Intel ICD together with
-  *optirun*(1). Else, a bug into the Intel ICD will make the application crash.
+If set, contrary the Khronos specification, the loader will not check that
+the loaded ICDs declare the `cl_khr_icd` extension. You may need to define
+this environment variable if you are using the Intel ICD together with
+*optirun*(1). Else, a bug into the Intel ICD will make the application crash.
 
 *OCL_ICD_PLATFORM_SORT*::
-  Allows to choose the way platforms are sorted when presented to programs
-  through **clGetPlatformIDs**(3). Current provided algorithms are:
+Allows one to choose the way platforms are sorted when presented to programs
+through **clGetPlatformIDs**(3). Current provided algorithms are:
 
 * *devices*: first, list platforms that support most GPU, then most CPU then
   most accelerators. If *OCL_ICD_PLATFORM_SORT* is not set or set to an
@@ -67,9 +67,9 @@ c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
 * *none*: no sort is done and the order can very at each run.
 
 *OCL_ICD_DEFAULT_PLATFORM*::
-  Number of the platform to choose as defaut platform. Note that using this
-  environment variable without specifying a sort algorithm for platforms
-  is not really useful.
+Number of the platform to choose as defaut platform. Note that using this
+environment variable without specifying a sort algorithm for platforms
+is not really useful.
 
 *OCL_ICD_DEBUG*::
 +
