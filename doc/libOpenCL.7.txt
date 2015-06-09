@@ -2,6 +2,8 @@ libOpenCL(7)
 ============
 Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 :Author Initials: VD
+:revdate: 2015-06-08
+:footer-style: revdate
 :toc:
 :icons:
 :numbered:
