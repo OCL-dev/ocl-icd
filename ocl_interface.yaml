@@ -597,10 +597,10 @@
                                   cl_event *       /* event */) CL_API_SUFFIX__VERSION_1_0;
 81: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clSetEventCallback( cl_event    /* event */,
-                      cl_int      /* command_exec_callback_type */,
-                      void (CL_CALLBACK * /* pfn_notify */)(cl_event, cl_int, void *),
-                      void *      /* user_data */) CL_API_SUFFIX__VERSION_1_1;
+  clSetEventCallback(cl_event    /* event */,
+                     cl_int      /* command_exec_callback_type */,
+                     void (CL_CALLBACK * /* pfn_notify */)(cl_event, cl_int, void *),
+                     void *      /* user_data */) CL_API_SUFFIX__VERSION_1_1;
 82: |-
   CL_API_ENTRY cl_mem CL_API_CALL
   clCreateSubBuffer(cl_mem                   /* buffer */,
@@ -610,9 +610,9 @@
                     cl_int *                 /* errcode_ret */) CL_API_SUFFIX__VERSION_1_1;
 83: |-
   CL_API_ENTRY cl_int CL_API_CALL
-  clSetMemObjectDestructorCallback(  cl_mem /* memobj */, 
-                                      void (CL_CALLBACK * /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/), 
-                                      void * /*user_data */ )             CL_API_SUFFIX__VERSION_1_1;
+  clSetMemObjectDestructorCallback(cl_mem /* memobj */,
+                                   void (CL_CALLBACK * /*pfn_notify*/)( cl_mem /* memobj */, void* /*user_data*/),
+                                   void * /*user_data */ )             CL_API_SUFFIX__VERSION_1_1;
 84: |-
   CL_API_ENTRY cl_event CL_API_CALL
   clCreateUserEvent(cl_context    /* context */,
@@ -670,17 +670,17 @@
                           cl_event *          /* event */) CL_API_SUFFIX__VERSION_1_1;
 89: |-
   CL_API_ENTRY cl_int CL_API_CALL
-      clCreateSubDevicesEXT(  cl_device_id /*in_device*/,
-                              const cl_device_partition_property_ext * /* properties */,
-                              cl_uint /*num_entries*/,
-                              cl_device_id * /*out_devices*/,
-                              cl_uint * /*num_devices*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+  clCreateSubDevicesEXT(cl_device_id /*in_device*/,
+                        const cl_device_partition_property_ext * /* properties */,
+                        cl_uint /*num_entries*/,
+                        cl_device_id * /*out_devices*/,
+                        cl_uint * /*num_devices*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 90: |-
   CL_API_ENTRY cl_int CL_API_CALL
-      clRetainDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+  clRetainDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 91: |-
   CL_API_ENTRY cl_int CL_API_CALL
-      clReleaseDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
+  clReleaseDeviceEXT( cl_device_id /*device*/ ) CL_EXT_SUFFIX__VERSION_1_1;
 92: |-
   CL_API_ENTRY cl_event CL_API_CALL
   clCreateEventFromGLsyncKHR(cl_context           /* context */,
