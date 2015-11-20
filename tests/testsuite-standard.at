@@ -46,7 +46,8 @@ AT_CHECK([sed -e "s/ *(expected)//" stdout | uniq -c | grep -v '^ *2 ' ], 0, [  
 AT_CLEANUP
 
 AT_SETUP([ICD Loader extension])
-AT_EXPORT([OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_EXPORT([OCL_ICD_DEBUG],[0],
+	[OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
 AT_CHECK([ocl_test_icdl], 0,
 [ocl_version: OpenCL 1.2
 version: AT_PACKAGE_VERSION
