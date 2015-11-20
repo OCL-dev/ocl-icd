@@ -251,6 +251,8 @@ EOF
          run_dummy_icd += "  #{func_name}(1,(cl_event*)&chosen_platform);\n"
        elsif func_name == "clGetExtensionFunctionAddress" then
          run_dummy_icd += "  #{func_name}(\"extLIG\");\n"
+       elsif func_name == "clGetExtensionFunctionAddressForPlatform" then
+         run_dummy_icd += "  #{func_name}((cl_platform_id )chosen_platform,\"extLIG\");\n"
        elsif func_name == "clUnloadCompiler" then
          run_dummy_icd += "  #{func_name}();\n"
        else
@@ -569,9 +571,24 @@ EOF
     return ocl_icd_bindings_source
   end
 
+  def self.generate_get_extension_address_for_platform
+    src = <<EOF
+  if( func_name == NULL )
+    return NULL;
+EOF
+    $api_entries.each { |func_name, entry|
+      src += <<EOF if func_name.match(/KHR$|EXT$/)
+  if( !strcmp(func_name,"#{func_name}") )
+    return (void *)#{func_name};
+EOF
+    }
+    return src
+  end
+
   def self.generate_ocl_icd_loader_gen_source
     skip_funcs = $specific_loader_funcs
     ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
+    ocl_icd_loader_gen_source += "#include <string.h>\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
     ocl_icd_loader_gen_source += "#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
@@ -591,6 +608,7 @@ EOF
       end
       fps = first_parameter.split
       ocl_icd_loader_gen_source += "  debug_trace();\n"
+      ocl_icd_loader_gen_source += generate_get_extension_address_for_platform if func_name == "clGetExtensionFunctionAddressForPlatform"
       raise "Unsupported data_type #{fps[0]}" if not $cl_data_type_error[fps[0]]
       ps = parameters.split(",")
       ps = ps.collect { |p|

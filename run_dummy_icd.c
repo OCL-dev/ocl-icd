@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  include <CL/opencl.h>
 #  include <CL/cl.h>
 #  include <CL/cl_gl.h>
+#  include <CL/cl_egl.h>
 #  include <CL/cl_ext.h>
 #  include <CL/cl_gl_ext.h>
 #pragma GCC diagnostic pop

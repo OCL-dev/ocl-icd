@@ -737,6 +737,26 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
   _initClIcd();
   if( func_name == NULL )
     return NULL;
+  if( !strcmp(func_name,"clGetGLContextInfoKHR") )
+    return (void *)clGetGLContextInfoKHR;
+  if( !strcmp(func_name,"clCreateSubDevicesEXT") )
+    return (void *)clCreateSubDevicesEXT;
+  if( !strcmp(func_name,"clRetainDeviceEXT") )
+    return (void *)clRetainDeviceEXT;
+  if( !strcmp(func_name,"clReleaseDeviceEXT") )
+    return (void *)clReleaseDeviceEXT;
+  if( !strcmp(func_name,"clCreateEventFromGLsyncKHR") )
+    return (void *)clCreateEventFromGLsyncKHR;
+  if( !strcmp(func_name,"clCreateFromEGLImageKHR") )
+    return (void *)clCreateFromEGLImageKHR;
+  if( !strcmp(func_name,"clEnqueueAcquireEGLObjectsKHR") )
+    return (void *)clEnqueueAcquireEGLObjectsKHR;
+  if( !strcmp(func_name,"clEnqueueReleaseEGLObjectsKHR") )
+    return (void *)clEnqueueReleaseEGLObjectsKHR;
+  if( !strcmp(func_name,"clCreateEventFromEGLSyncKHR") )
+    return (void *)clCreateEventFromEGLSyncKHR;
+  if( !strcmp(func_name,"clGetKernelSubGroupInfoKHR") )
+    return (void *)clGetKernelSubGroupInfoKHR;
   cl_uint suffix_length;
   cl_uint i;
   void * return_value=NULL;
