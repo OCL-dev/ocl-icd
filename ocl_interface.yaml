@@ -889,7 +889,7 @@
                           const cl_egl_image_properties_khr * /* properties */,
                           cl_int *                    /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 120: |-
-  CL_API_ENTRY cl_int CL_API_CAL
+  CL_API_ENTRY cl_int CL_API_CALL
   clEnqueueAcquireEGLObjectsKHR(cl_command_queue /* command_queue */,
                                 cl_uint          /* num_objects */,
                                 const cl_mem *   /* mem_objects */,
