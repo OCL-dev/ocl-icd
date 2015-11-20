@@ -1,5 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+#
+# Copyright (c) 2012-2015, Brice Videau <brice.videau@imag.fr>
+# Copyright (c) 2012-2015, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
+
 
 AC_PREREQ([2.67])
 AC_INIT([OpenCL ICD Loader], [2.2.7], [ocl-icd-devel@lists.forge.imag.fr], [ocl-icd])
