@@ -575,13 +575,17 @@ EOF
     src = <<EOF
   if( func_name == NULL )
     return NULL;
-EOF
-    $api_entries.each { |func_name, entry|
-      src += <<EOF if func_name.match(/KHR$|EXT$/)
-  if( !strcmp(func_name,"#{func_name}") )
-    return (void *)#{func_name};
-EOF
+  struct func_desc const * fn=&function_description[0];
+  int lenfn=strlen(func_name);
+  if (lenfn > 3 &&
+      (strcmp(func_name+lenfn-3, "KHR")==0 || strcmp(func_name+lenfn-3, "EXT")==0)) {
+    while (fn->name != NULL) {
+      if (strcmp(func_name, fn->name)==0)
+        RETURN(fn->addr);
+      fn++;
     }
+  }
+EOF
     return src
   end
 
