@@ -55,7 +55,7 @@ module IcdGenerator
   $specific_loader_funcs = ["clGetExtensionFunctionAddress","clGetPlatformIDs",
                          "clGetGLContextInfoKHR", "clUnloadCompiler",
     "clCreateContext", "clCreateContextFromType", "clWaitForEvents"]
-  $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h",
+  $header_files = ["/usr/include/CL/cl.h", "/usr/include/CL/cl_gl.h", "/usr/include/CL/cl_egl.h",
     "/usr/include/CL/cl_ext.h", "/usr/include/CL/cl_gl_ext.h"]
   $windows_header_files = ["/usr/include/CL/cl_dx9_media_sharing.h", "/usr/include/CL/cl_d3d11.h", "/usr/include/CL/cl_d3d10.h"]
   $cl_data_type_error = { "cl_platform_id"   => "CL_INVALID_PLATFORM",
