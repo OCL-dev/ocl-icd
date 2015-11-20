@@ -731,6 +731,17 @@ static cl_int clGetICDLoaderInfoOCLICD(
   return CL_SUCCESS;
 }
 
+typeof(clGetGLContextInfoKHR) clGetGLContextInfoKHR_hid;
+typeof(clCreateSubDevicesEXT) clCreateSubDevicesEXT_hid;
+typeof(clRetainDeviceEXT) clRetainDeviceEXT_hid;
+typeof(clReleaseDeviceEXT) clReleaseDeviceEXT_hid;
+typeof(clCreateEventFromGLsyncKHR) clCreateEventFromGLsyncKHR_hid;
+typeof(clCreateFromEGLImageKHR) clCreateFromEGLImageKHR_hid;
+typeof(clEnqueueAcquireEGLObjectsKHR) clEnqueueAcquireEGLObjectsKHR_hid;
+typeof(clEnqueueReleaseEGLObjectsKHR) clEnqueueReleaseEGLObjectsKHR_hid;
+typeof(clCreateEventFromEGLSyncKHR) clCreateEventFromEGLSyncKHR_hid;
+typeof(clGetKernelSubGroupInfoKHR) clGetKernelSubGroupInfoKHR_hid;
+
 CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
@@ -738,25 +749,25 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
   if( func_name == NULL )
     return NULL;
   if( !strcmp(func_name,"clGetGLContextInfoKHR") )
-    return (void *)clGetGLContextInfoKHR;
+    return (void *)clGetGLContextInfoKHR_hid;
   if( !strcmp(func_name,"clCreateSubDevicesEXT") )
-    return (void *)clCreateSubDevicesEXT;
+    return (void *)clCreateSubDevicesEXT_hid;
   if( !strcmp(func_name,"clRetainDeviceEXT") )
-    return (void *)clRetainDeviceEXT;
+    return (void *)clRetainDeviceEXT_hid;
   if( !strcmp(func_name,"clReleaseDeviceEXT") )
-    return (void *)clReleaseDeviceEXT;
+    return (void *)clReleaseDeviceEXT_hid;
   if( !strcmp(func_name,"clCreateEventFromGLsyncKHR") )
-    return (void *)clCreateEventFromGLsyncKHR;
+    return (void *)clCreateEventFromGLsyncKHR_hid;
   if( !strcmp(func_name,"clCreateFromEGLImageKHR") )
-    return (void *)clCreateFromEGLImageKHR;
+    return (void *)clCreateFromEGLImageKHR_hid;
   if( !strcmp(func_name,"clEnqueueAcquireEGLObjectsKHR") )
-    return (void *)clEnqueueAcquireEGLObjectsKHR;
+    return (void *)clEnqueueAcquireEGLObjectsKHR_hid;
   if( !strcmp(func_name,"clEnqueueReleaseEGLObjectsKHR") )
-    return (void *)clEnqueueReleaseEGLObjectsKHR;
+    return (void *)clEnqueueReleaseEGLObjectsKHR_hid;
   if( !strcmp(func_name,"clCreateEventFromEGLSyncKHR") )
-    return (void *)clCreateEventFromEGLSyncKHR;
+    return (void *)clCreateEventFromEGLSyncKHR_hid;
   if( !strcmp(func_name,"clGetKernelSubGroupInfoKHR") )
-    return (void *)clGetKernelSubGroupInfoKHR;
+    return (void *)clGetKernelSubGroupInfoKHR_hid;
   cl_uint suffix_length;
   cl_uint i;
   void * return_value=NULL;
