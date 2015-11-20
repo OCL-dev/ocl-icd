@@ -381,10 +381,12 @@ EOF
     nb=0
     $api_entries_array.each { |entry|
       version = entry.split("\n").
-	grep(/ CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_]/).join('').
-	gsub(/.* CL_API_SUFFIX__(VERSION_[0-9_]+)[^0-9_].*$/, '\1')
+	grep(/ CL_(API|EXT)_SUFFIX__(VERSION_[0-9_]+)[^0-9_]/).join('').
+	gsub(/.* CL_(API|EXT)_SUFFIX__(VERSION_[0-9_]*[0-9])_*[^0-9_].*$/, '\2')
       if (version != '') then
 	ocl_icd_header += '#ifdef CL_'+version+"\n"
+      elsif not entry =~ / clUnknown/
+        ocl_icd_header += "#warning no version\n"
       end
       ocl_icd_header += entry.gsub("\r","").
 	sub(/CL_API_CALL\n?(.*?)\(/m,'(CL_API_CALL*\1)('+"\n  ").
