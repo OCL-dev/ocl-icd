@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008 - 2013 The Khronos Group Inc.
+ * Copyright (c) 2008 - 2013, 2015 The Khronos Group Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and/or associated documentation files (the
@@ -89,6 +89,7 @@ typedef cl_uint             cl_kernel_arg_address_qualifier;
 typedef cl_uint             cl_kernel_arg_access_qualifier;
 typedef cl_bitfield         cl_kernel_arg_type_qualifier;
 typedef cl_uint             cl_kernel_work_group_info;
+typedef cl_uint             cl_kernel_sub_group_info;
 typedef cl_uint             cl_event_info;
 typedef cl_uint             cl_command_type;
 typedef cl_uint             cl_profiling_info;
@@ -110,6 +111,9 @@ typedef struct _cl_image_desc {
     size_t                  image_slice_pitch;
     cl_uint                 num_mip_levels;
     cl_uint                 num_samples;
+#ifdef __GNUC__
+    __extension__   /* Prevents warnings about anonymous union in -pedantic builds */
+#endif
     union {
       cl_mem                  buffer;
       cl_mem                  mem_object;
@@ -193,6 +197,7 @@ typedef struct _cl_buffer_region {
 #define CL_VERSION_1_1                              1
 #define CL_VERSION_1_2                              1
 #define CL_VERSION_2_0                              1
+#define CL_VERSION_2_1                              1
 
 /* cl_bool */
 #define CL_FALSE                                    0
@@ -206,6 +211,7 @@ typedef struct _cl_buffer_region {
 #define CL_PLATFORM_NAME                            0x0902
 #define CL_PLATFORM_VENDOR                          0x0903
 #define CL_PLATFORM_EXTENSIONS                      0x0904
+#define CL_PLATFORM_HOST_TIMER_RESOLUTION           0x0905
 
 /* cl_device_type - bitfield */
 #define CL_DEVICE_TYPE_DEFAULT                      (1 << 0)
@@ -216,98 +222,101 @@ typedef struct _cl_buffer_region {
 #define CL_DEVICE_TYPE_ALL                          0xFFFFFFFF
 
 /* cl_device_info */
-#define CL_DEVICE_TYPE                                  0x1000
-#define CL_DEVICE_VENDOR_ID                             0x1001
-#define CL_DEVICE_MAX_COMPUTE_UNITS                     0x1002
-#define CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS              0x1003
-#define CL_DEVICE_MAX_WORK_GROUP_SIZE                   0x1004
-#define CL_DEVICE_MAX_WORK_ITEM_SIZES                   0x1005
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR           0x1006
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT          0x1007
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT            0x1008
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG           0x1009
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT          0x100A
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE         0x100B
-#define CL_DEVICE_MAX_CLOCK_FREQUENCY                   0x100C
-#define CL_DEVICE_ADDRESS_BITS                          0x100D
-#define CL_DEVICE_MAX_READ_IMAGE_ARGS                   0x100E
-#define CL_DEVICE_MAX_WRITE_IMAGE_ARGS                  0x100F
-#define CL_DEVICE_MAX_MEM_ALLOC_SIZE                    0x1010
-#define CL_DEVICE_IMAGE2D_MAX_WIDTH                     0x1011
-#define CL_DEVICE_IMAGE2D_MAX_HEIGHT                    0x1012
-#define CL_DEVICE_IMAGE3D_MAX_WIDTH                     0x1013
-#define CL_DEVICE_IMAGE3D_MAX_HEIGHT                    0x1014
-#define CL_DEVICE_IMAGE3D_MAX_DEPTH                     0x1015
-#define CL_DEVICE_IMAGE_SUPPORT                         0x1016
-#define CL_DEVICE_MAX_PARAMETER_SIZE                    0x1017
-#define CL_DEVICE_MAX_SAMPLERS                          0x1018
-#define CL_DEVICE_MEM_BASE_ADDR_ALIGN                   0x1019
-#define CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE              0x101A
-#define CL_DEVICE_SINGLE_FP_CONFIG                      0x101B
-#define CL_DEVICE_GLOBAL_MEM_CACHE_TYPE                 0x101C
-#define CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE             0x101D
-#define CL_DEVICE_GLOBAL_MEM_CACHE_SIZE                 0x101E
-#define CL_DEVICE_GLOBAL_MEM_SIZE                       0x101F
-#define CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE              0x1020
-#define CL_DEVICE_MAX_CONSTANT_ARGS                     0x1021
-#define CL_DEVICE_LOCAL_MEM_TYPE                        0x1022
-#define CL_DEVICE_LOCAL_MEM_SIZE                        0x1023
-#define CL_DEVICE_ERROR_CORRECTION_SUPPORT              0x1024
-#define CL_DEVICE_PROFILING_TIMER_RESOLUTION            0x1025
-#define CL_DEVICE_ENDIAN_LITTLE                         0x1026
-#define CL_DEVICE_AVAILABLE                             0x1027
-#define CL_DEVICE_COMPILER_AVAILABLE                    0x1028
-#define CL_DEVICE_EXECUTION_CAPABILITIES                0x1029
-#define CL_DEVICE_QUEUE_PROPERTIES                      0x102A    /* deprecated */
-#define CL_DEVICE_QUEUE_ON_HOST_PROPERTIES              0x102A
-#define CL_DEVICE_NAME                                  0x102B
-#define CL_DEVICE_VENDOR                                0x102C
-#define CL_DRIVER_VERSION                               0x102D
-#define CL_DEVICE_PROFILE                               0x102E
-#define CL_DEVICE_VERSION                               0x102F
-#define CL_DEVICE_EXTENSIONS                            0x1030
-#define CL_DEVICE_PLATFORM                              0x1031
-#define CL_DEVICE_DOUBLE_FP_CONFIG                      0x1032
+#define CL_DEVICE_TYPE                                   0x1000
+#define CL_DEVICE_VENDOR_ID                              0x1001
+#define CL_DEVICE_MAX_COMPUTE_UNITS                      0x1002
+#define CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS               0x1003
+#define CL_DEVICE_MAX_WORK_GROUP_SIZE                    0x1004
+#define CL_DEVICE_MAX_WORK_ITEM_SIZES                    0x1005
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR            0x1006
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT           0x1007
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT             0x1008
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG            0x1009
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT           0x100A
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE          0x100B
+#define CL_DEVICE_MAX_CLOCK_FREQUENCY                    0x100C
+#define CL_DEVICE_ADDRESS_BITS                           0x100D
+#define CL_DEVICE_MAX_READ_IMAGE_ARGS                    0x100E
+#define CL_DEVICE_MAX_WRITE_IMAGE_ARGS                   0x100F
+#define CL_DEVICE_MAX_MEM_ALLOC_SIZE                     0x1010
+#define CL_DEVICE_IMAGE2D_MAX_WIDTH                      0x1011
+#define CL_DEVICE_IMAGE2D_MAX_HEIGHT                     0x1012
+#define CL_DEVICE_IMAGE3D_MAX_WIDTH                      0x1013
+#define CL_DEVICE_IMAGE3D_MAX_HEIGHT                     0x1014
+#define CL_DEVICE_IMAGE3D_MAX_DEPTH                      0x1015
+#define CL_DEVICE_IMAGE_SUPPORT                          0x1016
+#define CL_DEVICE_MAX_PARAMETER_SIZE                     0x1017
+#define CL_DEVICE_MAX_SAMPLERS                           0x1018
+#define CL_DEVICE_MEM_BASE_ADDR_ALIGN                    0x1019
+#define CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE               0x101A
+#define CL_DEVICE_SINGLE_FP_CONFIG                       0x101B
+#define CL_DEVICE_GLOBAL_MEM_CACHE_TYPE                  0x101C
+#define CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE              0x101D
+#define CL_DEVICE_GLOBAL_MEM_CACHE_SIZE                  0x101E
+#define CL_DEVICE_GLOBAL_MEM_SIZE                        0x101F
+#define CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE               0x1020
+#define CL_DEVICE_MAX_CONSTANT_ARGS                      0x1021
+#define CL_DEVICE_LOCAL_MEM_TYPE                         0x1022
+#define CL_DEVICE_LOCAL_MEM_SIZE                         0x1023
+#define CL_DEVICE_ERROR_CORRECTION_SUPPORT               0x1024
+#define CL_DEVICE_PROFILING_TIMER_RESOLUTION             0x1025
+#define CL_DEVICE_ENDIAN_LITTLE                          0x1026
+#define CL_DEVICE_AVAILABLE                              0x1027
+#define CL_DEVICE_COMPILER_AVAILABLE                     0x1028
+#define CL_DEVICE_EXECUTION_CAPABILITIES                 0x1029
+#define CL_DEVICE_QUEUE_PROPERTIES                       0x102A    /* deprecated */
+#define CL_DEVICE_QUEUE_ON_HOST_PROPERTIES               0x102A
+#define CL_DEVICE_NAME                                   0x102B
+#define CL_DEVICE_VENDOR                                 0x102C
+#define CL_DRIVER_VERSION                                0x102D
+#define CL_DEVICE_PROFILE                                0x102E
+#define CL_DEVICE_VERSION                                0x102F
+#define CL_DEVICE_EXTENSIONS                             0x1030
+#define CL_DEVICE_PLATFORM                               0x1031
+#define CL_DEVICE_DOUBLE_FP_CONFIG                       0x1032
 /* 0x1033 reserved for CL_DEVICE_HALF_FP_CONFIG */
-#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF           0x1034
-#define CL_DEVICE_HOST_UNIFIED_MEMORY                   0x1035   /* deprecated */
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR              0x1036
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT             0x1037
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_INT               0x1038
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG              0x1039
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT             0x103A
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE            0x103B
-#define CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF              0x103C
-#define CL_DEVICE_OPENCL_C_VERSION                      0x103D
-#define CL_DEVICE_LINKER_AVAILABLE                      0x103E
-#define CL_DEVICE_BUILT_IN_KERNELS                      0x103F
-#define CL_DEVICE_IMAGE_MAX_BUFFER_SIZE                 0x1040
-#define CL_DEVICE_IMAGE_MAX_ARRAY_SIZE                  0x1041
-#define CL_DEVICE_PARENT_DEVICE                         0x1042
-#define CL_DEVICE_PARTITION_MAX_SUB_DEVICES             0x1043
-#define CL_DEVICE_PARTITION_PROPERTIES                  0x1044
-#define CL_DEVICE_PARTITION_AFFINITY_DOMAIN             0x1045
-#define CL_DEVICE_PARTITION_TYPE                        0x1046
-#define CL_DEVICE_REFERENCE_COUNT                       0x1047
-#define CL_DEVICE_PREFERRED_INTEROP_USER_SYNC           0x1048
-#define CL_DEVICE_PRINTF_BUFFER_SIZE                    0x1049
-#define CL_DEVICE_IMAGE_PITCH_ALIGNMENT                 0x104A
-#define CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT          0x104B
-#define CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS             0x104C
-#define CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE              0x104D
-#define CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES            0x104E
-#define CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE        0x104F
-#define CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE              0x1050
-#define CL_DEVICE_MAX_ON_DEVICE_QUEUES                  0x1051
-#define CL_DEVICE_MAX_ON_DEVICE_EVENTS                  0x1052
-#define CL_DEVICE_SVM_CAPABILITIES                      0x1053
-#define CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE  0x1054
-#define CL_DEVICE_MAX_PIPE_ARGS                         0x1055
-#define CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS          0x1056
-#define CL_DEVICE_PIPE_MAX_PACKET_SIZE                  0x1057
-#define CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT   0x1058
-#define CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT     0x1059
-#define CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT      0x105A
+#define CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF            0x1034
+#define CL_DEVICE_HOST_UNIFIED_MEMORY                    0x1035   /* deprecated */
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR               0x1036
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT              0x1037
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_INT                0x1038
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG               0x1039
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT              0x103A
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE             0x103B
+#define CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF               0x103C
+#define CL_DEVICE_OPENCL_C_VERSION                       0x103D
+#define CL_DEVICE_LINKER_AVAILABLE                       0x103E
+#define CL_DEVICE_BUILT_IN_KERNELS                       0x103F
+#define CL_DEVICE_IMAGE_MAX_BUFFER_SIZE                  0x1040
+#define CL_DEVICE_IMAGE_MAX_ARRAY_SIZE                   0x1041
+#define CL_DEVICE_PARENT_DEVICE                          0x1042
+#define CL_DEVICE_PARTITION_MAX_SUB_DEVICES              0x1043
+#define CL_DEVICE_PARTITION_PROPERTIES                   0x1044
+#define CL_DEVICE_PARTITION_AFFINITY_DOMAIN              0x1045
+#define CL_DEVICE_PARTITION_TYPE                         0x1046
+#define CL_DEVICE_REFERENCE_COUNT                        0x1047
+#define CL_DEVICE_PREFERRED_INTEROP_USER_SYNC            0x1048
+#define CL_DEVICE_PRINTF_BUFFER_SIZE                     0x1049
+#define CL_DEVICE_IMAGE_PITCH_ALIGNMENT                  0x104A
+#define CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT           0x104B
+#define CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS              0x104C
+#define CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE               0x104D
+#define CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES             0x104E
+#define CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE         0x104F
+#define CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE               0x1050
+#define CL_DEVICE_MAX_ON_DEVICE_QUEUES                   0x1051
+#define CL_DEVICE_MAX_ON_DEVICE_EVENTS                   0x1052
+#define CL_DEVICE_SVM_CAPABILITIES                       0x1053
+#define CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE   0x1054
+#define CL_DEVICE_MAX_PIPE_ARGS                          0x1055
+#define CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS           0x1056
+#define CL_DEVICE_PIPE_MAX_PACKET_SIZE                   0x1057
+#define CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT    0x1058
+#define CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT      0x1059
+#define CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT       0x105A
+#define CL_DEVICE_IL_VERSION                             0x105B
+#define CL_DEVICE_MAX_NUM_SUB_GROUPS                     0x105C
+#define CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS 0x105D
 
 /* cl_device_fp_config - bitfield */
 #define CL_FP_DENORM                                (1 << 0)
@@ -374,6 +383,7 @@ typedef struct _cl_buffer_region {
 #define CL_QUEUE_REFERENCE_COUNT                    0x1092
 #define CL_QUEUE_PROPERTIES                         0x1093
 #define CL_QUEUE_SIZE                               0x1094
+#define CL_QUEUE_DEVICE_DEFAULT                     0x1095
 
 /* cl_mem_flags and cl_svm_mem_flags - bitfield */
 #define CL_MEM_READ_WRITE                           (1 << 0)
@@ -388,6 +398,7 @@ typedef struct _cl_buffer_region {
 #define CL_MEM_HOST_NO_ACCESS                       (1 << 9)
 #define CL_MEM_SVM_FINE_GRAIN_BUFFER                (1 << 10)   /* used by cl_svm_mem_flags only */
 #define CL_MEM_SVM_ATOMICS                          (1 << 11)   /* used by cl_svm_mem_flags only */
+#define CL_MEM_KERNEL_READ_AND_WRITE                (1 << 12)
 
 /* cl_mem_migration_flags - bitfield */
 #define CL_MIGRATE_MEM_OBJECT_HOST                  (1 << 0)
@@ -432,6 +443,7 @@ typedef struct _cl_buffer_region {
 #define CL_HALF_FLOAT                               0x10DD
 #define CL_FLOAT                                    0x10DE
 #define CL_UNORM_INT24                              0x10DF
+#define CL_UNORM_INT_101010_2                       0x10E0
 
 /* cl_mem_object_type */
 #define CL_MEM_OBJECT_BUFFER                        0x10F0
@@ -508,6 +520,7 @@ typedef struct _cl_buffer_region {
 #define CL_PROGRAM_BINARIES                         0x1166
 #define CL_PROGRAM_NUM_KERNELS                      0x1167
 #define CL_PROGRAM_KERNEL_NAMES                     0x1168
+#define CL_PROGRAM_IL                               0x1169
 
 /* cl_program_build_info */
 #define CL_PROGRAM_BUILD_STATUS                     0x1181
@@ -535,6 +548,8 @@ typedef struct _cl_buffer_region {
 #define CL_KERNEL_CONTEXT                           0x1193
 #define CL_KERNEL_PROGRAM                           0x1194
 #define CL_KERNEL_ATTRIBUTES                        0x1195
+#define CL_KERNEL_MAX_NUM_SUB_GROUPS                0x11B9
+#define CL_KERNEL_COMPILE_NUM_SUB_GROUPS            0x11BA
 
 /* cl_kernel_arg_info */
 #define CL_KERNEL_ARG_ADDRESS_QUALIFIER             0x1196
@@ -569,6 +584,11 @@ typedef struct _cl_buffer_region {
 #define CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE 0x11B3
 #define CL_KERNEL_PRIVATE_MEM_SIZE                  0x11B4
 #define CL_KERNEL_GLOBAL_WORK_SIZE                  0x11B5
+
+/* cl_kernel_sub_group_info */
+#define CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE    0x2033
+#define CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE       0x2034
+#define CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT    0x11B8
     
 /* cl_kernel_exec_info */
 #define CL_KERNEL_EXEC_INFO_SVM_PTRS                0x11B6
@@ -671,6 +691,21 @@ clRetainDevice(cl_device_id /* device */) CL_API_SUFFIX__VERSION_1_2;
     
 extern CL_API_ENTRY cl_int CL_API_CALL
 clReleaseDevice(cl_device_id /* device */) CL_API_SUFFIX__VERSION_1_2;
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clSetDefaultDeviceCommandQueue(cl_context           /* context */,
+                               cl_device_id         /* device */,
+                               cl_command_queue     /* command_queue */) CL_API_SUFFIX__VERSION_2_1;
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clGetDeviceAndHostTimer(cl_device_id    /* device */,
+                        cl_ulong*       /* device_timestamp */,
+                        cl_ulong*       /* host_timestamp */) CL_API_SUFFIX__VERSION_2_1;
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clGetHostTimer(cl_device_id /* device */,
+               cl_ulong *   /* host_timestamp */)  CL_API_SUFFIX__VERSION_2_1;
+
     
 /* Context APIs  */
 extern CL_API_ENTRY cl_context CL_API_CALL
@@ -847,6 +882,13 @@ clCreateProgramWithBuiltInKernels(cl_context            /* context */,
                                   const char *          /* kernel_names */,
                                   cl_int *              /* errcode_ret */) CL_API_SUFFIX__VERSION_1_2;
 
+extern CL_API_ENTRY cl_program CL_API_CALL
+clCreateProgramWithIL(cl_context    /* context */,
+                     const void*    /* il */,
+                     size_t         /* length */,
+                     cl_int*        /* errcode_ret */) CL_API_SUFFIX__VERSION_2_1;
+
+
 extern CL_API_ENTRY cl_int CL_API_CALL
 clRetainProgram(cl_program /* program */) CL_API_SUFFIX__VERSION_1_0;
 
@@ -914,6 +956,10 @@ clCreateKernelsInProgram(cl_program     /* program */,
                          cl_kernel *    /* kernels */,
                          cl_uint *      /* num_kernels_ret */) CL_API_SUFFIX__VERSION_1_0;
 
+extern CL_API_ENTRY cl_kernel CL_API_CALL
+clCloneKernel(cl_kernel     /* source_kernel */,
+              cl_int*       /* errcode_ret */) CL_API_SUFFIX__VERSION_2_1;
+
 extern CL_API_ENTRY cl_int CL_API_CALL
 clRetainKernel(cl_kernel    /* kernel */) CL_API_SUFFIX__VERSION_1_0;
 
@@ -959,6 +1005,17 @@ clGetKernelWorkGroupInfo(cl_kernel                  /* kernel */,
                          size_t                     /* param_value_size */,
                          void *                     /* param_value */,
                          size_t *                   /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clGetKernelSubGroupInfo(cl_kernel                   /* kernel */,
+                        cl_device_id                /* device */,
+                        cl_kernel_sub_group_info    /* param_name */,
+                        size_t                      /* input_value_size */,
+                        const void*                 /*input_value */,
+                        size_t                      /* param_value_size */,
+                        void*                       /* param_value */,
+                        size_t*                     /* param_value_size_ret */ ) CL_API_SUFFIX__VERSION_2_1;
+
 
 /* Event Object APIs */
 extern CL_API_ENTRY cl_int CL_API_CALL
@@ -1295,7 +1352,17 @@ clEnqueueSVMUnmap(cl_command_queue  /* command_queue */,
                   cl_uint           /* num_events_in_wait_list */,
                   const cl_event *  /* event_wait_list */,
                   cl_event *        /* event */) CL_API_SUFFIX__VERSION_2_0;
-    
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clEnqueueSVMMigrateMem(cl_command_queue         /* command_queue */,
+                       cl_uint                  /* num_svm_pointers */,
+                       const void **            /* svm_pointers */,
+                       const size_t *           /* sizes */,
+                       cl_mem_migration_flags   /* flags */,
+                       cl_uint                  /* num_events_in_wait_list */,
+                       const cl_event *         /* event_wait_list */,
+                       cl_event *               /* event */) CL_API_SUFFIX__VERSION_2_1;
+
 
 /* Extension function access
  *
@@ -1351,26 +1418,26 @@ extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_1_1_DEPRECATED void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * /* func_name */) CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED;
     
 /* Deprecated OpenCL 2.0 APIs */
-extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_2_0_DEPRECATED cl_command_queue CL_API_CALL
+extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_command_queue CL_API_CALL
 clCreateCommandQueue(cl_context                     /* context */,
                      cl_device_id                   /* device */,
                      cl_command_queue_properties    /* properties */,
-                     cl_int *                       /* errcode_ret */) CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED;
+                     cl_int *                       /* errcode_ret */) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED;
     
     
-extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_2_0_DEPRECATED cl_sampler CL_API_CALL
+extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_sampler CL_API_CALL
 clCreateSampler(cl_context          /* context */,
                 cl_bool             /* normalized_coords */,
                 cl_addressing_mode  /* addressing_mode */,
                 cl_filter_mode      /* filter_mode */,
-                cl_int *            /* errcode_ret */) CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED;
+                cl_int *            /* errcode_ret */) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED;
     
-extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_2_0_DEPRECATED cl_int CL_API_CALL
+extern CL_API_ENTRY CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_int CL_API_CALL
 clEnqueueTask(cl_command_queue  /* command_queue */,
               cl_kernel         /* kernel */,
               cl_uint           /* num_events_in_wait_list */,
               const cl_event *  /* event_wait_list */,
-              cl_event *        /* event */) CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED;
+              cl_event *        /* event */) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED;
     
 #ifdef __cplusplus
 }

@@ -45,14 +45,6 @@ extern "C" {
     #define CL_CALLBACK
 #endif
 
-/*
- * Deprecation flags refer to the last version of the header in which the
- * feature was not deprecated.
- *
- * E.g. VERSION_1_1_DEPRECATED means the feature is present in 1.1 without
- * deprecation but is deprecated in versions later than 1.1.
- */
-
 #ifdef __APPLE__
     #define CL_EXTENSION_WEAK_LINK       __attribute__((weak_import))
     #define CL_API_SUFFIX__VERSION_1_0                  AVAILABLE_MAC_OS_X_VERSION_10_6_AND_LATER
@@ -85,8 +77,6 @@ extern "C" {
     #define CL_EXT_SUFFIX__VERSION_1_2
     #define CL_API_SUFFIX__VERSION_2_0
     #define CL_EXT_SUFFIX__VERSION_2_0
-    #define CL_API_SUFFIX__VERSION_2_1
-    #define CL_EXT_SUFFIX__VERSION_2_1
     
     #ifdef __GNUC__
         #ifdef CL_USE_DEPRECATED_OPENCL_1_0_APIS
@@ -105,21 +95,13 @@ extern "C" {
             #define CL_EXT_PREFIX__VERSION_1_1_DEPRECATED    
         #endif
 
-        #ifdef CL_USE_DEPRECATED_OPENCL_1_2_APIS
-            #define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
-            #define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED
-        #else
-            #define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED __attribute__((deprecated))
-            #define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED
-         #endif
-
         #ifdef CL_USE_DEPRECATED_OPENCL_2_0_APIS
             #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED
             #define CL_EXT_PREFIX__VERSION_2_0_DEPRECATED
         #else
             #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED __attribute__((deprecated))
             #define CL_EXT_PREFIX__VERSION_2_0_DEPRECATED
-        #endif
+         #endif
     #elif _WIN32
         #ifdef CL_USE_DEPRECATED_OPENCL_1_0_APIS
             #define CL_EXT_SUFFIX__VERSION_1_0_DEPRECATED
@@ -137,19 +119,11 @@ extern "C" {
             #define CL_EXT_PREFIX__VERSION_1_1_DEPRECATED __declspec(deprecated)     
         #endif
     
-        #ifdef CL_USE_DEPRECATED_OPENCL_1_2_APIS
-            #define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
-            #define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED
-        #else
-            #define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
-            #define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED __declspec(deprecated)
-        #endif
-
         #ifdef CL_USE_DEPRECATED_OPENCL_2_0_APIS
             #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED
             #define CL_EXT_PREFIX__VERSION_2_0_DEPRECATED
         #else
-            #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED 
+            #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED
             #define CL_EXT_PREFIX__VERSION_2_0_DEPRECATED __declspec(deprecated)
         #endif
     #else
@@ -159,9 +133,6 @@ extern "C" {
         #define CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
         #define CL_EXT_PREFIX__VERSION_1_1_DEPRECATED
     
-        #define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
-        #define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED
-
         #define CL_EXT_SUFFIX__VERSION_2_0_DEPRECATED
         #define CL_EXT_PREFIX__VERSION_2_0_DEPRECATED
     #endif
