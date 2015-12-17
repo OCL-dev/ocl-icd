@@ -1,4 +1,30 @@
 
+Version 2.2.8
+=============
+Brice Videau (10):
+      Added missing EGL entries.
+      Added missing clGetKernelSubGroupInfoKHR.
+      Fixed indentation.
+      Added OpenCL 2.1 as comments.
+      Switched khronos headers to OpenCL 2.1.
+      Fixed typo in clEnqueueAcquireEGLObjectsKHR definition.
+      CL/cl_egl.h is needed to build EGL interfaces.
+      OpenCL headers needlessly include EGL headers.
+      ICD should be compliant regarding extensions.
+      Order for OpenCL 2.1 is finally known.
+
+Vincent Danjean (10):
+      Explicitly set the revision date in the documentation
+      cleanup doc
+      [test] avoid external problems in tests
+      Use internal symbols to avoid conflict with loaded ICD
+      Update copyright notices
+      Remove 2.0 OpenCL headers
+      Avoid to hardcode at several place the required OpenCL headers version
+      improve clGetExtensionFunctionAddress{,ForPlatform}
+      Fix guards in ocl_icd.h
+      Release 2.2.8 (support OpenCL 2.1)
+
 Version 2.2.7
 =============
 
