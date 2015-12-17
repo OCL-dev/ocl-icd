@@ -18,7 +18,7 @@ AM_PROG_AR
 LT_INIT([disable-static])
 AC_CONFIG_TESTDIR([tests], [.])
 
-m4_define([REQ_OPENCL_VERSION],[2_0])
+m4_define([REQ_OPENCL_VERSION],[2_1])
 OPENCL_VERSION="m4_translit(REQ_OPENCL_VERSION, [_], [.])"
 AC_SUBST([OPENCL_VERSION])
 
