@@ -15,6 +15,8 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 	  echo '  [$(PACKAGE_BUGREPORT)])'; \
 	  echo 'm4_define([AT_PACKAGE_URL],' && \
 	  echo '  [$(PACKAGE_URL)])'; \
+	  echo 'm4_define([AT_PACKAGE_OPENCL_VERSION],' && \
+	  echo '  [$(OPENCL_VERSION)])'; \
 	} >'$(srcdir)/package.m4'
 
 TESTSUITES_SRC = testsuite.at testsuite-standard.at testsuite-workaround.at testsuite-default-platform.at

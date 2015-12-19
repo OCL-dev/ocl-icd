@@ -21,6 +21,8 @@ AC_CONFIG_TESTDIR([tests], [.])
 m4_define([REQ_OPENCL_VERSION],[2_1])
 OPENCL_VERSION="m4_translit(REQ_OPENCL_VERSION, [_], [.])"
 AC_SUBST([OPENCL_VERSION])
+AC_DEFINE_UNQUOTED([OCL_ICD_OPENCL_VERSION], ["$OPENCL_VERSION"],
+              [supported OpenCL version])
 
 # Checks for programs.
 AC_PROG_CC_C89

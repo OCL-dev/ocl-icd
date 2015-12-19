@@ -49,7 +49,7 @@ AT_SETUP([ICD Loader extension])
 AT_EXPORT([OCL_ICD_DEBUG],[0],
 	[OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
 AT_CHECK([ocl_test_icdl], 0,
-[ocl_version: OpenCL 1.2
+[ocl_version: OpenCL AT_PACKAGE_OPENCL_VERSION
 version: AT_PACKAGE_VERSION
 name: OpenCL ICD Loader
 vendor: OCL Icd free software

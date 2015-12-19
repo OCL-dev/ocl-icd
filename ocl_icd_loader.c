@@ -698,7 +698,7 @@ static cl_int clGetICDLoaderInfoOCLICD(
   void *           param_value,
   size_t *         param_value_size_ret)
 {
-  char cl_icdl_ocl_version[] = "OpenCL 1.2";
+  char cl_icdl_ocl_version[] = "OpenCL " OCL_ICD_OPENCL_VERSION;
   char cl_icdl_version[] = PACKAGE_VERSION;
   char cl_icdl_name[] = PACKAGE_NAME;
   char cl_icdl_vendor[] = "OCL Icd free software";
