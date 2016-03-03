@@ -1,6 +1,16 @@
 
 Version 2.2.8
 =============
+Brice Videau (1):
+      Update clGetICDLoaderInfoOCLICD to report version 2.1.
+
+Vincent Danjean (3):
+      Report the correct supported OpenCL version when asked
+      Add support for OPENCL_VENDOR_PATH envvar
+      Release 2.2.9
+
+Version 2.2.8
+=============
 Brice Videau (10):
       Added missing EGL entries.
       Added missing clGetKernelSubGroupInfoKHR.
