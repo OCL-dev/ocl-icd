@@ -514,9 +514,16 @@ static void __initClIcd( void ) {
   int is_dir = 0;
   DIR *dir = NULL;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
+  const char* vendor_path=getenv("OPENCL_VENDOR_PATH");
+  if (! vendor_path || vendor_path[0]==0) {
+    vendor_path=ETC_OPENCL_VENDORS;
+    debug(D_DUMP, "OPENCL_VENDOR_PATH unset or empty. Using hard-coded path '%s'", vendor_path);
+  } else {
+    debug(D_DUMP, "OPENCL_VENDOR_PATH set to '%s', using it", vendor_path);
+  }
   if (! dir_path || dir_path[0]==0) {
-    debug(D_DUMP, "OCL_ICD_VENDORS empty or not defined, using %s", ETC_OPENCL_VENDORS);
-    dir_path=ETC_OPENCL_VENDORS;
+    dir_path=vendor_path;
+    debug(D_DUMP, "OCL_ICD_VENDORS empty or not defined, using vendors path '%s'", dir_path);
     is_dir=1;
   }
   if (!is_dir) {
@@ -560,7 +567,7 @@ static void __initClIcd( void ) {
     if (_string_end_with_icd(dir_path)) {
       num_icds = 0;
       if (! _string_with_slash(dir_path)) {
-	num_icds = _open_driver(0, ETC_OPENCL_VENDORS, dir_path);
+	num_icds = _open_driver(0, vendor_path, dir_path);
       }
       if (num_icds == 0) {
 	num_icds = _open_driver(0, NULL, dir_path);

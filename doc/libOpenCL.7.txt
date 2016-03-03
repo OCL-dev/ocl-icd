@@ -24,14 +24,20 @@ looks for files into '`/etc/OpenCL/vendors/`' directory and, for each file
 whose name ends with '`.icd`', the ICD Loader loads with **dlopen**(3) the
 shared library whose name is on the first line of the '`.icd`' file.
 
-Shared library name in ".icd" files can have its path, or it can be a plain
-filename. In the latter case, the ICD shared library will be look for into the
-standard dynamic loader paths.
+Each shared library name in ".icd" files can have its path, or it can be a plain
+filename. In the latter case, the ICD shared library will be looked for into the
+standard dynamic library loader paths.
 
 ENVIRONMENT
 -------------
 Some environment variables can be used modify the default behavior of
 libOpenCL.
+
+*OPENCL_VENDOR_PATH*::
+This variable allows one to modify the defaut '`/etc/OpenCL/vendors/`' path.
+It is compatible with some other ICD loaders (but not all of them, as the
+variable is not part of the standard). Note that *$OCL_ICD_VENDORS* (see below)
+is used in priority if defined and not empty.
 
 *OCL_ICD_VENDORS*::
 This variable allows one to change the way ICD are searched on the system.
@@ -44,10 +50,13 @@ b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
   the ICD whose shared library name is wrote into the specified ".icd"
   file;
   +
-  If there is no slash into
+  If there is no slashes into
   *$OCL_ICD_VENDORS*, libOpenCL.so will first try to use
-  '`/etc/OpenCL/vendors/`'*$OCL_ICD_VENDORS*. If this fail, it uses
-  *$OCL_ICD_VENDORS* (as a relative or absolute file name path).
+  '`/etc/OpenCL/vendors/`'*$OCL_ICD_VENDORS* (or
+  *$OPENCL_VENDOR_PATH*'`/`'*$OCL_ICD_VENDORS* if *OPENCL_VENDOR_PATH* is
+  defined).
+  If this fail or if there are shashes, it uses *$OCL_ICD_VENDORS* (as a
+  relative or absolute file name path).
 c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
@@ -64,11 +73,11 @@ through **clGetPlatformIDs**(3). Current provided algorithms are:
 * *devices*: first, list platforms that support most GPU, then most CPU then
   most accelerators. If *OCL_ICD_PLATFORM_SORT* is not set or set to an
   unknown value, this algorithm is used.
-* *none*: no sort is done and the order can very at each run.
+* *none*: no sort is done and the order can change at each run.
 
 *OCL_ICD_DEFAULT_PLATFORM*::
 Number of the platform to choose as defaut platform. Note that using this
-environment variable without specifying a sort algorithm for platforms
+environment variable without ensuring the use of a sort algorithm for platforms
 is not really useful.
 
 *OCL_ICD_DEBUG*::
