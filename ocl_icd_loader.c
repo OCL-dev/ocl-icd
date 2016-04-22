@@ -705,13 +705,13 @@ static cl_int clGetICDLoaderInfoOCLICD(
   void *           param_value,
   size_t *         param_value_size_ret)
 {
-  char cl_icdl_ocl_version[] = "OpenCL " OCL_ICD_OPENCL_VERSION;
-  char cl_icdl_version[] = PACKAGE_VERSION;
-  char cl_icdl_name[] = PACKAGE_NAME;
-  char cl_icdl_vendor[] = "OCL Icd free software";
+  static const char cl_icdl_ocl_version[] = "OpenCL " OCL_ICD_OPENCL_VERSION;
+  static const char cl_icdl_version[] = PACKAGE_VERSION;
+  static const char cl_icdl_name[] = PACKAGE_NAME;
+  static const char cl_icdl_vendor[] = "OCL Icd free software";
 
   size_t size_string;
-  char * string_p;
+  const char * string_p;
 #define oclcase(name, NAME) \
   case CL_ICDL_##NAME: \
     string_p = cl_icdl_##name; \
