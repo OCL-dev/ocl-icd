@@ -61,9 +61,9 @@ extern int debug_ocl_icd_mask;
 	return ret; \
    } while(0)
 #  define RETURN_STR(val) do { \
-	char* ret=(char*)(val);			\
-	debug(D_TRACE, "return: %s", ret);	\
-	return ret; \
+	char* _ret=(char*)(val);		\
+	debug(D_TRACE, "return: %s", _ret);	\
+	return _ret; \
    } while(0)
 #  ifdef DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
 #    pragma GCC diagnostic push
