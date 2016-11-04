@@ -422,7 +422,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     debug(D_LOG, "Try to load %d platforms", num_platforms);
     if (_allocate_platforms(num_platforms) < num_platforms) {
       free(platforms);
-      debug(D_WARN, "Not enought platform allocated. Skipping ICD");
+      debug(D_WARN, "Not enough platform allocated. Skipping ICD");
       continue;
     }
     for(j=0; j<num_platforms; j++) {
