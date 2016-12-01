@@ -395,14 +395,13 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     picd->ext_fn_ptr = _get_function_addr(dlh, NULL, "clGetExtensionFunctionAddress");
     clIcdGetPlatformIDsKHR_fn plt_fn_ptr =
       _get_function_addr(dlh, picd->ext_fn_ptr, "clIcdGetPlatformIDsKHR");
-    clGetPlatformInfo_fn plt_info_ptr =
-      _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
     if( picd->ext_fn_ptr == NULL
-	|| plt_fn_ptr == NULL
-	|| plt_info_ptr == NULL) {
+       || plt_fn_ptr == NULL) {
       debug(D_WARN, "Missing symbols in ICD, skipping it");
       continue;
     }
+    clGetPlatformInfo_fn plt_info_ptr =
+      _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
     cl_uint num_platforms=0;
     cl_int error;
     error = (*plt_fn_ptr)(0, NULL, &num_platforms);
@@ -422,7 +421,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     debug(D_LOG, "Try to load %d platforms", num_platforms);
     if (_allocate_platforms(num_platforms) < num_platforms) {
       free(platforms);
-      debug(D_WARN, "Not enought platform allocated. Skipping ICD");
+      debug(D_WARN, "Not enough platform allocated. Skipping ICD");
       continue;
     }
     for(j=0; j<num_platforms; j++) {
@@ -432,6 +431,18 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->extension_suffix=NULL;
       p->vicd=&_icds[i];
       p->pid=platforms[j];
+
+      /* If clGetPlatformInfo is not exported, try to take it from the dispatch
+       * table. If that fails too, we have to bail.
+       */
+      if (plt_info_ptr == NULL) {
+        plt_info_ptr = p->pid->dispatch->clGetPlatformInfo;
+        if (plt_info_ptr == NULL) {
+          debug(D_WARN, "Missing clGetPlatformInfo in ICD, skipping it");
+          continue;
+        }
+      }
+
 #ifdef DEBUG_OCL_ICD
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
