@@ -1,5 +1,20 @@
 
-Version 2.2.8
+Version 2.2.10
+==============
+Giuseppe Bilotta (2):
+      Suppress warning due to shadowed variable name
+      Static-const-ify ICD loader info strings
+
+Martin Kelly (2):
+      Typo fix
+      Fallback to dispatch table for clGetPlatformInfo
+
+Vincent Danjean (3):
+      Merge pull request #2 from surround-io/master
+      By default, use platforme specific clGetPlatformInfo
+      Release 2.2.10
+
+Version 2.2.9
 =============
 Brice Videau (1):
       Update clGetICDLoaderInfoOCLICD to report version 2.1.
