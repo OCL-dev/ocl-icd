@@ -400,7 +400,8 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       debug(D_WARN, "Missing symbols in ICD, skipping it");
       continue;
     }
-    clGetPlatformInfo_fn plt_info_ptr =
+    int plt_info_global_ptr_queried = 0;
+    clGetPlatformInfo_fn plt_info_global_ptr = NULL;
       _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
     cl_uint num_platforms=0;
     cl_int error;
@@ -432,12 +433,21 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->vicd=&_icds[i];
       p->pid=platforms[j];
 
-      /* If clGetPlatformInfo is not exported, try to take it from the dispatch
-       * table. If that fails too, we have to bail.
+      /* By default, we try to use the plateform-specific
+       * clGetPlatformInfo (from the dispatch table).
+       * If missing, we fail back on the global one (if any)
        */
+      clGetPlatformInfo_fn plt_info_ptr = p->pid->dispatch->clGetPlatformInfo;
+
       if (plt_info_ptr == NULL) {
-        plt_info_ptr = p->pid->dispatch->clGetPlatformInfo;
-        if (plt_info_ptr == NULL) {
+        if (! plt_info_global_ptr_queried) {
+          plt_info_global_ptr =
+            _get_function_addr(dlh, picd->ext_fn_ptr, "clGetPlatformInfo");
+            plt_info_global_ptr_queried = 1;
+        }
+        if (plt_info_global_ptr) {
+          plt_info_ptr = plt_info_global_ptr;
+        } else {
           debug(D_WARN, "Missing clGetPlatformInfo in ICD, skipping it");
           continue;
         }
