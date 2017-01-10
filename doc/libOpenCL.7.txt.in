@@ -19,10 +19,12 @@ any OpenCL implementation itself, but merly act as a dispatcher to real OpenCL
 implementations provided as OpenCL Installable Client Driver (ICD).
 An ICD loader should be able to load ICDs provided by any vendors.
 
-According to OpenCL specifications from Khronos (see [Khronos]), the ICD Loader
-looks for files into '`/etc/OpenCL/vendors/`' directory and, for each file
+The ICD Loader will look for files in '`@OCL_ICD_VENDORDIR@`' directory and, for each file
 whose name ends with '`.icd`', the ICD Loader loads with **dlopen**(3) the
 shared library whose name is on the first line of the '`.icd`' file.
+According to OpenCL specifications from Khronos (see [Khronos]), the default
+path for this purpose is '`/etc/OpenCL/vendors`'. OCL-ICD will use this
+path if it is configured with the root directory as the installation prefix.
 
 Each shared library name in ".icd" files can have its path, or it can be a plain
 filename. In the latter case, the ICD shared library will be looked for into the
@@ -34,7 +36,7 @@ Some environment variables can be used modify the default behavior of
 libOpenCL.
 
 *OPENCL_VENDOR_PATH*::
-This variable allows one to modify the defaut '`/etc/OpenCL/vendors/`' path.
+This variable allows one to modify the defaut '`@OCL_ICD_VENDORDIR@`' path.
 It is compatible with some other ICD loaders (but not all of them, as the
 variable is not part of the standard). Note that *$OCL_ICD_VENDORS* (see below)
 is used in priority if defined and not empty.
@@ -44,7 +46,7 @@ This variable allows one to change the way ICD are searched on the system.
 Several cases are considered:
 
 a. if *$OCL_ICD_VENDORS* is a directory path, then this path replaces the
-  "/etc/OpenCL/vendors" path in the standard behavior: the loader will use the
+  "@OCL_ICD_VENDORDIR@" path in the standard behavior: the loader will use the
   '`.icd`' files in this directory;
 b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
   the ICD whose shared library name is wrote into the specified ".icd"
@@ -52,7 +54,7 @@ b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
   +
   If there is no slashes into
   *$OCL_ICD_VENDORS*, libOpenCL.so will first try to use
-  '`/etc/OpenCL/vendors/`'*$OCL_ICD_VENDORS* (or
+  '`@OCL_ICD_VENDORDIR@`'*$OCL_ICD_VENDORS* (or
   *$OPENCL_VENDOR_PATH*'`/`'*$OCL_ICD_VENDORS* if *OPENCL_VENDOR_PATH* is
   defined).
   If this fail or if there are shashes, it uses *$OCL_ICD_VENDORS* (as a

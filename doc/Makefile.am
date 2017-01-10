@@ -28,3 +28,7 @@ libOpenCL.so.7: libOpenCL.7
 	@: already create by a2x when generating libOpenCL.7
 endif
 
+libOpenCL.7.txt: libOpenCL.7.txt.in
+	$(SED) \
+	    -e "s|[@]OCL_ICD_VENDORDIR@|@OCL_ICD_VENDORDIR@|g" \
+	    < "$<" > "$@"
