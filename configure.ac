@@ -150,7 +150,7 @@ AC_ARG_ENABLE([custom-vendordir],
   [AS_HELP_STRING([--enable-custom-vendordir],
                   [use the given directory instead of /etc/OpenCL/vendors to look for .icd files])],
   [OCL_ICD_VENDORDIR=$enableval],
-  [OCL_ICD_VENDORDIR=/etc/OpenCL/vendors])
+  [OCL_ICD_VENDORDIR=$sysconfdir/OpenCL/vendors])
 AC_SUBST([OCL_ICD_VENDORDIR])
 
 # always use versionned symbols (check required for MacOSX)
