@@ -384,6 +384,27 @@ static void _sort_platforms(struct platform_icd *picds, int npicds) {
 	}
 }
 
+#define ASSUME_ICD_EXTENSION_UNKNOWN ((int)-1)
+#define ASSUME_ICD_EXTENSION_NO ((int)0)
+#define ASSUME_ICD_EXTENSION_YES ((int)1)
+#define ASSUME_ICD_EXTENSION_YES_AND_QUIET ((int)2)
+
+
+static int _assume_ICD_extension() {
+	static int val=ASSUME_ICD_EXTENSION_UNKNOWN;
+	if (val == ASSUME_ICD_EXTENSION_UNKNOWN) {
+		const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
+		if (! str || str[0]==0) {
+			val=ASSUME_ICD_EXTENSION_NO;
+		} else if (strcmp(str, "debug")==0) {
+			val=ASSUME_ICD_EXTENSION_YES;
+		} else {
+			val=ASSUME_ICD_EXTENSION_YES_AND_QUIET;
+		}
+	}
+	return val;
+}
+
 static inline void _find_and_check_platforms(cl_uint num_icds) {
   cl_uint i;
   _num_icds = 0;
@@ -402,6 +423,25 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
     }
     clGetPlatformInfo_fn plt_info_ptr =
       _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
+    if (plt_info_ptr == NULL) {
+	    switch (_assume_ICD_extension()) {
+	    case ASSUME_ICD_EXTENSION_NO:
+		    debug(D_WARN, "Missing 'clGetPlatformInfo' symbol in ICD, skipping it (use OCL_ICD_ASSUME_ICD_EXTENSION to ignore this check)");
+		    continue;
+	    case ASSUME_ICD_EXTENSION_YES:
+		    debug(D_LOG, "Missing 'clGetPlatformInfo' symbol in ICD, but still continuing due to OCL_ICD_ASSUME_ICD_EXTENSION");
+		    /* Fall through */
+	    case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
+		    /* Assuming an ICD extension, so we will try to
+		     * find the ICD specific version of
+		     * clGetPlatformInfo before knowing for sure that
+		     * the cl_khr_icd is really present */
+		    break;
+	    default:
+		    debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
+		    break;
+	    }
+    }
     cl_uint num_platforms=0;
     cl_int error;
     error = (*plt_fn_ptr)(0, NULL, &num_platforms);
@@ -432,13 +472,15 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->vicd=&_icds[i];
       p->pid=platforms[j];
 
-      /* If clGetPlatformInfo is not exported, try to take it from the dispatch
-       * table. If that fails too, we have to bail.
+      /* If clGetPlatformInfo is not exported and we are here, it
+       * means that OCL_ICD_ASSUME_ICD_EXTENSION. Si we try to take it
+       * from the dispatch * table. If that fails too, we have to
+       * bail.
        */
       if (plt_info_ptr == NULL) {
         plt_info_ptr = p->pid->dispatch->clGetPlatformInfo;
         if (plt_info_ptr == NULL) {
-          debug(D_WARN, "Missing clGetPlatformInfo in ICD, skipping it");
+          debug(D_WARN, "Missing clGetPlatformInfo even in ICD dispatch table, skipping it");
           continue;
         }
       }
@@ -452,11 +494,9 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       }
 #endif
       {
-	      /* Allow to workaround a bug in the Intel ICD used
-	       * with optirun (search for NVidia Optimus for more info)
-	       */
-	      const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
-	      if (! str || str[0]==0) {
+	      switch (_assume_ICD_extension()) {
+	      case ASSUME_ICD_EXTENSION_NO:
+		      /* checking the extension as required by the specs */
 		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
 		      if (param_value == NULL){
 			      debug(D_WARN, "Skipping platform %i", j);
@@ -469,6 +509,24 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 			      continue;
 		      }
 		      free(param_value);
+		      break;
+	      case ASSUME_ICD_EXTENSION_YES:
+		      /* Allow to workaround a bug in the Intel ICD used
+		       * with optirun :
+		       * - https://software.intel.com/en-us/forums/opencl/topic/328091
+		       * - https://sourceforge.net/p/virtualgl/bugs/54/
+		       */
+		      debug(D_LOG, "Assuming cl_khr_icd extension without checking for it");
+		      /* Fall through */
+	      case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
+		      /* Assuming an ICD extension, so we will try to
+		       * find the ICD specific version of
+		       * clGetPlatformInfo before knowing for sure that
+		       * the cl_khr_icd is really present */
+		      break;
+	      default:
+		      debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
+		      break;
 	      }
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");

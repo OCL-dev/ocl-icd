@@ -61,10 +61,17 @@ c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
 *OCL_ICD_ASSUME_ICD_EXTENSION*::
-If set, contrary the Khronos specification, the loader will not check that
-the loaded ICDs declare the `cl_khr_icd` extension. You may need to define
-this environment variable if you are using the Intel ICD together with
-*optirun*(1). Else, a bug into the Intel ICD will make the application crash.
+If set to an non-empty value, contrary the Khronos specification, the
+loader will not check that the loaded ICDs declare the `cl_khr_icd`
+extension. It will also use the clGetPlatformInfo from the dispatch
+table if no such function is globally available. You may need to
+define this environment variable if you are using not (fully)
+compliant ICD, or if you are using the Intel ICD together with
+*optirun*(1). In the latter case, a bug into the Intel ICD will make
+the application crash.
+
+If set to the '`debug`' value, some additional messages will be
+printed in debug mode (see *OCL_ICD_DEBUG* below).
 
 *OCL_ICD_PLATFORM_SORT*::
 Allows one to choose the way platforms are sorted when presented to programs
