@@ -33,10 +33,18 @@ AM_PROG_CC_C_O
 AC_PATH_PROG([ASCIIDOC], [asciidoc], [])
 AC_PATH_PROG([A2X], [a2x], [])
 AC_PATH_PROG([XMLTO], [xmlto], [])
-AM_CONDITIONAL([GEN_DOC], [\
-	test x"$ASCIIDOC" != x && \
+AS_IF([	test x"$ASCIIDOC" != x && \
 	test x"$A2X" != x && \
-	test x"$XMLTO" != x ])
+	test x"$XMLTO" != x ],
+[
+  gen_doc=1
+  AC_MSG_NOTICE([generating documentation])
+],
+[
+  gen_doc=0
+  AC_MSG_NOTICE([documentation generation disabled])
+])
+AM_CONDITIONAL([GEN_DOC], [ test x"$gen_doc" = x1 ])
 
 # Checks for libraries.
 AC_CHECK_LIB([dl], [dlopen])
@@ -144,6 +152,23 @@ AC_ARG_ENABLE([update-database],
   [update_database=$enableval],
   [update_database=no])
 AM_CONDITIONAL([UPDATE_DATABASE], [test x"$update_database" != xno])
+
+# --enable-custom-vendordir
+AC_ARG_ENABLE([custom-vendordir],
+  [AS_HELP_STRING([--enable-custom-vendordir],
+                  [use the given directory instead of /etc/OpenCL/vendors to look for .icd files])],
+  [AS_CASE(["$enableval"],
+    [yes], [OCL_ICD_VENDORDIR="$sysconfdir/OpenCL/vendors"],
+    [no], [OCL_ICD_VENDORDIR='/etc/OpenCL/vendors'],
+    [OCL_ICD_VENDORDIR=$enableval])],
+  [OCL_ICD_VENDORDIR=/etc/OpenCL/vendors])
+AC_SUBST([OCL_ICD_VENDORDIR])
+
+AS_IF([test x"$OCL_ICD_VENDORDIR" = x"/etc/OpenCL/vendors" ], [
+  AC_MSG_NOTICE([using the official default vendors directory ($OCL_ICD_VENDORDIR)])
+], [
+  AC_MSG_NOTICE([using an unofficial custom default vendors directory ($OCL_ICD_VENDORDIR)])
+])
 
 # always use versionned symbols (check required for MacOSX)
 AM_CONDITIONAL([USE_MAP], [true])

@@ -49,8 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
 #include "ocl_icd_debug.h"
 
-#define ETC_OPENCL_VENDORS "/etc/OpenCL/vendors"
-
 int debug_ocl_icd_mask=0;
 
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
