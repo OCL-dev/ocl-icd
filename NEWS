@@ -1,4 +1,21 @@
 
+Version 2.2.11
+==============
+Andreas Kloeckner (3):
+      Add autoconf option for custom vendors .icd path
+      Make vendordir relative to
+      Hack the docs to reflect configured vendordir
+
+Vincent Danjean (8):
+      Revert "By default, use platforme specific clGetPlatformInfo"
+      Do not deference the plateform structure before checking it is an ICD
+      Cleanup --enable-custom-vendordir usage
+      [doc] ensure that files are correctly distributed and/or cleaned up
+      [doc] improve doc
+      [build] add notice message about what is choosen
+      Merge branch 'rel-vendor'
+      Release 2.2.11
+
 Version 2.2.10
 ==============
 Giuseppe Bilotta (2):
