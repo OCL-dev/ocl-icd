@@ -19,12 +19,17 @@ any OpenCL implementation itself, but merly act as a dispatcher to real OpenCL
 implementations provided as OpenCL Installable Client Driver (ICD).
 An ICD loader should be able to load ICDs provided by any vendors.
 
-The ICD Loader will look for files in '`@OCL_ICD_VENDORDIR@`' directory and, for each file
-whose name ends with '`.icd`', the ICD Loader loads with **dlopen**(3) the
-shared library whose name is on the first line of the '`.icd`' file.
-According to OpenCL specifications from Khronos (see [Khronos]), the default
-path for this purpose is '`/etc/OpenCL/vendors`'. OCL-ICD will use this
-path if it is configured with the root directory as the installation prefix.
+
+@@OFFICIAL: According to OpenCL specifications from Khronos (see [Khronos]), the
+@@CUSTOM: The
+ICD Loader looks for files into '`@OCL_ICD_VENDORDIR@`' directory
+and, for each file whose name ends with '`.icd`', the ICD Loader loads
+with **dlopen**(3) the shared library whose name is on the first line
+of the '`.icd`' file.
+@@CUSTOM: According to OpenCL specifications from Khronos (see
+@@CUSTOM: [Khronos]), the default path for this purpose is
+@@CUSTOM: '`/etc/OpenCL/vendors`', but this OCL-ICD version has been
+@@CUSTOM: configurated otherwise.
 
 Each shared library name in ".icd" files can have its path, or it can be a plain
 filename. In the latter case, the ICD shared library will be looked for into the
@@ -101,4 +106,4 @@ development.
 
 SEE ALSO
 --------
-http://www.khronos.org/registry/cl/[Khronos OpenCL registry website]
+\\http://www.khronos.org/registry/cl/[Khronos OpenCL registry website]

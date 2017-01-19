@@ -19,6 +19,18 @@ CLEANFILES = $(MAN_DOC) $(MAN_HTML) $(MAN_TXT)
 
 SUFFIXES=.html .7.txt .7
 
+libOpenCL.7.txt: libOpenCL.7.txt.in Makefile
+	$(AM_V_GEN)if [ "${OCL_ICD_VENDORDIR}" = '/etc/OpenCL/vendors' ]; then \
+		KEEP=OFFICIAL ; REMOVE=CUSTOM ; \
+	else \
+		KEEP=CUSTOM ; REMOVE=OFFICIAL ; \
+	fi && \
+	$(SED) \
+	    -e 's|[@]OCL_ICD_VENDORDIR@|@OCL_ICD_VENDORDIR@|g' \
+	    -e "/^@@$$REMOVE: /d" \
+	    -e "s/^@@$$KEEP: //" \
+	    < "$<" > "$@"
+
 .7.txt.html:
 	$(AM_V_GEN)$(ASCIIDOC) -d manpage -b xhtml11 -o$@ $<
 .7.txt.7:
@@ -28,8 +40,3 @@ SUFFIXES=.html .7.txt .7
 libOpenCL.so.7: libOpenCL.7
 	@: already create by a2x when generating libOpenCL.7
 endif
-
-libOpenCL.7.txt: libOpenCL.7.txt.in
-	$(SED) \
-	    -e "s|[@]OCL_ICD_VENDORDIR@|@OCL_ICD_VENDORDIR@|g" \
-	    < "$<" > "$@"
