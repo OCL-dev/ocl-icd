@@ -149,8 +149,11 @@ AM_CONDITIONAL([UPDATE_DATABASE], [test x"$update_database" != xno])
 AC_ARG_ENABLE([custom-vendordir],
   [AS_HELP_STRING([--enable-custom-vendordir],
                   [use the given directory instead of /etc/OpenCL/vendors to look for .icd files])],
-  [OCL_ICD_VENDORDIR=$enableval],
-  [OCL_ICD_VENDORDIR=$sysconfdir/OpenCL/vendors])
+  [AS_CASE(["$enableval"],
+    [yes], [OCL_ICD_VENDORDIR="$sysconfdir/OpenCL/vendors"],
+    [no], [OCL_ICD_VENDORDIR='/etc/OpenCL/vendors'],
+    [OCL_ICD_VENDORDIR=$enableval])],
+  [OCL_ICD_VENDORDIR=/etc/OpenCL/vendors])
 AC_SUBST([OCL_ICD_VENDORDIR])
 
 # always use versionned symbols (check required for MacOSX)
