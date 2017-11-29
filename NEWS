@@ -1,4 +1,16 @@
 
+Version 2.2.12
+==============
+Brice Videau (2):
+      Switched khronos headers to OpenCL 2.2.
+      Added OpenCL 2.2 support.
+
+Vincent Danjean (4):
+      Release 2.2.11
+      Merge remote-tracking branch 'origin/master'
+      Add instructions about bootstrap in INSTALL file
+      Release 2.2.12
+
 Version 2.2.11
 ==============
 Andreas Kloeckner (3):
