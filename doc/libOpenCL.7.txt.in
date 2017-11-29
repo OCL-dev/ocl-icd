@@ -41,7 +41,7 @@ Some environment variables can be used modify the default behavior of
 libOpenCL.
 
 *OPENCL_VENDOR_PATH*::
-This variable allows one to modify the defaut '`@OCL_ICD_VENDORDIR@`' path.
+This variable allows one to modify the default '`@OCL_ICD_VENDORDIR@`' path.
 It is compatible with some other ICD loaders (but not all of them, as the
 variable is not part of the standard). Note that *$OCL_ICD_VENDORS* (see below)
 is used in priority if defined and not empty.
@@ -90,7 +90,7 @@ through **clGetPlatformIDs**(3). Current provided algorithms are:
 * *none*: no sort is done and the order can change at each run.
 
 *OCL_ICD_DEFAULT_PLATFORM*::
-Number of the platform to choose as defaut platform. Note that using this
+Number of the platform to choose as default platform. Note that using this
 environment variable without ensuring the use of a sort algorithm for platforms
 is not really useful.
 
