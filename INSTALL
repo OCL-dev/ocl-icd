@@ -12,6 +12,11 @@ without warranty of any kind.
 Basic Installation
 ==================
 
+   If you start from the Git repository, you first need to run the
+'./bootstrap' script (with all autotool software installed). If you
+start from a released tarball, this step and autotool software are not
+required.
+
    Briefly, the shell commands './configure; make; make install' should
 configure, build, and install this package.  The following
 more-detailed instructions are generic; see the 'README' file for
