@@ -59,7 +59,7 @@ b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
   +
   If there is no slashes into
   *$OCL_ICD_VENDORS*, libOpenCL.so will first try to use
-  '`@OCL_ICD_VENDORDIR@`'*$OCL_ICD_VENDORS* (or
+  '`@OCL_ICD_VENDORDIR@/`'*$OCL_ICD_VENDORS* (or
   *$OPENCL_VENDOR_PATH*'`/`'*$OCL_ICD_VENDORS* if *OPENCL_VENDOR_PATH* is
   defined).
   If this fail or if there are shashes, it uses *$OCL_ICD_VENDORS* (as a
@@ -113,4 +113,4 @@ development.
 
 SEE ALSO
 --------
-\\http://www.khronos.org/registry/cl/[Khronos OpenCL registry website]
+https://www.khronos.org/registry/cl/[Khronos OpenCL registry website]
