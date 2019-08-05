@@ -39,7 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wcpp"
+#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS
 #  define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#  define CL_USE_DEPRECATED_OPENCL_2_0_APIS
+#  define CL_USE_DEPRECATED_OPENCL_2_1_APIS
+#  define CL_TARGET_OPENCL_VERSION 220
 #  include <CL/opencl.h>
 #pragma GCC diagnostic pop
 

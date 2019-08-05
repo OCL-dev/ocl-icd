@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 require 'yaml'
 
 module IcdGenerator
+
   $api_entries = {}
   $key_entries = {}
   $api_entries_array = []
@@ -170,12 +171,29 @@ EOF
     return headers
   end
 
+  def self.include_headers_no_warnings
+    headers_no_warn = ""
+    headers_no_warn << "#pragma GCC diagnostic push\n"
+    headers_no_warn << "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
+    headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
+    headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
+    headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
+    headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_2_0_APIS\n"
+    headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_2_1_APIS\n"
+    headers_no_warn << "#  define CL_TARGET_OPENCL_VERSION 220\n"
+    headers_no_warn << "#  include <CL/opencl.h>\n"
+    headers_no_warn << self.include_headers
+    headers_no_warn << "#pragma GCC diagnostic pop\n"
+    headers_no_warn
+   end
+
   ##########################################################
   ##########################################################
   # generate mode
   def self.generate_libdummy_icd_header
     libdummy_icd_structures = "/**\n#{$license}\n*/\n"
-    libdummy_icd_structures +=  "#include <CL/opencl.h>\n"
+    libdummy_icd_structures += "#define CL_TARGET_OPENCL_VERSION 220\n"
+    libdummy_icd_structures += "#include <CL/opencl.h>\n"
     libdummy_icd_structures += self.include_headers
     libdummy_icd_structures += "\n\nstruct _cl_icd_dispatch;\n"
     libdummy_icd_structures += "struct _cl_platform_id { struct _cl_icd_dispatch *dispatch; };\n\n"
@@ -223,14 +241,7 @@ EOF
     run_dummy_icd = "/**\n#{$license}\n*/\n"
     run_dummy_icd += "#include <stdlib.h>\n"
     run_dummy_icd += "#include <stdio.h>\n"
-    run_dummy_icd += "#pragma GCC diagnostic push\n"
-    run_dummy_icd += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
-    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    run_dummy_icd += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
-    run_dummy_icd += "#  include <CL/opencl.h>\n"
-    run_dummy_icd += self.include_headers
-    run_dummy_icd += "#pragma GCC diagnostic pop\n"
+    run_dummy_icd += self.include_headers_no_warnings
     run_dummy_icd += "\n\n"
     $api_entries.each_key { |func_name|
        next if $forbidden_funcs.include?(func_name)
@@ -291,14 +302,7 @@ EOF
 #include <dlfcn.h>
 
 EOF
-    run_dummy_icd_weak += "#pragma GCC diagnostic push\n"
-    run_dummy_icd_weak += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
-    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    run_dummy_icd_weak += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
-    run_dummy_icd_weak += "#  include <CL/opencl.h>\n"
-    run_dummy_icd_weak += self.include_headers
-    run_dummy_icd_weak += "#pragma GCC diagnostic pop\n"
+    run_dummy_icd_weak += self.include_headers_no_warnings
 
     $api_entries.each { |func_name, entry|
       next if $noweak_funcs.include?(func_name)
@@ -363,14 +367,7 @@ EOF
     ocl_icd_header = "/**\n#{$license}\n*/\n\n"
     ocl_icd_header += "#ifndef OCL_ICD_H\n"
     ocl_icd_header += "#define OCL_ICD_H\n"
-    ocl_icd_header += "#pragma GCC diagnostic push\n"
-    ocl_icd_header += "#  pragma GCC diagnostic ignored \"-Wcpp\"\n"
-    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_0_APIS\n"
-    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_1_APIS\n"
-    ocl_icd_header += "#  define CL_USE_DEPRECATED_OPENCL_1_2_APIS\n"
-    ocl_icd_header += "#  include <CL/opencl.h>\n"
-    ocl_icd_header += self.include_headers
-    ocl_icd_header += "#pragma GCC diagnostic pop\n"
+    ocl_icd_header += self.include_headers_no_warnings
     ocl_icd_header += <<EOF
 
 #define OCL_ICD_API_VERSION	1
