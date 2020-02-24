@@ -2,16 +2,16 @@
 Copyright (c) 2012-2015, Brice Videau <brice.videau@imag.fr>
 Copyright (c) 2012-2015, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
-      
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    
+
 1. Redistributions of source code must retain the above copyright notice, this
    list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
    and/or other materials provided with the distribution.
-        
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -75,16 +75,16 @@ module IcdGenerator
 Copyright (c) 2012-2015, Brice Videau <brice.videau@imag.fr>
 Copyright (c) 2012-2015, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
-      
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    
+
 1. Redistributions of source code must retain the above copyright notice, this
    list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
    and/or other materials provided with the distribution.
-        
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -112,7 +112,7 @@ EOF
     }
     api_entries.each{ |entry|
 #      puts entry
-      begin 
+      begin
         entry_name = entry.match(/CL_API_CALL(.*?)\(/m)[1].strip
       rescue
         entry_name = entry.match(/(\S*?)\(/m)[1].strip
@@ -227,7 +227,7 @@ EOF
     comma=","
     ($api_entries.length+$buff).times { |i|
       comma="" if (i == $api_entries.length+$buff-1)
-      if( $use_name_in_test[i] ) then 
+      if( $use_name_in_test[i] ) then
         libdummy_icd_source += "  (void(*)(void))& INT#{$known_entries[i]}#{comma}\n"
       else
         libdummy_icd_source += "  (void(*)(void))& dummyFunc#{i}#{comma}\n"
@@ -236,7 +236,7 @@ EOF
     libdummy_icd_source += "};\n"
     return libdummy_icd_source
   end
-  
+
   def self.generate_run_dummy_icd_source
     run_dummy_icd = "/**\n#{$license}\n*/\n"
     run_dummy_icd += "#include <stdlib.h>\n"
@@ -325,7 +325,7 @@ EOF
         p = p.split
         p = p[-1].gsub("*","")
       }
-       
+
       run_dummy_icd_weak += "  if(p) {\n"
       run_dummy_icd_weak += "    return((*(typeof(#{func_name})*)p)("
       run_dummy_icd_weak += ps.join(", ")
@@ -339,8 +339,73 @@ EOF
     return run_dummy_icd_weak
   end
 
+  def self.generate_icd_layer_source
+    icd_layer_source = "/**\n#{$license}\n*/\n"
+    icd_layer_source += <<EOF
+#include <stdio.h>
+#include "ocl_icd_layer.h"
+
+CL_API_ENTRY cl_uint CL_API_CALL
+clLayerVersion(void) {
+  return 1;
+}
+
+static void _init_dispatch(void);
+
+CL_API_ENTRY cl_int CL_API_CALL
+clInitLayer(
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                         num_entries,
+    const struct _cl_icd_dispatch **layer_dispatch,
+    cl_uint                        *num_entries_out) {
+  if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < OCL_ICD_LAST_FUNCTION+1)
+    return -1;
+
+  _init_dispatch();
+
+  tdispatch = target_dispatch;
+  *layer_dispatch = &dispatch;
+  *num_entries_out = OCL_ICD_LAST_FUNCTION+1;
+  return CL_SUCCESS;
+}
+
+EOF
+
+    $api_entries.each { |func_name, entry|
+      clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
+      return_type = entry.match(/CL_API_ENTRY (.*) CL_API_CALL/)[1]
+      parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
+      parameters.gsub!(/\[.*?\]/,"")
+      parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/m,'\1')
+      clean_entry = clean_entry.gsub(func_name, func_name+"_wrap").gsub("CL_API_ENTRY", "").gsub("CL_API_CALL", "")
+      icd_layer_source += "static "
+      icd_layer_source += clean_entry.gsub(/\*\[.*?\]/,"*  ").gsub(/\[.+?\]/,"")
+
+      ps = parameters.split(",")
+      ps = ps.collect { |p|
+        p = p.split
+        p = p[-1].gsub("*","")
+      }
+      icd_layer_source += "  printf(\"#{func_name}\\n\");\n"
+      icd_layer_source += "  return tdispatch->#{func_name}("
+      if func_name != "clUnloadCompiler"
+        icd_layer_source += ps.join(", ")
+      end
+      icd_layer_source += ");\n"
+      icd_layer_source += "}\n\n"
+    }
+
+    icd_layer_source += "static void _init_dispatch(void) {\n"
+    $api_entries.each { |func_name, _|
+      icd_layer_source += "  dispatch.#{func_name} = &#{func_name}_wrap;\n"
+    }
+    icd_layer_source += "}"
+
+    icd_layer_source
+  end
+
   def self.generate_sources(from_headers=true, from_database=false, database=nil)
-    if from_headers then        
+    if from_headers then
       parse_headers
     end
     if from_database then
@@ -358,6 +423,9 @@ EOF
     File.open('run_dummy_icd_weak_gen.c','w') { |f|
       f.puts generate_run_dummy_icd_weak_source
     }
+    File.open('dummy_icd_layer_gen.c','w') { |f|
+      f.puts generate_icd_layer_source
+    }
   end
 
   ##########################################################
@@ -372,6 +440,7 @@ EOF
 
 #define OCL_ICD_API_VERSION	1
 #define OCL_ICD_IDENTIFIED_FUNCTIONS	#{$known_entries.count}
+#define OCL_ICD_LAST_FUNCTION	#{$known_entries.keys.max}
 
 struct _cl_icd_dispatch {
 EOF
@@ -455,13 +524,13 @@ EOF
     }
     return ocl_icd_loader_map
   end
- 
+
   def self.generate_ocl_icd_bindings_source
     ocl_icd_bindings_source = "/**\n#{$license}\n*/\n"
     ocl_icd_bindings_source += "#include \"ocl_icd.h\"\n"
     ocl_icd_bindings_source += "struct _cl_icd_dispatch master_dispatch = {\n"
     ($api_entries.length+$buff-1).times { |i|
-      if( $known_entries[i] ) then 
+      if( $known_entries[i] ) then
         ocl_icd_bindings_source += "  #{$known_entries[i]},\n"
       else
         ocl_icd_bindings_source += "  (void *) NULL,\n"
@@ -475,8 +544,8 @@ EOF
     ocl_icd_bindings_source += "};\n"
     ocl_icd_bindings_source += <<EOF
 
-CL_API_ENTRY cl_int CL_API_CALL clIcdGetPlatformIDsKHR(  
-             cl_uint num_entries, 
+CL_API_ENTRY cl_int CL_API_CALL clIcdGetPlatformIDsKHR(
+             cl_uint num_entries,
              cl_platform_id *platforms,
              cl_uint *num_platforms) {
   if( platforms == NULL && num_platforms == NULL )
@@ -504,9 +573,9 @@ CL_API_ENTRY void * CL_API_CALL clGetExtensionFunctionAddress(
   return NULL;
 }
 CL_API_ENTRY cl_int CL_API_CALL clGetPlatformInfo(
-             cl_platform_id   platform, 
+             cl_platform_id   platform,
              cl_platform_info param_name,
-             size_t           param_value_size, 
+             size_t           param_value_size,
              void *           param_value,
              size_t *         param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
 #error You ahve to fill this function with your information or assert that your version responds to CL_PLATFORM_ICD_SUFFIX_KHR
@@ -595,13 +664,17 @@ EOF
     ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
     ocl_icd_loader_gen_source += "#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD\n"
     ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
-    $api_entries.each { |func_name, entry|
+    api_proc = proc { |disp, (func_name, entry)|
       next if skip_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
       return_type = entry.match(/CL_API_ENTRY (.*) CL_API_CALL/)[1]
       parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
       parameters.gsub!(/\[.*?\]/,"")
       parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/m,'\1')
+      if disp
+        clean_entry = clean_entry.gsub(func_name, func_name+"_disp").gsub("CL_API_ENTRY", "").gsub("CL_API_CALL", "")
+        ocl_icd_loader_gen_source +=  '__attribute__((visibility("hidden"))) '
+      end
       ocl_icd_loader_gen_source += clean_entry.gsub(/\*\[.*?\]/,"*  ").gsub(/\[.+?\]/,"")
       first_parameter = parameters.match(/.*?\,/m)
       if not first_parameter then
@@ -610,14 +683,21 @@ EOF
         first_parameter = first_parameter[0][0..-2]
       end
       fps = first_parameter.split
-      ocl_icd_loader_gen_source += "  debug_trace();\n"
-      ocl_icd_loader_gen_source += generate_get_extension_address_for_platform if func_name == "clGetExtensionFunctionAddressForPlatform"
-      raise "Unsupported data_type #{fps[0]}" if not $cl_data_type_error[fps[0]]
       ps = parameters.split(",")
       ps = ps.collect { |p|
         p = p.split
         p = p[-1].gsub("*","")
       }
+      if !disp
+        ocl_icd_loader_gen_source += "  debug_trace();\n"
+        ocl_icd_loader_gen_source += "  _initClIcd_no_inline();\n" if fps[0] == "cl_platform_id"
+        ocl_icd_loader_gen_source += "  if (__builtin_expect (!!_first_layer, 0))\n"
+        ocl_icd_loader_gen_source += "    return _first_layer->dispatch.#{func_name}("
+        ocl_icd_loader_gen_source += ps.join(", ")
+        ocl_icd_loader_gen_source += ");\n"
+      end
+      ocl_icd_loader_gen_source += generate_get_extension_address_for_platform if func_name == "clGetExtensionFunctionAddressForPlatform"
+      raise "Unsupported data_type #{fps[0]}" if ! $cl_data_type_error[fps[0]]
       error_handler = lambda {
          if(ps.include?("errcode_ret")) then
           ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
@@ -642,7 +722,7 @@ EOF
           end
         end
       }
-       
+
       if(fps[0] == "cl_platform_id") then
         ocl_icd_loader_gen_source += "  #{fps[1]}=selectPlatformID(#{fps[1]});\n"
       end
@@ -659,6 +739,8 @@ EOF
       ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
+    $api_entries.each &(api_proc.curry[true])
+    $api_entries.each &(api_proc.curry[false])
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
     skip_funcs = $specific_loader_funcs
     $api_entries.each { |func_name, entry|
@@ -666,6 +748,7 @@ EOF
       #next if func_name.match(/KHR$/)
       if (skip_funcs.include?(func_name)) then
         ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_hid;\n"
+        ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_disp;\n"
       else
         ocl_icd_loader_gen_source += "typeof(#{func_name}) #{func_name}_hid __attribute__ ((alias (\"#{func_name}\"), visibility(\"hidden\")));\n"
       end
@@ -674,11 +757,29 @@ EOF
     $api_entries.each { |func_name, entry|
       #next if func_name.match(/EXT$/)
       #next if func_name.match(/KHR$/)
-      ocl_icd_loader_gen_source += "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
+      ocl_icd_loader_gen_source << "  {\"#{func_name}\", (void(* const)(void))&#{func_name}_hid },\n"
     }
-    ocl_icd_loader_gen_source += <<EOF
+    ocl_icd_loader_gen_source << <<EOF
   {NULL, NULL}
 };
+
+EOF
+    ocl_icd_loader_gen_source << "struct _cl_icd_dispatch master_dispatch = {\n"
+    ($api_entries.length+$buff-1).times { |i|
+      if( $known_entries[i] ) then
+        ocl_icd_loader_gen_source << "  #{$known_entries[i]}_disp,\n"
+      else
+        ocl_icd_loader_gen_source << "  (void *) NULL,\n"
+      end
+    }
+    if( $known_entries[$api_entries.length+$buff-1] ) then
+      ocl_icd_loader_gen_source << "  #{$known_entries[$api_entries.length+$buff-1]}\n"
+    else
+      ocl_icd_loader_gen_source << "  (void *) NULL\n"
+    end
+    ocl_icd_loader_gen_source << "};\n"
+
+    ocl_icd_loader_gen_source << <<EOF
 
 #ifdef DEBUG_OCL_ICD
 void dump_platform(clGEFA_t f, cl_platform_id pid) {
@@ -687,10 +788,10 @@ EOF
     $api_entries_array.each { |entry|
       e = entry.gsub("\r"," ").gsub("\n"," ").gsub("\t"," ").
         sub(/.*CL_API_CALL *([^ ()]*)[ ()].*$/m, '\1')
-      ocl_icd_loader_gen_source += "  dump_field(pid, f, #{e});\n"
+      ocl_icd_loader_gen_source << "  dump_field(pid, f, #{e});\n"
     }
 
-    ocl_icd_loader_gen_source += <<EOF
+    ocl_icd_loader_gen_source << <<EOF
 }
 #endif
 
@@ -699,7 +800,7 @@ EOF
 EOF
     return ocl_icd_loader_gen_source;
   end
-  
+
   def self.generate_from_database(yamlfile)
     load_database(yamlfile)
     File.open('ocl_icd.h','w') { |f|
@@ -716,6 +817,9 @@ EOF
     }
     File.open('ocl_icd_loader_gen.c','w') { |f|
       f.puts generate_ocl_icd_loader_gen_source
+    }
+    File.open('dummy_icd_layer_gen.c','w') { |f|
+      f.puts generate_icd_layer_source
     }
   end
 
@@ -796,7 +900,7 @@ OptionParser.new do |opts|
   do |v|
     options[:input] = v
   end
-  opts.on("-s", "--[no-]system-headers", 
+  opts.on("-s", "--[no-]system-headers",
           "Look for OpenCL functions in system header files") \
   do |v|
     options[:"system-headers"] = v
@@ -828,6 +932,6 @@ elsif options[:mode] == :"update-database" then
 elsif options[:mode] == :database then
   IcdGenerator.generate_from_database(options[:database])
 else
-  raise "Mode must be one of generate, database or update-database not #{options[:mode]}" 
+  raise "Mode must be one of generate, database or update-database not #{options[:mode]}"
 end
 
