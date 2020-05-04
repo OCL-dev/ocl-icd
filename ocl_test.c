@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2012, Brice Videau <brice.videau@imag.fr>
+Copyright (c) 2012-2020, Brice Videau <bvideau@anl.gov>
 All rights reserved.
       
 Redistribution and use in source and binary forms, with or without
