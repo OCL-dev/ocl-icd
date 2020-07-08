@@ -650,8 +650,7 @@ static void __initLayer(char * layer_path) {
         ((void **)layer_dispatch)[i] ? ((void **)layer_dispatch)[i] : ((void **)target_dispatch)[i];
     }
     for( i = limit; i <= OCL_ICD_LAST_FUNCTION; i++) {
-      ((void **)&(new_layer->dispatch))[i] =
-        ((void **)layer_dispatch)[i] ? ((void **)layer_dispatch)[i] : ((void **)target_dispatch)[i];
+      ((void **)&(new_layer->dispatch))[i] = ((void **)target_dispatch)[i];
     }
   } else {
     debug(D_WARN, "Layer: %s could not be loaded", layer_path);
