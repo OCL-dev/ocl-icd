@@ -1203,6 +1203,9 @@ CL_API_ENTRY cl_int CL_API_CALL
 clWaitForEvents(cl_uint              num_events,
                 const cl_event *     event_list) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clWaitForEvents(num_events,
+                                                  event_list);
   clWaitForEvents_body
 }
 hidden_alias(clWaitForEvents);
@@ -1218,6 +1221,8 @@ clUnloadCompiler_disp(void) {
 CL_API_ENTRY cl_int CL_API_CALL
 clUnloadCompiler(void) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clUnloadCompiler();
   clUnloadCompiler_body
 }
 hidden_alias(clUnloadCompiler);
