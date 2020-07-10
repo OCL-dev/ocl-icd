@@ -345,19 +345,39 @@ EOF
 #include <stdio.h>
 #include "ocl_icd_layer.h"
 
-CL_API_ENTRY cl_uint CL_API_CALL
-clLayerVersion(void) {
-  return 1;
+CL_API_ENTRY cl_int CL_API_CALL
+clGetLayerInfo(
+    cl_layer_info  param_name,
+    size_t         param_value_size,
+    void          *param_value,
+    size_t        *param_value_size_ret) {
+  if (param_value_size && !param_value)
+    return CL_INVALID_VALUE;
+  if (!param_value && !param_value_size_ret)
+    return CL_INVALID_VALUE;
+  switch (param_name) {
+  case CL_LAYER_API_VERSION:
+    if (param_value_size < sizeof(cl_layer_api_version))
+      return CL_INVALID_VALUE;
+    if (param_value)
+      *((cl_layer_api_version *)param_value) = CL_LAYER_API_VERSION_100;
+    if (param_value_size_ret)
+      *param_value_size_ret = sizeof(cl_layer_api_version);
+    break;
+  default:
+    return CL_INVALID_VALUE;
+  }
+  return CL_SUCCESS;
 }
 
 static void _init_dispatch(void);
 
 CL_API_ENTRY cl_int CL_API_CALL
 clInitLayer(
-    const struct _cl_icd_dispatch  *target_dispatch,
     cl_uint                         num_entries,
-    const struct _cl_icd_dispatch **layer_dispatch,
-    cl_uint                        *num_entries_out) {
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                        *num_entries_out,
+    const struct _cl_icd_dispatch **layer_dispatch) {
   if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < OCL_ICD_LAST_FUNCTION+1)
     return -1;
 

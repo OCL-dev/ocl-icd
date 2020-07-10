@@ -56,13 +56,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int debug_ocl_icd_mask=0;
 
+typedef cl_uint cl_layer_info;
+typedef cl_uint cl_layer_api_version;
+#define CL_LAYER_API_VERSION 0xDEAD
+#define CL_LAYER_API_VERSION_100 100
+
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
-CL_API_ENTRY typedef cl_uint (CL_API_CALL *clLayerVersion_fn)(void);
+CL_API_ENTRY typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
+    cl_layer_info  param_name,
+    size_t         param_value_size,
+    void          *param_value,
+    size_t        *param_value_size_ret);
+
 CL_API_ENTRY typedef cl_int (CL_API_CALL *clInitLayer_fn)(
-    const struct _cl_icd_dispatch  *target_dispatch,
     cl_uint                         num_entries,
-    const struct _cl_icd_dispatch **layer_dispatch,
-    cl_uint                        *num_entries_out);
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                        *num_entries_out,
+    const struct _cl_icd_dispatch **layer_dispatch);
 
 inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
@@ -603,17 +613,27 @@ static void __initLayer(char * layer_path) {
         dlclose(handle);
         return;
       }
+      cur_layer = cur_layer->next_layer;
     }
     debug(D_LOG, "Layer: %s loaded", layer_path);
-    clLayerVersion_fn clLayerVersion_ptr = (clLayerVersion_fn)dlsym(handle, "clLayerVersion");
+    clGetLayerInfo_fn clGetLayerInfo_ptr = (clGetLayerInfo_fn)dlsym(handle, "clGetLayerInfo");
     clInitLayer_fn clInitLayer_ptr = (clInitLayer_fn)dlsym(handle, "clInitLayer");
 
-    if (!clLayerVersion_ptr || !clInitLayer_ptr) {
+    if (!clGetLayerInfo_ptr || !clInitLayer_ptr) {
       dlclose(handle);
       debug(D_WARN, "Layer: %s was rejected", layer_path);
       return;
     }
-    cl_uint layer_version = clLayerVersion_ptr();
+    cl_layer_api_version layer_version = 0;
+    cl_int err = clGetLayerInfo_ptr(CL_LAYER_API_VERSION, sizeof(layer_version), &layer_version, NULL);
+    if (CL_SUCCESS != err) {
+      debug(D_WARN, "Layer: %s api version could not be queried", layer_path);
+      return;
+    }
+    if (CL_LAYER_API_VERSION_100 != layer_version) {
+      debug(D_WARN, "Layer: %s api version not supported", layer_path);
+      return;
+    }
     const struct _cl_icd_dispatch *layer_dispatch = NULL;
     cl_uint layer_dispatch_num_entries = 0;
     const struct _cl_icd_dispatch *target_dispatch = NULL;
@@ -629,9 +649,9 @@ static void __initLayer(char * layer_path) {
       target_dispatch = &(master_dispatch);
     }
 
-    cl_int err = clInitLayer_ptr(target_dispatch, OCL_ICD_LAST_FUNCTION+1, &layer_dispatch, &layer_dispatch_num_entries );
+    err = clInitLayer_ptr(OCL_ICD_LAST_FUNCTION+1, target_dispatch, &layer_dispatch_num_entries, &layer_dispatch);
 
-    if (!layer_version || err != CL_SUCCESS || !layer_dispatch || !layer_dispatch_num_entries) {
+    if (err != CL_SUCCESS || !layer_dispatch || !layer_dispatch_num_entries) {
       dlclose(handle);
       free(new_layer);
       debug(D_WARN, "Layer: %s could not be initialized", layer_path);
