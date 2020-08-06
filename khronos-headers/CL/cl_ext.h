@@ -198,7 +198,7 @@ typedef CL_API_ENTRY cl_int
  *****************************************/
 #define cl_khr_create_command_queue 1
 
-typedef cl_bitfield cl_queue_properties_khr;
+typedef cl_properties cl_queue_properties_khr;
 
 extern CL_API_ENTRY cl_command_queue CL_API_CALL
 clCreateCommandQueueWithPropertiesKHR(cl_context context,
@@ -231,7 +231,27 @@ typedef CL_API_ENTRY cl_command_queue
 * cl_amd_device_attribute_query *
 *********************************/
 
-#define CL_DEVICE_PROFILING_TIMER_OFFSET_AMD        0x4036
+#define CL_DEVICE_PROFILING_TIMER_OFFSET_AMD            0x4036
+#define CL_DEVICE_TOPOLOGY_AMD                          0x4037
+#define CL_DEVICE_BOARD_NAME_AMD                        0x4038
+#define CL_DEVICE_GLOBAL_FREE_MEMORY_AMD                0x4039
+#define CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD             0x4040
+#define CL_DEVICE_SIMD_WIDTH_AMD                        0x4041
+#define CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD            0x4042
+#define CL_DEVICE_WAVEFRONT_WIDTH_AMD                   0x4043
+#define CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD               0x4044
+#define CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD          0x4045
+#define CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD     0x4046
+#define CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD   0x4047
+#define CL_DEVICE_LOCAL_MEM_BANKS_AMD                   0x4048
+#define CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD            0x4049
+#define CL_DEVICE_GFXIP_MAJOR_AMD                       0x404A
+#define CL_DEVICE_GFXIP_MINOR_AMD                       0x404B
+#define CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD            0x404C
+#define CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_AMD         0x4030
+#define CL_DEVICE_MAX_WORK_GROUP_SIZE_AMD               0x4031
+#define CL_DEVICE_PREFERRED_CONSTANT_BUFFER_SIZE_AMD    0x4033
+#define CL_DEVICE_PCIE_ID_AMD                           0x4034
 
 
 /*********************************
@@ -611,6 +631,21 @@ typedef struct _cl_name_version_khr
 #define CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR            0x1060
 #define CL_DEVICE_ILS_WITH_VERSION_KHR                   0x1061
 #define CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR      0x1062
+
+
+/*********************************
+* cl_khr_device_uuid extension
+*********************************/
+#define cl_khr_device_uuid 1
+
+#define CL_UUID_SIZE_KHR 16
+#define CL_LUID_SIZE_KHR 8
+
+#define CL_DEVICE_UUID_KHR          0x106A
+#define CL_DRIVER_UUID_KHR          0x106B
+#define CL_DEVICE_LUID_VALID_KHR    0x106C
+#define CL_DEVICE_LUID_KHR          0x106D
+#define CL_DEVICE_NODE_MASK_KHR     0x106E
 
 
 /**********************************
