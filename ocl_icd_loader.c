@@ -329,19 +329,19 @@ static void _count_devices(struct platform_icd *p) {
   /* Ensure they are 0 in case of errors */
   p->ngpus = p->ncpus = p->ndevs = 0;
 
-  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
+  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting GPU devices in platform %p",
 	  _clerror2string(error), p->pid);
   }
 
-  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
+  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting CPU devices in platform %p",
 	  _clerror2string(error), p->pid);
   }
 
-  error = clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
+  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting ALL devices in platform %p",
 	  _clerror2string(error), p->pid);
