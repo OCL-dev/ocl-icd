@@ -36,8 +36,8 @@ AT_CLEANUP
 
 AT_SETUP([No choice, among 1 => default platform])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
-	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so])
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/.libs/libdummycl.so],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0])
 AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
 AT_CHECK([cat stdout], 0, 
 [Found 1 platforms!
@@ -73,8 +73,8 @@ AT_CLEANUP
 AT_SETUP([No choice, among 2 => one platform])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
-	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0])
 AT_CHECK([ocl_test --default-platform], 0, [stdout], [stderr])
 dnl platforms can be listed in any order
 AT_CHECK([env LC_ALL=C sort -u stdout], 0, 
@@ -128,6 +128,7 @@ AT_SETUP([Sort by GPU])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [31],
           [NB_GPU2], [3],
 	  [NB_CPU], [3],
@@ -135,7 +136,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [3],
           [NB_ALL2], [31]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test
@@ -148,6 +148,7 @@ AT_SETUP([Sort by GPU (rev)])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [3],
           [NB_GPU2], [31],
 	  [NB_CPU], [3],
@@ -155,7 +156,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [3],
           [NB_ALL2], [31]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test2
@@ -168,6 +168,7 @@ AT_SETUP([Sort by CPU])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [3],
           [NB_GPU2], [3],
 	  [NB_CPU], [31],
@@ -175,7 +176,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [3],
           [NB_ALL2], [31]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test
@@ -188,6 +188,7 @@ AT_SETUP([Sort by CPU (rev)])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [3],
           [NB_GPU2], [3],
 	  [NB_CPU], [3],
@@ -195,7 +196,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [3],
           [NB_ALL2], [31]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test2
@@ -208,6 +208,7 @@ AT_SETUP([Sort by devices])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [3],
           [NB_GPU2], [3],
 	  [NB_CPU], [31],
@@ -215,7 +216,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [31],
           [NB_ALL2], [3]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test
@@ -228,6 +228,7 @@ AT_SETUP([Sort by devices (rev)])
 AT_UNSET([OCL_ICD_ASSUME_ICD_EXTENSION])
 AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors],
+	  [OCL_ICD_DEFAULT_PLATFORM],[0],
 	  [NB_GPU], [3],
           [NB_GPU2], [3],
 	  [NB_CPU], [3],
@@ -235,7 +236,6 @@ AT_EXPORT([OCL_ICD_DEBUG],[7],
 	  [NB_ALL], [3],
           [NB_ALL2], [31]
 	)
-AT_UNSET([OCL_ICD_DEFAULT_PLATFORM])
 AT_CHECK([ocl_test --default-platform], 0, 
 [Found 2 platforms!
 ocl-icd ICD test2
