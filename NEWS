@@ -1,3 +1,22 @@
+Version 2.2.13
+==============
+Brice Videau (9):
+      Removed warnings and use uniform warning suppression
+      Switched Khornos Headers to OpenCL3.0
+      Added OpenCL 3.0 support
+      Updated copyright
+      Fix warning in gcc10
+      Updated loader and headers to support clSetContextDestructorCallback.
+      Call clGetDeviceIDs directly through the dispatch table
+      Updated NEWS
+      Release 2.2.13
+
+Sergei Trofimovich (1):
+      icd_generator.rb: fix build failure against gcc-10
+
+Vincent Danjean (2):
+      Fix typo in manpage
+      Fix typo in doc
 
 Version 2.2.12
 ==============
@@ -6,7 +25,6 @@ Brice Videau (2):
       Added OpenCL 2.2 support.
 
 Vincent Danjean (4):
-      Release 2.2.11
       Merge remote-tracking branch 'origin/master'
       Add instructions about bootstrap in INSTALL file
       Release 2.2.12
