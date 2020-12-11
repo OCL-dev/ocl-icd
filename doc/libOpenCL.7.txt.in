@@ -67,6 +67,10 @@ b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
 c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
+*OCL_ICD_LAYERS*::
+This variable allows one to specify a colon separated list of layers to load,
+specifying their path. This support is experimental.
+
 *OCL_ICD_ASSUME_ICD_EXTENSION*::
 If set to an non-empty value, contrary the Khronos specification, the
 loader will not check that the loaded ICDs declare the `cl_khr_icd`
