@@ -59,7 +59,7 @@ int debug_ocl_icd_mask=0;
 
 typedef cl_uint cl_layer_info;
 typedef cl_uint cl_layer_api_version;
-#define CL_LAYER_API_VERSION 0xDEAD
+#define CL_LAYER_API_VERSION 0x4240
 #define CL_LAYER_API_VERSION_100 100
 
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
@@ -604,6 +604,8 @@ static void __initLayer(char * layer_path) {
     return;
 
   void *handle=NULL;
+
+  debug(D_LOG, "Considering file '%s'", layer_path);
 
   handle = dlopen(layer_path, RTLD_LAZY|RTLD_LOCAL);
   if (handle) {

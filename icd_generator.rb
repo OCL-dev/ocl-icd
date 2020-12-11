@@ -346,6 +346,9 @@ EOF
 #include <stdio.h>
 #include "ocl_icd_layer.h"
 
+static struct _cl_icd_dispatch dispatch = {NULL};
+static const struct _cl_icd_dispatch *tdispatch;
+
 CL_API_ENTRY cl_int CL_API_CALL
 clGetLayerInfo(
     cl_layer_info  param_name,
