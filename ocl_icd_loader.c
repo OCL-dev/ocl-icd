@@ -57,12 +57,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int debug_ocl_icd_mask=0;
 
+typedef cl_uint cl_layer_info;
+typedef cl_uint cl_layer_api_version;
+#define CL_LAYER_API_VERSION 0xDEAD
+#define CL_LAYER_API_VERSION_100 100
+
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
+CL_API_ENTRY typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
+    cl_layer_info  param_name,
+    size_t         param_value_size,
+    void          *param_value,
+    size_t        *param_value_size_ret);
+
+CL_API_ENTRY typedef cl_int (CL_API_CALL *clInitLayer_fn)(
+    cl_uint                         num_entries,
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                        *num_entries_out,
+    const struct _cl_icd_dispatch **layer_dispatch);
 
 static inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
 	v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
 }
+
+__attribute__((visibility("hidden"))) struct layer_icd *_first_layer=NULL;
 
 struct vendor_icd *_icds=NULL;
 struct platform_icd *_picds=NULL;
@@ -581,6 +599,101 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
   _sort_platforms(&_picds[0], _num_picds);
 }
 
+static void __initLayer(char * layer_path) {
+  if(strlen(layer_path) == 0)
+    return;
+
+  void *handle=NULL;
+
+  handle = dlopen(layer_path, RTLD_LAZY|RTLD_LOCAL);
+  if (handle) {
+    struct layer_icd * cur_layer = _first_layer;
+    while (cur_layer) {
+      if (cur_layer->dl_handle == handle) {
+        debug(D_WARN, "Layer: %s already loaded", layer_path);
+        dlclose(handle);
+        return;
+      }
+      cur_layer = cur_layer->next_layer;
+    }
+    debug(D_LOG, "Layer: %s loaded", layer_path);
+    clGetLayerInfo_fn clGetLayerInfo_ptr = (clGetLayerInfo_fn)dlsym(handle, "clGetLayerInfo");
+    clInitLayer_fn clInitLayer_ptr = (clInitLayer_fn)dlsym(handle, "clInitLayer");
+
+    if (!clGetLayerInfo_ptr || !clInitLayer_ptr) {
+      dlclose(handle);
+      debug(D_WARN, "Layer: %s was rejected", layer_path);
+      return;
+    }
+    cl_layer_api_version layer_version = 0;
+    cl_int err = clGetLayerInfo_ptr(CL_LAYER_API_VERSION, sizeof(layer_version), &layer_version, NULL);
+    if (CL_SUCCESS != err) {
+      debug(D_WARN, "Layer: %s api version could not be queried", layer_path);
+      return;
+    }
+    if (CL_LAYER_API_VERSION_100 != layer_version) {
+      debug(D_WARN, "Layer: %s api version not supported", layer_path);
+      return;
+    }
+    const struct _cl_icd_dispatch *layer_dispatch = NULL;
+    cl_uint layer_dispatch_num_entries = 0;
+    const struct _cl_icd_dispatch *target_dispatch = NULL;
+    struct layer_icd * new_layer = (struct layer_icd *)malloc(sizeof(struct layer_icd));
+    if (!new_layer) {
+      debug(D_WARN, "Layer: %s could not be allocated", layer_path);
+      return;
+    }
+
+    if (_first_layer) {
+      target_dispatch = &(_first_layer->dispatch);
+    } else {
+      target_dispatch = &(master_dispatch);
+    }
+
+    err = clInitLayer_ptr(OCL_ICD_LAST_FUNCTION+1, target_dispatch, &layer_dispatch_num_entries, &layer_dispatch);
+
+    if (err != CL_SUCCESS || !layer_dispatch || !layer_dispatch_num_entries) {
+      dlclose(handle);
+      free(new_layer);
+      debug(D_WARN, "Layer: %s could not be initialized", layer_path);
+      return;
+    }
+
+    new_layer->next_layer = _first_layer;
+    _first_layer = new_layer;
+    new_layer->dl_handle = handle;
+
+    cl_uint limit = layer_dispatch_num_entries < OCL_ICD_LAST_FUNCTION+1 ? layer_dispatch_num_entries : OCL_ICD_LAST_FUNCTION+1;
+    cl_uint i;
+
+    for( i = 0; i < limit; i++) {
+      ((void **)&(new_layer->dispatch))[i] =
+        ((void **)layer_dispatch)[i] ? ((void **)layer_dispatch)[i] : ((void **)target_dispatch)[i];
+    }
+    for( i = limit; i <= OCL_ICD_LAST_FUNCTION; i++) {
+      ((void **)&(new_layer->dispatch))[i] = ((void **)target_dispatch)[i];
+    }
+  } else {
+    debug(D_WARN, "Layer: %s could not be loaded", layer_path);
+  }
+}
+
+static void __initLayers( void ) {
+  char* layers_path=getenv("OCL_ICD_LAYERS");
+  if (layers_path) {
+    char* layer_path = layers_path;
+    char* next_layer_path = strchr(layers_path, ':');
+    while (layer_path) {
+      if (next_layer_path)
+        *next_layer_path++ = '\0';
+      __initLayer(layer_path);
+      layer_path = next_layer_path;
+      if (next_layer_path)
+        next_layer_path = strchr(next_layer_path, ':');
+    }
+  }
+}
+
 static void __initClIcd( void ) {
   debug_init();
   cl_uint num_icds = 0;
@@ -668,6 +781,7 @@ static void __initClIcd( void ) {
   if (dir != NULL){
     closedir(dir);
   }
+  __initLayers();
   return;
  abort:
   _num_icds = 0;
@@ -724,6 +838,13 @@ static void _initClIcd_real( void ) {
   _initialized = 1;
 }
 
+void __attribute__((visibility("internal")))
+_initClIcd_no_inline( void ) {
+  if( __builtin_expect (_initialized, 1) )
+    return;
+  _initClIcd_real();
+}
+
 static inline void _initClIcd( void ) {
   if( __builtin_expect (_initialized, 1) )
     return;
@@ -734,7 +855,6 @@ cl_platform_id __attribute__((visibility("internal")))
 getDefaultPlatformID() {
   static cl_platform_id defaultPlatformID=NULL;
   static int defaultSet=0;
-  _initClIcd();
   if (! defaultSet) {
     do {
       if(_num_picds == 0) {
@@ -811,38 +931,78 @@ static cl_int clGetICDLoaderInfoOCLICD(
   return CL_SUCCESS;
 }
 
+#define clGetExtensionFunctionAddress_body \
+  if( func_name == NULL ) \
+    return NULL; \
+  cl_uint suffix_length; \
+  cl_uint i; \
+  void * return_value=NULL; \
+  struct func_desc const * fn=&function_description[0]; \
+  int lenfn=strlen(func_name); \
+  if (lenfn > 3 && \
+      (strcmp(func_name+lenfn-3, "KHR")==0 || strcmp(func_name+lenfn-3, "EXT")==0)) { \
+    while (fn->name != NULL) { \
+      if (strcmp(func_name, fn->name)==0) \
+        RETURN(fn->addr); \
+      fn++; \
+    } \
+  } \
+  for(i=0; i<_num_picds; i++) { \
+    suffix_length = strlen(_picds[i].extension_suffix); \
+    if( suffix_length > strlen(func_name) ) \
+      continue; \
+    if(strcmp(_picds[i].extension_suffix, &func_name[strlen(func_name)-suffix_length]) == 0) \
+      RETURN((*_picds[i].vicd->ext_fn_ptr)(func_name)); \
+  } \
+  if(strcmp(func_name, "clGetICDLoaderInfoOCLICD") == 0) { \
+    return (void*)(void*(*)(void))(&clGetICDLoaderInfoOCLICD); \
+  } \
+  RETURN(return_value);
+
+__attribute__ ((visibility ("hidden"))) void *
+clGetExtensionFunctionAddress_disp(const char * func_name) {
+  clGetExtensionFunctionAddress_body
+}
+
 CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if( func_name == NULL )
-    return NULL;
-  cl_uint suffix_length;
-  cl_uint i;
-  void * return_value=NULL;
-  struct func_desc const * fn=&function_description[0];
-  int lenfn=strlen(func_name);
-  if (lenfn > 3 &&
-      (strcmp(func_name+lenfn-3, "KHR")==0 || strcmp(func_name+lenfn-3, "EXT")==0)) {
-    while (fn->name != NULL) {
-      if (strcmp(func_name, fn->name)==0)
-        RETURN(fn->addr);
-      fn++;
-    }
-  }
-  for(i=0; i<_num_picds; i++) {
-    suffix_length = strlen(_picds[i].extension_suffix);
-    if( suffix_length > strlen(func_name) )
-      continue;
-    if(strcmp(_picds[i].extension_suffix, &func_name[strlen(func_name)-suffix_length]) == 0)
-      RETURN((*_picds[i].vicd->ext_fn_ptr)(func_name));
-  }
-  if(strcmp(func_name, "clGetICDLoaderInfoOCLICD") == 0) {
-    return (void*)(void*(*)(void))(&clGetICDLoaderInfoOCLICD);
-  }
-  RETURN(return_value);
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clGetExtensionFunctionAddress(func_name);
+  clGetExtensionFunctionAddress_body
 }
 hidden_alias(clGetExtensionFunctionAddress);
+
+#define clGetPlatformIDs_body \
+  if( platforms == NULL && num_platforms == NULL ) \
+    RETURN(CL_INVALID_VALUE); \
+  if( num_entries == 0 && platforms != NULL ) \
+    RETURN(CL_INVALID_VALUE); \
+  if( _num_icds == 0 || _num_picds == 0 ) { \
+    if ( num_platforms != NULL ) \
+      *num_platforms = 0; \
+    RETURN(CL_PLATFORM_NOT_FOUND_KHR); \
+  } \
+ \
+  cl_uint i; \
+  if( num_platforms != NULL ){ \
+    *num_platforms = _num_picds; \
+  } \
+  if( platforms != NULL ) { \
+    cl_uint n_platforms = _num_picds < num_entries ? _num_picds : num_entries; \
+    for( i=0; i<n_platforms; i++) { \
+      *(platforms++) = _picds[i].pid; \
+    } \
+  } \
+  return CL_SUCCESS;
+
+__attribute__ ((visibility ("hidden"))) cl_int
+clGetPlatformIDs_disp(cl_uint          num_entries,
+                      cl_platform_id * platforms,
+                      cl_uint *        num_platforms) {
+  clGetPlatformIDs_body
+}
 
 CL_API_ENTRY cl_int CL_API_CALL
 clGetPlatformIDs(cl_uint          num_entries,
@@ -850,27 +1010,9 @@ clGetPlatformIDs(cl_uint          num_entries,
                  cl_uint *        num_platforms) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if( platforms == NULL && num_platforms == NULL )
-    RETURN(CL_INVALID_VALUE);
-  if( num_entries == 0 && platforms != NULL )
-    RETURN(CL_INVALID_VALUE);
-  if( _num_icds == 0 || _num_picds == 0 ) {
-    if ( num_platforms != NULL )
-      *num_platforms = 0;
-    RETURN(CL_PLATFORM_NOT_FOUND_KHR);
-  }
-
-  cl_uint i;
-  if( num_platforms != NULL ){
-    *num_platforms = _num_picds;
-  }
-  if( platforms != NULL ) {
-    cl_uint n_platforms = _num_picds < num_entries ? _num_picds : num_entries;
-    for( i=0; i<n_platforms; i++) {
-      *(platforms++) = _picds[i].pid;
-    }
-  }
-  return CL_SUCCESS;
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clGetPlatformIDs(num_entries, platforms, num_platforms);
+  clGetPlatformIDs_body
 }
 hidden_alias(clGetPlatformIDs);
 
@@ -896,132 +1038,211 @@ hidden_alias(clGetPlatformIDs);
     good; \
   })
 
+#define clCreateContext_body \
+  cl_uint i=0; \
+  if( properties != NULL){ \
+    while( properties[i] != 0 ) { \
+      if( properties[i] == CL_CONTEXT_PLATFORM ) { \
+        if((struct _cl_platform_id *) properties[i+1] == NULL) { \
+          if(errcode_ret) { \
+            *errcode_ret = CL_INVALID_PLATFORM; \
+          } \
+          RETURN(NULL); \
+        } else { \
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
+	    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL); \
+          } \
+        } \
+        RETURN(((struct _cl_platform_id *) properties[i+1]) \
+          ->dispatch->clCreateContext(properties, num_devices, devices, \
+                        pfn_notify, user_data, errcode_ret)); \
+      } \
+      i += 2; \
+    } \
+  } \
+  if(devices == NULL || num_devices == 0) { \
+    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_VALUE, NULL); \
+  } \
+  if((struct _cl_device_id *)devices[0] == NULL) { \
+    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_DEVICE, NULL); \
+  } \
+  RETURN(((struct _cl_device_id *)devices[0]) \
+    ->dispatch->clCreateContext(properties, num_devices, devices, \
+                  pfn_notify, user_data, errcode_ret));
+
+
+__attribute__ ((visibility ("hidden"))) cl_context
+clCreateContext_disp(const cl_context_properties *  properties,
+                     cl_uint                        num_devices,
+                     const cl_device_id *           devices,
+                     void (CL_CALLBACK *  pfn_notify)(const char *, const void *, size_t, void *),
+                     void *                         user_data,
+                     cl_int *                       errcode_ret ){
+  clCreateContext_body
+}
+
 CL_API_ENTRY cl_context CL_API_CALL
-clCreateContext(const cl_context_properties *  properties ,
-                cl_uint                        num_devices ,
-                const cl_device_id *           devices ,
-                void (CL_CALLBACK *  pfn_notify )(const char *, const void *, size_t, void *),
-                void *                         user_data ,
-                cl_int *                       errcode_ret ){
+clCreateContext(const cl_context_properties *  properties,
+                cl_uint                        num_devices,
+                const cl_device_id *           devices,
+                void (CL_CALLBACK *  pfn_notify)(const char *, const void *, size_t, void *),
+                void *                         user_data,
+                cl_int *                       errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM ) {
-        if((struct _cl_platform_id *) properties[i+1] == NULL) {
-          if(errcode_ret) {
-            *errcode_ret = CL_INVALID_PLATFORM;
-          }
-          RETURN(NULL);
-        } else {
-          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
-	    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
-          }
-        }
-        RETURN(((struct _cl_platform_id *) properties[i+1])
-          ->dispatch->clCreateContext(properties, num_devices, devices,
-                        pfn_notify, user_data, errcode_ret));
-      }
-      i += 2;
-    }
-  }
-  if(devices == NULL || num_devices == 0) {
-    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_VALUE, NULL);
-  }
-  if((struct _cl_device_id *)devices[0] == NULL) {
-    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_DEVICE, NULL);
-  }
-  RETURN(((struct _cl_device_id *)devices[0])
-    ->dispatch->clCreateContext(properties, num_devices, devices,
-                  pfn_notify, user_data, errcode_ret));
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clCreateContext(properties,
+                                                  num_devices,
+                                                  devices,
+                                                  pfn_notify,
+                                                  user_data,
+                                                  errcode_ret);
+  clCreateContext_body
 }
 hidden_alias(clCreateContext);
 
+#define clCreateContextFromType_body \
+  if(_num_picds == 0) { \
+    goto out; \
+  } \
+  cl_uint i=0; \
+  if( properties != NULL){ \
+    while( properties[i] != 0 ) { \
+      if( properties[i] == CL_CONTEXT_PLATFORM ) { \
+	if( (struct _cl_platform_id *) properties[i+1] == NULL ) { \
+	  goto out; \
+        } else { \
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
+            goto out; \
+          } \
+        } \
+        return ((struct _cl_platform_id *) properties[i+1]) \
+          ->dispatch->clCreateContextFromType(properties, device_type, \
+                        pfn_notify, user_data, errcode_ret); \
+      } \
+      i += 2; \
+    } \
+  } else { \
+    cl_platform_id default_platform=getDefaultPlatformID(); \
+    RETURN(default_platform->dispatch->clCreateContextFromType \
+	(properties, device_type, pfn_notify, user_data, errcode_ret)); \
+  } \
+ out: \
+  RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
+
+__attribute__ ((visibility ("hidden"))) cl_context
+clCreateContextFromType_disp(const cl_context_properties *  properties,
+                             cl_device_type                 device_type,
+                             void (CL_CALLBACK *      pfn_notify )(const char *, const void *, size_t, void *),
+                             void *                         user_data,
+                             cl_int *                       errcode_ret) {
+  clCreateContextFromType_body
+}
+
 CL_API_ENTRY cl_context CL_API_CALL
-clCreateContextFromType(const cl_context_properties *  properties ,
-                        cl_device_type                 device_type ,
+clCreateContextFromType(const cl_context_properties *  properties,
+                        cl_device_type                 device_type,
                         void (CL_CALLBACK *      pfn_notify )(const char *, const void *, size_t, void *),
-                        void *                         user_data ,
-                        cl_int *                       errcode_ret ){
+                        void *                         user_data,
+                        cl_int *                       errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if(_num_picds == 0) {
-    goto out;
-  }
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM ) {
-	if( (struct _cl_platform_id *) properties[i+1] == NULL ) {
-	  goto out;
-        } else {
-          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
-            goto out;
-          }
-        }
-        return ((struct _cl_platform_id *) properties[i+1])
-          ->dispatch->clCreateContextFromType(properties, device_type,
-                        pfn_notify, user_data, errcode_ret);
-      }
-      i += 2;
-    }
-  } else {
-    cl_platform_id default_platform=getDefaultPlatformID();
-    RETURN(default_platform->dispatch->clCreateContextFromType
-	(properties, device_type, pfn_notify, user_data, errcode_ret));
-  }
- out:
-  RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clCreateContextFromType(properties,
+                                                          device_type,
+                                                          pfn_notify,
+                                                          user_data,
+                                                          errcode_ret);
+  clCreateContextFromType_body
 }
 hidden_alias(clCreateContextFromType);
 
+#define clGetGLContextInfoKHR_body \
+  cl_uint i=0; \
+  if( properties != NULL){ \
+    while( properties[i] != 0 ) { \
+      if( properties[i] == CL_CONTEXT_PLATFORM ) { \
+        if( (struct _cl_platform_id *) properties[i+1] == NULL ) { \
+	  RETURN(CL_INVALID_PLATFORM); \
+        } else { \
+          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
+	    RETURN(CL_INVALID_PLATFORM); \
+          } \
+        } \
+        RETURN(((struct _cl_platform_id *) properties[i+1]) \
+	  ->dispatch->clGetGLContextInfoKHR(properties, param_name, \
+                        param_value_size, param_value, param_value_size_ret)); \
+      } \
+      i += 2; \
+    } \
+  } \
+  RETURN(CL_INVALID_PLATFORM);
+
+__attribute__ ((visibility ("hidden"))) cl_int
+clGetGLContextInfoKHR_disp(const cl_context_properties *  properties,
+                           cl_gl_context_info             param_name,
+                           size_t                         param_value_size,
+                           void *                         param_value,
+                           size_t *                       param_value_size_ret) {
+  clGetGLContextInfoKHR_body
+}
+
 CL_API_ENTRY cl_int CL_API_CALL
-clGetGLContextInfoKHR(const cl_context_properties *  properties ,
-                      cl_gl_context_info             param_name ,
-                      size_t                         param_value_size ,
-                      void *                         param_value ,
-                      size_t *                       param_value_size_ret ){
+clGetGLContextInfoKHR(const cl_context_properties *  properties,
+                      cl_gl_context_info             param_name,
+                      size_t                         param_value_size,
+                      void *                         param_value,
+                      size_t *                       param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  cl_uint i=0;
-  if( properties != NULL){
-    while( properties[i] != 0 ) {
-      if( properties[i] == CL_CONTEXT_PLATFORM ) {
-        if( (struct _cl_platform_id *) properties[i+1] == NULL ) {
-	  RETURN(CL_INVALID_PLATFORM);
-        } else {
-          if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) {
-	    RETURN(CL_INVALID_PLATFORM);
-          }
-        }
-        RETURN(((struct _cl_platform_id *) properties[i+1])
-	  ->dispatch->clGetGLContextInfoKHR(properties, param_name,
-                        param_value_size, param_value, param_value_size_ret));
-      }
-      i += 2;
-    }
-  }
-  RETURN(CL_INVALID_PLATFORM);
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clGetGLContextInfoKHR(properties,
+                                                        param_name,
+                                                        param_value_size,
+                                                        param_value,
+                                                        param_value_size_ret);
+  clGetGLContextInfoKHR_body
 }
 hidden_alias(clGetGLContextInfoKHR);
 
-CL_API_ENTRY cl_int CL_API_CALL
-clWaitForEvents(cl_uint              num_events ,
-                const cl_event *     event_list ){
-  debug_trace();
-  if( num_events == 0 || event_list == NULL )
-    RETURN(CL_INVALID_VALUE);
-  if( (struct _cl_event *)event_list[0] == NULL )
-    RETURN(CL_INVALID_EVENT);
-  RETURN(((struct _cl_event *)event_list[0])
+#define clWaitForEvents_body \
+  if( num_events == 0 || event_list == NULL ) \
+    RETURN(CL_INVALID_VALUE); \
+  if( (struct _cl_event *)event_list[0] == NULL ) \
+    RETURN(CL_INVALID_EVENT); \
+  RETURN(((struct _cl_event *)event_list[0]) \
     ->dispatch->clWaitForEvents(num_events, event_list));
+
+__attribute__ ((visibility ("hidden"))) cl_int
+clWaitForEvents_disp(cl_uint              num_events,
+                     const cl_event *     event_list) CL_API_SUFFIX__VERSION_1_0 {
+  clWaitForEvents_body
+}
+
+CL_API_ENTRY cl_int CL_API_CALL
+clWaitForEvents(cl_uint              num_events,
+                const cl_event *     event_list) CL_API_SUFFIX__VERSION_1_0 {
+  debug_trace();
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clWaitForEvents(num_events,
+                                                  event_list);
+  clWaitForEvents_body
 }
 hidden_alias(clWaitForEvents);
 
-CL_API_ENTRY cl_int CL_API_CALL
-clUnloadCompiler( void ){
-  debug_trace();
+#define clUnloadCompiler_body \
   RETURN(CL_SUCCESS);
+
+__attribute__ ((visibility ("hidden"))) cl_int
+clUnloadCompiler_disp(void) {
+  clUnloadCompiler_body
+}
+
+CL_API_ENTRY cl_int CL_API_CALL
+clUnloadCompiler(void) CL_API_SUFFIX__VERSION_1_0 {
+  debug_trace();
+  if (__builtin_expect (!!_first_layer, 0))
+    return _first_layer->dispatch.clUnloadCompiler();
+  clUnloadCompiler_body
 }
 hidden_alias(clUnloadCompiler);

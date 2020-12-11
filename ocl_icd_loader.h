@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2013, Brice Videau <brice.videau@imag.fr>
+Copyright (c) 2020, Brice Videau <bvideau@anl.gov>
 Copyright (c) 2013, Vincent Danjean <Vincent.Danjean@ens-lyon.org>
 All rights reserved.
       
@@ -34,10 +34,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 cl_platform_id __attribute__((visibility("internal")))
 getDefaultPlatformID();
 
+void __attribute__((visibility("internal")))
+_initClIcd_no_inline(void);
+
 static inline
 cl_platform_id selectPlatformID(cl_platform_id pid) {
   if (pid) return pid;
   return getDefaultPlatformID();
 }
+
+struct layer_icd;
+struct layer_icd {
+  void                    *dl_handle;
+  struct _cl_icd_dispatch  dispatch;
+  struct layer_icd        *next_layer;
+};
+
+__attribute__((visibility("hidden"))) extern struct layer_icd *_first_layer;
 
 #endif

@@ -81,7 +81,7 @@ clean-local: mostlyclean-generic clean-generic
 ##################################################################
 # dummy OpenCL ICD
 FILES_FROM_GENERATOR = run_dummy_icd_gen.c run_dummy_icd_weak_gen.c \
-	libdummy_icd_gen.c libdummy_icd_gen.h
+	libdummy_icd_gen.c libdummy_icd_gen.h dummy_icd_layer_gen.c
 BUILT_SOURCES += $(FILES_FROM_GENERATOR)
 CLEANFILES += $(FILES_FROM_GENERATOR) stamp-generator-dummy
 
@@ -95,7 +95,7 @@ stamp-generator-dummy: icd_generator.rb
 # noinst_LTLIBRARIES would be the correct thing but then libtool
 # only built non shared version :-( So, declaring the libs as
 # pkglib_LTLIBRARIES and using an install hook to remove them.
-pkglib_LTLIBRARIES = libdummycl.la libdummycl2.la libdummycl-noext.la
+pkglib_LTLIBRARIES = libdummycl.la libdummycl2.la libdummycl-noext.la libdummylayer.la
 install-exec-hook::
 	$(RM) -r $(DESTDIR)$(pkglibdir)
 libdummycl_la_SOURCES = libdummy_icd.c libdummy_icd.h
@@ -106,6 +106,8 @@ libdummycl_noext_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_WITHOUT_EXTENSION
 libdummycl2_la_SOURCES = $(libdummycl_la_SOURCES)
 nodist_libdummycl2_la_SOURCES = $(nodist_libdummycl_la_SOURCES)
 libdummycl2_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_SUFFIX=\"2\"
+libdummylayer_la_SOURCES = ocl_icd_layer.h
+nodist_libdummylayer_la_SOURCES = dummy_icd_layer_gen.c
 
 noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
 run_dummy_icd_through_our_ICDL_SOURCES = run_dummy_icd.c
