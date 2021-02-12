@@ -15,7 +15,7 @@ libOpenCL, libOpenCL.so - OCL-ICD implementation of OpenCL ICD loader
 DESCRIPTION
 -----------
 `libOpenCL.so` is the library linked by OpenCL programs. It does not contains
-any OpenCL implementation itself, but merly act as a dispatcher to real OpenCL
+any OpenCL implementation itself, but merely act as a dispatcher to real OpenCL
 implementations provided as OpenCL Installable Client Driver (ICD).
 An ICD loader should be able to load ICDs provided by any vendors.
 
