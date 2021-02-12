@@ -344,7 +344,14 @@ EOF
     icd_layer_source = "/**\n#{$license}\n*/\n"
     icd_layer_source += <<EOF
 #include <stdio.h>
-#include "ocl_icd_layer.h"
+#define CL_USE_DEPRECATED_OPENCL_1_0_APIS
+#define CL_USE_DEPRECATED_OPENCL_1_1_APIS
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#define CL_USE_DEPRECATED_OPENCL_2_0_APIS
+#define CL_USE_DEPRECATED_OPENCL_2_1_APIS
+#define CL_USE_DEPRECATED_OPENCL_2_2_APIS
+#define CL_TARGET_OPENCL_VERSION 300
+#include <CL/cl_layer.h>
 
 static struct _cl_icd_dispatch dispatch = {NULL};
 static const struct _cl_icd_dispatch *tdispatch;
@@ -382,14 +389,14 @@ clInitLayer(
     const struct _cl_icd_dispatch  *target_dispatch,
     cl_uint                        *num_entries_out,
     const struct _cl_icd_dispatch **layer_dispatch) {
-  if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < OCL_ICD_LAST_FUNCTION+1)
+  if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < sizeof(dispatch)/sizeof(dispatch.clGetPlatformIDs))
     return -1;
 
   _init_dispatch();
 
   tdispatch = target_dispatch;
   *layer_dispatch = &dispatch;
-  *num_entries_out = OCL_ICD_LAST_FUNCTION+1;
+  *num_entries_out = sizeof(dispatch)/sizeof(dispatch.clGetPlatformIDs);
   return CL_SUCCESS;
 }
 

@@ -106,7 +106,6 @@ libdummycl_noext_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_WITHOUT_EXTENSION
 libdummycl2_la_SOURCES = $(libdummycl_la_SOURCES)
 nodist_libdummycl2_la_SOURCES = $(nodist_libdummycl_la_SOURCES)
 libdummycl2_la_CPPFLAGS = $(AM_CPPFLAGS) -DICD_SUFFIX=\"2\"
-libdummylayer_la_SOURCES = ocl_icd_layer.h
 nodist_libdummylayer_la_SOURCES = dummy_icd_layer_gen.c
 
 noinst_PROGRAMS=run_dummy_icd_through_our_ICDL
