@@ -134,20 +134,28 @@ typedef struct _cl_image_desc {
     cl_uint                 num_mip_levels;
     cl_uint                 num_samples;
 #ifdef CL_VERSION_2_0
-#ifdef __GNUC__
-    __extension__   /* Prevents warnings about anonymous union in -pedantic builds */
+#if defined(__GNUC__)
+    __extension__                   /* Prevents warnings about anonymous union in -pedantic builds */
 #endif
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__STDC__)
 #pragma warning( push )
-#pragma warning( disable : 4201 ) /* Prevents warning about nameless struct/union in /W4 /Za builds */
+#pragma warning( disable : 4201 )   /* Prevents warning about nameless struct/union in /W4 builds */
 #endif
+#if defined(_MSC_VER) && defined(__STDC__)
+    /* Anonymous unions are not supported in /Za builds */
+#else
     union {
+#endif
 #endif
       cl_mem                  buffer;
 #ifdef CL_VERSION_2_0
+#if defined(_MSC_VER) && defined(__STDC__)
+    /* Anonymous unions are not supported in /Za builds */
+#else
       cl_mem                  mem_object;
     };
-#ifdef _MSC_VER
+#endif
+#if defined(_MSC_VER) && !defined(__STDC__)
 #pragma warning( pop )
 #endif
 #endif
@@ -1502,8 +1510,8 @@ extern CL_API_ENTRY cl_int CL_API_CALL
 clEnqueueReadBufferRect(cl_command_queue    command_queue,
                         cl_mem              buffer,
                         cl_bool             blocking_read,
-                        const size_t *      buffer_offset,
-                        const size_t *      host_offset,
+                        const size_t *      buffer_origin,
+                        const size_t *      host_origin,
                         const size_t *      region,
                         size_t              buffer_row_pitch,
                         size_t              buffer_slice_pitch,
@@ -1533,8 +1541,8 @@ extern CL_API_ENTRY cl_int CL_API_CALL
 clEnqueueWriteBufferRect(cl_command_queue    command_queue,
                          cl_mem              buffer,
                          cl_bool             blocking_write,
-                         const size_t *      buffer_offset,
-                         const size_t *      host_offset,
+                         const size_t *      buffer_origin,
+                         const size_t *      host_origin,
                          const size_t *      region,
                          size_t              buffer_row_pitch,
                          size_t              buffer_slice_pitch,
