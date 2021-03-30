@@ -67,7 +67,7 @@ b. else, if *$OCL_ICD_VENDORS* ends with '`.icd`', libOpenCL.so will only load
 c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
   library itself (i.e. to load it directly with **dlopen**(3)).
 
-*OCL_ICD_LAYERS*::
+*OPENCL_LAYERS*::
 This variable allows one to specify a colon separated list of layers to load,
 specifying their path. This support is experimental.
 

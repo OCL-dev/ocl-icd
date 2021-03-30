@@ -681,7 +681,7 @@ static void __initLayer(char * layer_path) {
 }
 
 static void __initLayers( void ) {
-  char* layers_path=getenv("OCL_ICD_LAYERS");
+  char* layers_path=getenv("OPENCL_LAYERS");
   if (layers_path) {
     char* layer_path = layers_path;
     char* next_layer_path = strchr(layers_path, ':');
