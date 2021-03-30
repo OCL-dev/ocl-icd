@@ -1,3 +1,13 @@
+Version 2.3.0
+=============
+Vincent Danjean (1):
+      Fixed typo in manpage
+
+Brice Videau (3):
+      Change OCL_ICD_LAYERS to OPENCL_LAYERS to conform to specification
+      Updated layer support around official CL/cl_layer.h
+      Updated OpenCL Headers
+
 Version 2.2.14
 ==============
 Brice Videau (1):
