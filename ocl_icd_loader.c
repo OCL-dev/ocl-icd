@@ -884,8 +884,12 @@ getDefaultPlatformID() {
 }
 
 #pragma GCC visibility pop
+#if defined(__APPLE__) || defined(__MACOSX)
+#define hidden_alias(name)
+#else
 #define hidden_alias(name) \
   typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
+#endif
 
 typedef enum {
   CL_ICDL_OCL_VERSION=1,

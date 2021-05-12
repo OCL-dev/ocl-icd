@@ -209,9 +209,15 @@ EOF
     libdummy_icd_structures += "};\n\n"
     libdummy_icd_structures += "#pragma GCC visibility push(hidden)\n\n"
     libdummy_icd_structures += "extern struct _cl_icd_dispatch master_dispatch; \n\n"
+    libdummy_icd_structures += "#if defined(__APPLE__) || defined(__MACOSX)\n"
+    $use_name_in_test.each { |k, f|
+      libdummy_icd_structures += "#define INT#{f} #{f}\n"
+    }
+    libdummy_icd_structures += "#else\n"
     $use_name_in_test.each { |k, f|
       libdummy_icd_structures += "typeof(#{f}) INT#{f};\n"
     }
+    libdummy_icd_structures += "#endif\n"
     libdummy_icd_structures += "#pragma GCC visibility pop\n\n"
     return libdummy_icd_structures
   end
@@ -351,7 +357,13 @@ EOF
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_2_APIS
 #define CL_TARGET_OPENCL_VERSION 300
+#ifdef HAVE_OPENCL_CL_LAYER_H
+#include <OpenCL/cl_layer.h>
+#elif defined HAVE_CL_CL_LAYER_H
 #include <CL/cl_layer.h>
+#else
+#include "khronos-headers/CL/cl_layer.h"
+#endif
 
 static struct _cl_icd_dispatch dispatch = {NULL};
 static const struct _cl_icd_dispatch *tdispatch;
@@ -690,11 +702,15 @@ EOF
 
   def self.generate_ocl_icd_loader_gen_source
     skip_funcs = $specific_loader_funcs
-    ocl_icd_loader_gen_source = "/**\n#{$license}\n*/\n"
-    ocl_icd_loader_gen_source += "#include <string.h>\n"
-    ocl_icd_loader_gen_source += "#include \"ocl_icd_loader.h\"\n"
-    ocl_icd_loader_gen_source += "#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD\n"
-    ocl_icd_loader_gen_source += "#include \"ocl_icd_debug.h\"\n"
+    ocl_icd_loader_gen_source = <<EOF
+/**\n#{$license}\n*/
+#include <string.h>
+#include "ocl_icd_loader.h"
+#define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
+#include "ocl_icd_debug.h"
+#define hidden_alias(name) \\
+  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
+EOF
     api_proc = proc { |disp, (func_name, entry)|
       next if skip_funcs.include?(func_name)
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
@@ -778,10 +794,22 @@ EOF
       #next if func_name.match(/EXT$/)
       #next if func_name.match(/KHR$/)
       if (skip_funcs.include?(func_name)) then
-        ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_hid;\n"
-        ocl_icd_loader_gen_source += "extern typeof(#{func_name}) #{func_name}_disp;\n"
+        ocl_icd_loader_gen_source += <<EOF
+#if defined(__APPLE__) || defined(__MACOSX)
+#define #{func_name}_hid #{func_name}
+#else
+extern typeof(#{func_name}) #{func_name}_hid;
+#endif
+extern typeof(#{func_name}) #{func_name}_disp;
+EOF
       else
-        ocl_icd_loader_gen_source += "typeof(#{func_name}) #{func_name}_hid __attribute__ ((alias (\"#{func_name}\"), visibility(\"hidden\")));\n"
+        ocl_icd_loader_gen_source += <<EOF
+#if defined(__APPLE__) || defined(__MACOSX)
+#define #{func_name}_hid #{func_name}
+#else
+hidden_alias(#{func_name});
+#endif
+EOF
       end
     }
     ocl_icd_loader_gen_source += "\n\nstruct func_desc const function_description[]= {\n"

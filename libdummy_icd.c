@@ -32,8 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #define NUM_PLATFORMS 1
 
+#if defined(__APPLE__) || defined(__MACOSX)
+#define SYMB(f)
+#else
 #define SYMB(f) \
 typeof(INT##f) f __attribute__ ((alias ("INT" #f), visibility("default")))
+#endif
 
 #pragma GCC visibility push(hidden)
 
@@ -42,8 +46,8 @@ int debug_ocl_icd_mask;
 cl_uint const num_master_platforms = NUM_PLATFORMS;
 struct _cl_platform_id master_platforms[NUM_PLATFORMS] = { {&master_dispatch} };
 
-static cl_int _GetPlatformIDs(  
-             cl_uint num_entries, 
+static cl_int _GetPlatformIDs(
+             cl_uint num_entries,
              cl_platform_id *platforms,
              cl_uint *num_platforms) {
   debug_trace();
@@ -65,20 +69,34 @@ static cl_int _GetPlatformIDs(
   return CL_SUCCESS;
 }
 
-CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformIDs(  
-             cl_uint num_entries, 
+#if defined(__APPLE__) || defined(__MACOSX)
+CL_API_ENTRY cl_int __attribute__((visibility("default"))) CL_API_CALL clGetPlatformIDs(
+             cl_uint num_entries,
              cl_platform_id *platforms,
              cl_uint *num_platforms) {
+#else
+CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformIDs(
+             cl_uint num_entries,
+             cl_platform_id *platforms,
+             cl_uint *num_platforms) {
+#endif
   debug_init();
   debug_trace();
   return _GetPlatformIDs(num_entries, platforms, num_platforms);
 }
 SYMB(clGetPlatformIDs);
 
-CL_API_ENTRY cl_int CL_API_CALL INTclIcdGetPlatformIDsKHR(  
-             cl_uint num_entries, 
+#if defined(__APPLE__) || defined(__MACOSX)
+CL_API_ENTRY cl_int __attribute__((visibility("default"))) CL_API_CALL clIcdGetPlatformIDsKHR(
+             cl_uint num_entries,
              cl_platform_id *platforms,
              cl_uint *num_platforms) {
+#else
+CL_API_ENTRY cl_int CL_API_CALL INTclIcdGetPlatformIDsKHR(
+             cl_uint num_entries,
+             cl_platform_id *platforms,
+             cl_uint *num_platforms) {
+#endif
   debug_init();
   debug_trace();
   return _GetPlatformIDs(num_entries, platforms, num_platforms);
@@ -90,8 +108,13 @@ SYMB(clIcdGetPlatformIDsKHR);
              const char *   func_name) CL_API_SUFFIX__VERSION_1_2 {
 }*/
 
+#if defined(__APPLE__) || defined(__MACOSX)
+CL_API_ENTRY void * __attribute__((visibility("default"))) CL_API_CALL clGetExtensionFunctionAddress(
+             const char *   func_name) CL_API_SUFFIX__VERSION_1_0 {
+#else
 CL_API_ENTRY void * CL_API_CALL INTclGetExtensionFunctionAddress(
              const char *   func_name) CL_API_SUFFIX__VERSION_1_0 {
+#endif
   debug_init();
   debug_trace();
   debug(D_LOG, "request address for %s", func_name);
@@ -108,17 +131,26 @@ SYMB(clGetExtensionFunctionAddress);
 #  define ICD_SUFFIX ""
 #endif
 
-CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
-             cl_platform_id   platform, 
+#if defined(__APPLE__) || defined(__MACOSX)
+CL_API_ENTRY cl_int __attribute__((visibility("default"))) CL_API_CALL clGetPlatformInfo(
+             cl_platform_id   platform,
              cl_platform_info param_name,
-             size_t           param_value_size, 
+             size_t           param_value_size,
              void *           param_value,
              size_t *         param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
+#else
+CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
+             cl_platform_id   platform,
+             cl_platform_info param_name,
+             size_t           param_value_size,
+             void *           param_value,
+             size_t *         param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
+#endif
   debug_init();
   debug_trace();
   debug(D_LOG, "request info for 0x%x", param_name);
 
-  if (param_name==0 && param_value_size==0 
+  if (param_name==0 && param_value_size==0
       && param_value==NULL && param_value_size_ret==NULL) {
     printf("1  : ");
   }

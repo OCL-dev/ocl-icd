@@ -18,10 +18,15 @@ jobs:
   build-and-check:
     needs: pre_job
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
-    name: Build and Check Ubuntu
-    runs-on: ubuntu-latest
+    name: Build and Check ${{ matrix.os }} ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
+      - run: brew install automake
+        if: ${{ matrix.os == 'macos-latest' }}
       - run: ./bootstrap
       - run: ./configure --enable-official-khronos-headers
       - run: make
