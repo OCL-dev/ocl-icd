@@ -209,9 +209,15 @@ EOF
     libdummy_icd_structures += "};\n\n"
     libdummy_icd_structures += "#pragma GCC visibility push(hidden)\n\n"
     libdummy_icd_structures += "extern struct _cl_icd_dispatch master_dispatch; \n\n"
+    libdummy_icd_structures += "#if defined(__APPLE__) || defined(__MACOSX)\n"
+    $use_name_in_test.each { |k, f|
+      libdummy_icd_structures += "#define INT#{f} #{f}\n"
+    }
+    libdummy_icd_structures += "#else\n"
     $use_name_in_test.each { |k, f|
       libdummy_icd_structures += "typeof(#{f}) INT#{f};\n"
     }
+    libdummy_icd_structures += "#endif\n"
     libdummy_icd_structures += "#pragma GCC visibility pop\n\n"
     return libdummy_icd_structures
   end

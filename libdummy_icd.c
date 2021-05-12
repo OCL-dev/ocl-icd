@@ -32,8 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #define NUM_PLATFORMS 1
 
+#if defined(__APPLE__) || defined(__MACOSX)
+#define SYMB(f)
+#else
 #define SYMB(f) \
 typeof(INT##f) f __attribute__ ((alias ("INT" #f), visibility("default")))
+#endif
 
 #pragma GCC visibility push(hidden)
 
