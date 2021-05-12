@@ -36,10 +36,45 @@ jobs:
   distcheck:
     needs: pre_job
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
-    name: Build and Check Ubuntu
+    name: Distcheck Ubuntu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: ./bootstrap
       - run: ./configure --enable-official-khronos-headers
       - run: make distcheck DISTCHECK_CONFIGURE_FLAGS=--enable-official-khronos-headers
+
+  build-and-check-official-headers:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    name: Build and Check Ubuntu Official Headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Dependencies
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/OpenCL-Headers
+      - run: ./bootstrap
+      - run: ./configure
+      - run: make
+      - run: make check
+        env:
+          CPATH: ${{ github.workspace }}/OpenCL-Headers:$CPATH
+
+  distcheck-official-headers:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    name: Build and Check Ubuntu Official Headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Dependencies
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/OpenCL-Headers
+      - run: ./bootstrap
+      - run: ./configure
+      - run: make distcheck
+        env:
+          CPATH: ${{ github.workspace }}/OpenCL-Headers:$CPATH
