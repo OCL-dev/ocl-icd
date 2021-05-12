@@ -32,3 +32,14 @@ jobs:
           name: build-and-check
           path: |
             tests/testsuite.log
+
+  distcheck:
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    name: Build and Check Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: ./bootstrap
+      - run: ./configure --enable-official-khronos-headers
+      - run: make distcheck DISTCHECK_CONFIGURE_FLAGS=--enable-official-khronos-headers
