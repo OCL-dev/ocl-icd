@@ -795,7 +795,7 @@ EOF
       if (skip_funcs.include?(func_name)) then
         ocl_icd_loader_gen_source += <<EOF
 #if defined(__APPLE__) || defined(__MACOSX)
-#define name##_hid #name
+#define #{func_name}_hid #{func_name}
 #else
 extern typeof(#{func_name}) #{func_name}_hid;
 #endif
