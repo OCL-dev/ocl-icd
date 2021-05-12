@@ -886,10 +886,10 @@ getDefaultPlatformID() {
 #pragma GCC visibility pop
 #if defined(__APPLE__) || defined(__MACOSX)
 #define hidden_alias(name) \
-  #define name##_hid #name
+  (void)
 #else
 #define hidden_alias(name) \
-  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")));
+  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
 #endif
 
 typedef enum {
@@ -979,7 +979,7 @@ clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0
     return _first_layer->dispatch.clGetExtensionFunctionAddress(func_name);
   clGetExtensionFunctionAddress_body
 }
-hidden_alias(clGetExtensionFunctionAddress)
+hidden_alias(clGetExtensionFunctionAddress);
 
 #define clGetPlatformIDs_body \
   if( platforms == NULL && num_platforms == NULL ) \
@@ -1021,7 +1021,7 @@ clGetPlatformIDs(cl_uint          num_entries,
     return _first_layer->dispatch.clGetPlatformIDs(num_entries, platforms, num_platforms);
   clGetPlatformIDs_body
 }
-hidden_alias(clGetPlatformIDs)
+hidden_alias(clGetPlatformIDs);
 
 #define RETURN_WITH_ERRCODE(errvar, errvalue, retvalue) \
   do { \
@@ -1106,7 +1106,7 @@ clCreateContext(const cl_context_properties *  properties,
                                                   errcode_ret);
   clCreateContext_body
 }
-hidden_alias(clCreateContext)
+hidden_alias(clCreateContext);
 
 #define clCreateContextFromType_body \
   if(_num_picds == 0) { \
@@ -1162,7 +1162,7 @@ clCreateContextFromType(const cl_context_properties *  properties,
                                                           errcode_ret);
   clCreateContextFromType_body
 }
-hidden_alias(clCreateContextFromType)
+hidden_alias(clCreateContextFromType);
 
 #define clGetGLContextInfoKHR_body \
   cl_uint i=0; \
@@ -1210,7 +1210,7 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties,
                                                         param_value_size_ret);
   clGetGLContextInfoKHR_body
 }
-hidden_alias(clGetGLContextInfoKHR)
+hidden_alias(clGetGLContextInfoKHR);
 
 #define clWaitForEvents_body \
   if( num_events == 0 || event_list == NULL ) \
@@ -1235,7 +1235,7 @@ clWaitForEvents(cl_uint              num_events,
                                                   event_list);
   clWaitForEvents_body
 }
-hidden_alias(clWaitForEvents)
+hidden_alias(clWaitForEvents);
 
 #define clUnloadCompiler_body \
   RETURN(CL_SUCCESS);
@@ -1252,4 +1252,4 @@ clUnloadCompiler(void) CL_API_SUFFIX__VERSION_1_0 {
     return _first_layer->dispatch.clUnloadCompiler();
   clUnloadCompiler_body
 }
-hidden_alias(clUnloadCompiler)
+hidden_alias(clUnloadCompiler);

@@ -702,13 +702,8 @@ EOF
 #include "ocl_icd_loader.h"
 #define DEBUG_OCL_ICD_PROVIDE_DUMP_FIELD
 #include "ocl_icd_debug.h"
-#if defined(__APPLE__) || defined(__MACOSX)
 #define hidden_alias(name) \\
-  #define name##_hid #name
-#else
-#define hidden_alias(name) \\
-  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")));
-#endif
+  typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
 EOF
     api_proc = proc { |disp, (func_name, entry)|
       next if skip_funcs.include?(func_name)
@@ -802,7 +797,13 @@ extern typeof(#{func_name}) #{func_name}_hid;
 extern typeof(#{func_name}) #{func_name}_disp;
 EOF
       else
-        ocl_icd_loader_gen_source += "hidden_alias(#{func_name})\n"
+        ocl_icd_loader_gen_source += <<EOF
+#if defined(__APPLE__) || defined(__MACOSX)
+#define #{func_name}_hid #{func_name}
+#else
+hidden_alias(#{func_name});
+#endif
+EOF
       end
     }
     ocl_icd_loader_gen_source += "\n\nstruct func_desc const function_description[]= {\n"
