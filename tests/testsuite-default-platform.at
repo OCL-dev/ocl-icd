@@ -82,7 +82,7 @@ AT_CHECK([env LC_ALL=C sort -u stdout], 0,
 ocl-icd ICD test
 ocl-icd ICD test2
 ])
-AT_CHECK([wc -l < stdout], 0, 
+AT_CHECK([wc -l < stdout | sed "s/^ *//"], 0,
 [4
 ])
 AT_CLEANUP

@@ -85,7 +85,7 @@ AT_CHECK([run_dummy_icd_through_our_ICDL], 0, [stdout], [stderr])
 AT_CHECK([grep "^-1" stdout | sort], 0, [])
 AT_CHECK([grep -v '^[[0-9]]* *:' stdout ], 0, [---
 ])
-AT_CHECK([sed -e "s/ *(expected)//" stdout | uniq -c | grep -v '^ *2 ' ], 0, [      1 ---
+AT_CHECK([sed -e "s/ *(expected)//" stdout | uniq -c | grep -v '^ *2 ' | sed "s/^ *//" ], 0, [1 ---
 ])
 AT_CLEANUP
 
