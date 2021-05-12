@@ -351,7 +351,13 @@ EOF
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_2_APIS
 #define CL_TARGET_OPENCL_VERSION 300
+#ifdef HAVE_OPENCL_CL_LAYER_H
+#include <OpenCL/cl_layer.h>
+#elif defined HAVE_CL_CL_LAYER_H
 #include <CL/cl_layer.h>
+#else
+#include "khronos-headers/CL/cl_layer.h"
+#endif
 
 static struct _cl_icd_dispatch dispatch = {NULL};
 static const struct _cl_icd_dispatch *tdispatch;

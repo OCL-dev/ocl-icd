@@ -55,9 +55,11 @@ cl_h=no
 case $host_os in
   darwin* )
     AC_CHECK_HEADER([OpenCL/opencl.h],[cl_h=yes])
+    AC_CHECK_HEADERS([OpenCL/cl_layer.h])
     ;;
   * )
     AC_CHECK_HEADER([CL/opencl.h],[cl_h=yes])
+    AC_CHECK_HEADERS([CL/cl_layer.h])
     ;;
 esac
 if test $cl_h = yes; then
