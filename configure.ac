@@ -11,6 +11,12 @@ AC_CONFIG_SRCDIR([ocl_icd_loader.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+AC_CANONICAL_HOST
+case $host_os in
+  *macos*) macos="yes" ;;
+  *darwin*) macos="yes" ;;
+  *) macos="no" ;;
+esac
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.9 tar-pax check-news color-tests parallel-tests])
 AMX_SILENT_RULES([AM_DEFAULT_VERBOSITY=1])
 # AM_PROG_AR must be called before LT_INIT...
@@ -173,7 +179,11 @@ AS_IF([test x"$OCL_ICD_VENDORDIR" = x"/etc/OpenCL/vendors" ], [
 ])
 
 # always use versionned symbols (check required for MacOSX)
+if test "x$macos" == xyes ; then
+AM_CONDITIONAL([USE_MAP], [false])
+else
 AM_CONDITIONAL([USE_MAP], [true])
+fi
 
 AC_CONFIG_FILES([
   Makefile
