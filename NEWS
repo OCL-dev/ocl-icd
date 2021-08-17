@@ -1,3 +1,10 @@
+Version 2.3.1
+=============
+Brice Videau(3):
+      Updated OpenCL Headers
+      Add support for MacOS
+      Add CI through GitHub Actions
+
 Version 2.3.0
 =============
 Vincent Danjean (1):
