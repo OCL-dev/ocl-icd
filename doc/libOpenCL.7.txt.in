@@ -69,7 +69,11 @@ c. else libOpenCL.so will try to load *$OCL_ICD_VENDORS* as the ICD shared
 
 *OPENCL_LAYERS*::
 This variable allows one to specify a colon separated list of layers to load,
-specifying their path. This support is experimental.
+specifying their path.
+
+*OPENCL_LAYER_PATH*::
+This variable allows one to override the default system layer search path
+('`@OCL_ICD_LAYERDIR@`').
 
 *OCL_ICD_ASSUME_ICD_EXTENSION*::
 If set to an non-empty value, contrary the Khronos specification, the

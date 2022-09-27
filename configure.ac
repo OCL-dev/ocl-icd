@@ -178,6 +178,23 @@ AS_IF([test x"$OCL_ICD_VENDORDIR" = x"/etc/OpenCL/vendors" ], [
   AC_MSG_NOTICE([using an unofficial custom default vendors directory ($OCL_ICD_VENDORDIR)])
 ])
 
+# --enable-custom-layerdir
+AC_ARG_ENABLE([custom-layerdir],
+  [AS_HELP_STRING([--enable-custom-layerdir],
+                  [use the given directory instead of /etc/OpenCL/layers to look for .lay files])],
+  [AS_CASE(["$enableval"],
+    [yes], [OCL_ICD_LAYERDIR="$sysconfdir/OpenCL/layers"],
+    [no], [OCL_ICD_LAYERDIR='/etc/OpenCL/layers'],
+    [OCL_ICD_LAYERDIR=$enableval])],
+  [OCL_ICD_LAYERDIR=/etc/OpenCL/layers])
+AC_SUBST([OCL_ICD_LAYERDIR])
+
+AS_IF([test x"$OCL_ICD_LAYERDIR" = x"/etc/OpenCL/layers"], [
+  AC_MSG_NOTICE([using the official default layers directory ($OCL_ICD_LAYERDIR)])
+], [
+  AC_MSG_NOTICE([using an unofficial custom default layers directory ($OCL_ICD_LAYERDIR)])
+])
+
 # always use versionned symbols (check required for MacOSX)
 if test "x$macos" == xyes ; then
 AM_CONDITIONAL([USE_MAP], [false])

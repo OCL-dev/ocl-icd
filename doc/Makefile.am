@@ -27,6 +27,7 @@ libOpenCL.7.txt: libOpenCL.7.txt.in Makefile
 	fi && \
 	$(SED) \
 	    -e 's|[@]OCL_ICD_VENDORDIR@|@OCL_ICD_VENDORDIR@|g' \
+	    -e 's|[@]OCL_ICD_LAYERDIR@|@OCL_ICD_LAYERDIR@|g' \
 	    -e "/^@@$$REMOVE: /d" \
 	    -e "s/^@@$$KEEP: //" \
 	    < "$<" > "$@"
