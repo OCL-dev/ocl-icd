@@ -708,13 +708,12 @@ static void __initLayer(char * layer_path) {
   }
 }
 
-static void __initLayers( void ) {
+static void __initSystemLayers( void ) {
   struct stat buf;
   cl_uint num_lays = 0;
   int ret;
   struct dirent *ent;
   DIR *dir = NULL;
-  char* layers_path=getenv("OPENCL_LAYERS");
   const char* opencl_layer_path=getenv("OPENCL_LAYER_PATH");
   if (! opencl_layer_path || opencl_layer_path[0]==0) {
     opencl_layer_path=ETC_OPENCL_LAYERS;
@@ -727,11 +726,11 @@ static void __initLayers( void ) {
   ret=stat(opencl_layer_path, &buf);
   if (ret != 0) {
     debug(D_WARN, "Cannot stat '%s'. Aborting", opencl_layer_path);
-    goto layer_list;
+    return;
   }
   if (!S_ISDIR(buf.st_mode)) {
     debug(D_WARN, "'%s' is not a directory. Aborting", opencl_layer_path);
-    goto layer_list;
+    return;
   }
   debug(D_LOG,"Reading lay list from '%s'", opencl_layer_path);
   dir = opendir(opencl_layer_path);
@@ -739,19 +738,19 @@ static void __initLayers( void ) {
     if (errno == ENOTDIR) {
       debug(D_DUMP, "%s is not a directory. Aborting", opencl_layer_path);
     }
-    goto layer_list;
+    return;
   }
 
   num_lays = _find_num_lays(dir);
   if(num_lays == 0) {
-    goto layer_list;
+    return;
   }
 
   char **dir_elems = NULL;
   cl_uint real_num_lays = 0;
   dir_elems = (char **)malloc(num_lays*sizeof(char *));
   if(!dir_elems) {
-    goto layer_list;
+    return;
   }
   while( (ent=readdir(dir)) != NULL && real_num_lays < num_lays){
     char * lib_path;
@@ -808,8 +807,12 @@ static void __initLayers( void ) {
     free(lib_path);
   }
   free(dir_elems);
+}
 
-layer_list:
+static void __initLayers( void ) {
+  __initSystemLayers();
+
+  char* layers_path=getenv("OPENCL_LAYERS");
   if (layers_path) {
     char* layer_path = layers_path;
     char* next_layer_path = strchr(layers_path, ':');
