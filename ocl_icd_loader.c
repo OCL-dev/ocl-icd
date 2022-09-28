@@ -177,47 +177,50 @@ static char* _clerror2string (cl_int error) {
 #endif
 }
 
-static inline int _string_end_with_icd(const char* str) {
+static inline int _string_end_with(const char* str, const char* suffix) {
   size_t len = strlen(str);
-  if( len<5 || strcmp(str + len - 4, ".icd" ) != 0 ) {
+  size_t len_suff = strlen(suffix);
+  if (len < len_suff + 1 || strcmp(str + len - len_suff, suffix) != 0) {
     return 0;
   }
   return 1;
 }
 
+#define ICD_EXTENSION ".icd"
+#define LAY_EXTENSION ".lay"
+
+static inline int _string_end_with_icd(const char* str) {
+  return _string_end_with(str, ICD_EXTENSION);
+}
+
 static inline int _string_end_with_lay(const char* str) {
-  size_t len = strlen(str);
-  if( len<5 || strcmp(str + len - 4, ".lay" ) != 0 ) {
-    return 0;
-  }
-  return 1;
+  return _string_end_with(str, LAY_EXTENSION);
 }
 
 static inline int _string_with_slash(const char* str) {
   return strchr(str, '/') != NULL;
 }
 
-static inline unsigned int _find_num_icds(DIR *dir) {
-  unsigned int num_icds = 0;
+
+static inline unsigned int _find_num_suffix_match(DIR *dir, const char* suffix) {
+  unsigned int num_matches = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    if (_string_end_with_icd(ent->d_name)) {
-      num_icds++;
+    if (_string_end_with(ent->d_name, suffix)) {
+      num_matches++;
     }
   }
   rewinddir(dir);
+  return num_matches;
+}
+
+static inline unsigned int _find_num_icds(DIR *dir) {
+  unsigned int num_icds = _find_num_suffix_match(dir, ICD_EXTENSION);
   RETURN(num_icds);
 }
 
 static inline unsigned int _find_num_lays(DIR *dir) {
-  unsigned int num_lays = 0;
-  struct dirent *ent;
-  while( (ent=readdir(dir)) != NULL ){
-    if (_string_end_with_lay(ent->d_name)) {
-      num_lays++;
-    }
-  }
-  rewinddir(dir);
+  unsigned int num_lays = _find_num_suffix_match(dir, LAY_EXTENSION);
   RETURN(num_lays);
 }
 
