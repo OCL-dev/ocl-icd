@@ -891,12 +891,12 @@ getDefaultPlatformID() {
   typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
 #endif
 
-typedef enum {
-  CL_ICDL_OCL_VERSION=1,
-  CL_ICDL_VERSION=2,
-  CL_ICDL_NAME=3,
-  CL_ICDL_VENDOR=4,
-} cl_icdl_info;
+typedef cl_uint cl_icdl_info;
+
+#define CL_ICDL_OCL_VERSION 1
+#define CL_ICDL_VERSION     2
+#define CL_ICDL_NAME        3
+#define CL_ICDL_VENDOR      4
 
 static cl_int clGetICDLoaderInfoOCLICD(
   cl_icdl_info     param_name,
