@@ -177,28 +177,56 @@ static char* _clerror2string (cl_int error) {
 #endif
 }
 
-static inline int _string_end_with_icd(const char* str) {
+static inline int _string_end_with(const char* str, const char* suffix) {
   size_t len = strlen(str);
-  if( len<5 || strcmp(str + len - 4, ".icd" ) != 0 ) {
+  size_t len_suff = strlen(suffix);
+  if (len < len_suff + 1 || strcmp(str + len - len_suff, suffix) != 0) {
     return 0;
   }
   return 1;
+}
+
+#define ICD_EXTENSION ".icd"
+#define LAY_EXTENSION ".lay"
+
+static inline int _string_end_with_icd(const char* str) {
+  return _string_end_with(str, ICD_EXTENSION);
+}
+
+static inline int _string_end_with_lay(const char* str) {
+  return _string_end_with(str, LAY_EXTENSION);
 }
 
 static inline int _string_with_slash(const char* str) {
   return strchr(str, '/') != NULL;
 }
 
-static inline unsigned int _find_num_icds(DIR *dir) {
-  unsigned int num_icds = 0;
+
+static inline unsigned int _find_num_suffix_match(DIR *dir, const char* suffix) {
+  unsigned int num_matches = 0;
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
-    if (_string_end_with_icd(ent->d_name)) {
-      num_icds++;
+    if (_string_end_with(ent->d_name, suffix)) {
+      num_matches++;
     }
   }
   rewinddir(dir);
+  return num_matches;
+}
+
+static inline unsigned int _find_num_icds(DIR *dir) {
+  unsigned int num_icds = _find_num_suffix_match(dir, ICD_EXTENSION);
   RETURN(num_icds);
+}
+
+static inline unsigned int _find_num_lays(DIR *dir) {
+  unsigned int num_lays = _find_num_suffix_match(dir, LAY_EXTENSION);
+  RETURN(num_lays);
+}
+
+static int compare_path(const void *a, const void *b)
+{
+      return strcoll(*(const char **)a, *(const char **)b);
 }
 
 static inline unsigned int _load_icd(int num_icds, const char* lib_path) {
@@ -680,7 +708,110 @@ static void __initLayer(char * layer_path) {
   }
 }
 
+static void __initSystemLayers( void ) {
+  struct stat buf;
+  cl_uint num_lays = 0;
+  int ret;
+  struct dirent *ent;
+  DIR *dir = NULL;
+  const char* opencl_layer_path=getenv("OPENCL_LAYER_PATH");
+  if (! opencl_layer_path || opencl_layer_path[0]==0) {
+    opencl_layer_path=ETC_OPENCL_LAYERS;
+    debug(D_DUMP, "OPENCL_LAYER_PATH unset or empty. Using hard-coded path '%s'", opencl_layer_path);
+  } else {
+    debug(D_DUMP, "OPENCL_LAYER_PATH set to '%s', using it", opencl_layer_path);
+  }
+  debug(D_LOG,"Reading lay list from '%s'", opencl_layer_path);
+
+  ret=stat(opencl_layer_path, &buf);
+  if (ret != 0) {
+    debug(D_WARN, "Cannot stat '%s'. Aborting", opencl_layer_path);
+    return;
+  }
+  if (!S_ISDIR(buf.st_mode)) {
+    debug(D_WARN, "'%s' is not a directory. Aborting", opencl_layer_path);
+    return;
+  }
+  debug(D_LOG,"Reading lay list from '%s'", opencl_layer_path);
+  dir = opendir(opencl_layer_path);
+  if(dir == NULL) {
+    if (errno == ENOTDIR) {
+      debug(D_DUMP, "%s is not a directory. Aborting", opencl_layer_path);
+    }
+    return;
+  }
+
+  num_lays = _find_num_lays(dir);
+  if(num_lays == 0) {
+    return;
+  }
+
+  char **dir_elems = NULL;
+  cl_uint real_num_lays = 0;
+  dir_elems = (char **)malloc(num_lays*sizeof(char *));
+  if(!dir_elems) {
+    return;
+  }
+  while( (ent=readdir(dir)) != NULL && real_num_lays < num_lays){
+    char * lib_path;
+    unsigned int lib_path_length;
+    if (!_string_end_with_lay(ent->d_name)) {
+      continue;
+    }
+    lib_path_length = strlen(opencl_layer_path) + strlen(ent->d_name) + 2;
+    lib_path = malloc(lib_path_length*sizeof(char));
+    if (!lib_path) {
+      free(lib_path);
+      continue;
+    }
+    sprintf(lib_path,"%s/%s", opencl_layer_path, ent->d_name);
+    debug(D_LOG, "Considering file '%s'", lib_path);
+    dir_elems[real_num_lays] = lib_path;
+    real_num_lays++;
+  }
+  qsort(dir_elems, real_num_lays, sizeof(char *), compare_path);
+  for(cl_uint j = 0; j < real_num_lays; j++) {
+    unsigned int lib_path_length;
+    char * err;
+    char * lib_path = dir_elems[j];
+    FILE *f = fopen(lib_path,"r");
+    free(lib_path);
+    if (f==NULL) {
+      continue;
+    }
+    fseek(f, 0, SEEK_END);
+    lib_path_length = ftell(f)+1;
+    fseek(f, 0, SEEK_SET);
+    if(lib_path_length == 1) {
+      debug(D_WARN, "File contents too short, skipping LAY");
+      fclose(f);
+      continue;
+    }
+    lib_path = malloc(lib_path_length*sizeof(char));
+    if (!lib_path) {
+      continue;
+    }
+    err = fgets(lib_path, lib_path_length*sizeof(char), f);
+    if( err == NULL ) {
+      free(lib_path);
+      debug(D_WARN, "Error while loading file contents, skipping LAY");
+      continue;
+    }
+
+    lib_path_length = strnlen(lib_path, lib_path_length);
+
+    if( lib_path[lib_path_length-1] == '\n' )
+      lib_path[lib_path_length-1] = '\0';
+
+    __initLayer(lib_path);
+    free(lib_path);
+  }
+  free(dir_elems);
+}
+
 static void __initLayers( void ) {
+  __initSystemLayers();
+
   char* layers_path=getenv("OPENCL_LAYERS");
   if (layers_path) {
     char* layer_path = layers_path;
