@@ -5,6 +5,7 @@ includedir=@includedir@
 
 Name: ocl-icd
 Description: Open Computing Language generic Installable Client Driver support
+Requires: OpenCL-Headers
 Version: @VERSION@
 Libs: -L${libdir}
 Cflags: -I${includedir}
