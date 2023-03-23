@@ -57,24 +57,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int debug_ocl_icd_mask=0;
 
-typedef cl_uint cl_layer_info;
-typedef cl_uint cl_layer_api_version;
-#define CL_LAYER_API_VERSION 0x4240
-#define CL_LAYER_API_VERSION_100 100
-
-typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
-CL_API_ENTRY typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
-    cl_layer_info  param_name,
-    size_t         param_value_size,
-    void          *param_value,
-    size_t        *param_value_size_ret);
-
-CL_API_ENTRY typedef cl_int (CL_API_CALL *clInitLayer_fn)(
-    cl_uint                         num_entries,
-    const struct _cl_icd_dispatch  *target_dispatch,
-    cl_uint                        *num_entries_out,
-    const struct _cl_icd_dispatch **layer_dispatch);
-
 static inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
 	v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
