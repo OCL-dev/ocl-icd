@@ -685,6 +685,10 @@ static void __initLayer(char * layer_path) {
     for( i = limit; i <= OCL_ICD_LAST_FUNCTION; i++) {
       ((void **)&(new_layer->dispatch))[i] = ((void **)target_dispatch)[i];
     }
+#ifdef CLLAYERINFO
+  new_layer->library_name = strdup(layer_path);
+  new_layer->layer_info_fn_ptr = clGetLayerInfo_ptr;
+#endif
   } else {
     debug(D_WARN, "Layer: %s could not be loaded", layer_path);
   }

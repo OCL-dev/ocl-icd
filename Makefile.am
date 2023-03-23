@@ -56,6 +56,15 @@ libOpenCL_la_DEPENDS = ocl_icd_loader_gen.map
 endif
 
 ####################################
+# A utility to list loaded layers
+bin_PROGRAMS = cllayerinfo
+
+cllayerinfo_SOURCES = cllayerinfo.c $(libOpenCL_la_SOURCES)
+nodist_cllayerinfo_SOURCES = $(nodist_libOpenCL_la_SOURCES)
+cllayerinfo_CFLAGS = -DCLLAYERINFO $(libOpenCL_la_CFLAGS)
+cllayerinfo_LDFLAGS = $(PTHREAD_CFLAGS) $(PTHREAD_LIBS)
+
+####################################
 # A very small program test
 check_PROGRAMS=ocl_test ocl_test_icdl
 ocl_test_SOURCES = ocl_test.c
