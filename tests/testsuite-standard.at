@@ -100,3 +100,12 @@ vendor: OCL Icd free software
 ], [])
 AT_CLEANUP
 
+AT_SETUP([Our dummy layer through cllayerinfo])
+AT_EXPORT([OPENCL_LAYERS],[$abs_top_builddir/.libs/libdummylayer.so],
+	  [OCL_ICD_VENDORS],[$abs_top_builddir/vendors])
+AT_CHECK_UNQUOTED([cllayerinfo], 0,
+[$abs_top_builddir/.libs/libdummylayer.so:
+	CL_LAYER_API_VERSION: 100
+	CL_LAYER_NAME: dummylayer
+], [])
+AT_CLEANUP
