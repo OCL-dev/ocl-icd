@@ -738,7 +738,7 @@ EOF
       if !disp
         ocl_icd_loader_gen_source += "  debug_trace();\n"
         ocl_icd_loader_gen_source += "  _initClIcd_no_inline();\n" if fps[0] == "cl_platform_id"
-        ocl_icd_loader_gen_source += "  if (__builtin_expect (!!_first_layer, 0))\n"
+        ocl_icd_loader_gen_source += "  if (_first_layer)\n"
         ocl_icd_loader_gen_source += "    return _first_layer->dispatch.#{func_name}("
         ocl_icd_loader_gen_source += ps.join(", ")
         ocl_icd_loader_gen_source += ");\n"
