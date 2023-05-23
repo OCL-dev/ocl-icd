@@ -42,6 +42,7 @@ stamp-generator: icd_generator.rb
 # ignore the warning in OpenCL headers when using old interface
 libOpenCL_la_CFLAGS= $(NO_DEPRECATED_DECLARATIONS_FLAGS) \
 	$(AM_CFLAGS) $(PTHREAD_CFLAGS) \
+	-DCL_NO_NON_ICD_DISPATCH_EXTENSION_PROTOTYPES \
 	-DETC_OPENCL_VENDORS=\"@OCL_ICD_VENDORDIR@\" \
 	-DETC_OPENCL_LAYERS=\"@OCL_ICD_LAYERDIR@\"
 
