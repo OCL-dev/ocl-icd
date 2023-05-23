@@ -1105,7 +1105,7 @@ CL_API_ENTRY void * CL_API_CALL
 clGetExtensionFunctionAddress(const char * func_name) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clGetExtensionFunctionAddress(func_name);
   clGetExtensionFunctionAddress_body
 }
@@ -1147,7 +1147,7 @@ clGetPlatformIDs(cl_uint          num_entries,
                  cl_uint *        num_platforms) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clGetPlatformIDs(num_entries, platforms, num_platforms);
   clGetPlatformIDs_body
 }
@@ -1227,7 +1227,7 @@ clCreateContext(const cl_context_properties *  properties,
                 cl_int *                       errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clCreateContext(properties,
                                                   num_devices,
                                                   devices,
@@ -1284,7 +1284,7 @@ clCreateContextFromType(const cl_context_properties *  properties,
                         cl_int *                       errcode_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clCreateContextFromType(properties,
                                                           device_type,
                                                           pfn_notify,
@@ -1332,7 +1332,7 @@ clGetGLContextInfoKHR(const cl_context_properties *  properties,
                       size_t *                       param_value_size_ret) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
   _initClIcd();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clGetGLContextInfoKHR(properties,
                                                         param_name,
                                                         param_value_size,
@@ -1360,7 +1360,7 @@ CL_API_ENTRY cl_int CL_API_CALL
 clWaitForEvents(cl_uint              num_events,
                 const cl_event *     event_list) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clWaitForEvents(num_events,
                                                   event_list);
   clWaitForEvents_body
@@ -1378,7 +1378,7 @@ clUnloadCompiler_disp(void) {
 CL_API_ENTRY cl_int CL_API_CALL
 clUnloadCompiler(void) CL_API_SUFFIX__VERSION_1_0 {
   debug_trace();
-  if (__builtin_expect (!!_first_layer, 0))
+  if (_first_layer)
     return _first_layer->dispatch.clUnloadCompiler();
   clUnloadCompiler_body
 }
