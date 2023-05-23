@@ -8,4 +8,3 @@ Description: Open Computing Language generic Installable Client Driver Loader
 Requires: OpenCL-Headers
 Version: @OPENCL_VERSION@
 Libs: -L${libdir} -lOpenCL
-Cflags: -I${includedir}
