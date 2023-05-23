@@ -50,13 +50,13 @@ typedef cl_uint cl_layer_api_version;
 #define CL_LAYER_API_VERSION_100 100
 
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
-CL_API_ENTRY typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
+typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
     cl_layer_info  param_name,
     size_t         param_value_size,
     void          *param_value,
     size_t        *param_value_size_ret);
 
-CL_API_ENTRY typedef cl_int (CL_API_CALL *clInitLayer_fn)(
+typedef cl_int (CL_API_CALL *clInitLayer_fn)(
     cl_uint                         num_entries,
     const struct _cl_icd_dispatch  *target_dispatch,
     cl_uint                        *num_entries_out,
