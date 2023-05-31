@@ -350,6 +350,7 @@ EOF
     icd_layer_source = "/**\n#{$license}\n*/\n"
     icd_layer_source += <<EOF
 #include <stdio.h>
+#include <string.h>
 #define CL_USE_DEPRECATED_OPENCL_1_0_APIS
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
@@ -367,6 +368,8 @@ EOF
 
 static struct _cl_icd_dispatch dispatch = {NULL};
 static const struct _cl_icd_dispatch *tdispatch;
+static const cl_layer_api_version layer_api_version = CL_LAYER_API_VERSION_100;
+static const char layer_name[] = "dummylayer";
 
 CL_API_ENTRY cl_int CL_API_CALL
 clGetLayerInfo(
@@ -374,22 +377,30 @@ clGetLayerInfo(
     size_t         param_value_size,
     void          *param_value,
     size_t        *param_value_size_ret) {
+  size_t sz = 0;
+  const void *src = NULL;
   if (param_value_size && !param_value)
     return CL_INVALID_VALUE;
   if (!param_value && !param_value_size_ret)
     return CL_INVALID_VALUE;
   switch (param_name) {
   case CL_LAYER_API_VERSION:
-    if (param_value_size < sizeof(cl_layer_api_version))
-      return CL_INVALID_VALUE;
-    if (param_value)
-      *((cl_layer_api_version *)param_value) = CL_LAYER_API_VERSION_100;
-    if (param_value_size_ret)
-      *param_value_size_ret = sizeof(cl_layer_api_version);
+    sz = sizeof(cl_layer_api_version);
+    src = &layer_api_version;
+    break;
+  case CL_LAYER_NAME:
+    sz = sizeof(layer_name);
+    src = layer_name;
     break;
   default:
     return CL_INVALID_VALUE;
   }
+  if (param_value && param_value_size < sz)
+    return CL_INVALID_VALUE;
+  if (param_value)
+    memcpy(param_value, src, sz);
+  if (param_value_size_ret)
+    *param_value_size_ret = sz;
   return CL_SUCCESS;
 }
 
