@@ -1,6 +1,17 @@
+Version 2.3.2
+=============
+Brice Videau (7):
+      Add support for system layers
+      Implement published clGetICDLoaderInfoOCLICD extension
+      Define CL_NO_NON_DISPATCH_EXTENSION_PROTOTYPES for compatibility with recent headers
+      Updated OpenCL Headers ot 2023.04.17
+      Remove use of __builtin_expect in layer dispatch
+      Updated pkg-config to depend on OpenCL-Headers.pc
+      Add cllayerinfo tool
+
 Version 2.3.1
 =============
-Brice Videau(3):
+Brice Videau (3):
       Updated OpenCL Headers
       Add support for MacOS
       Add CI through GitHub Actions
