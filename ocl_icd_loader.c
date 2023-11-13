@@ -357,19 +357,19 @@ static void _count_devices(struct platform_icd *p) {
   /* Ensure they are 0 in case of errors */
   p->ngpus = p->ncpus = p->ndevs = 0;
 
-  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
+  error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting GPU devices in platform %p",
 	  _clerror2string(error), p->pid);
   }
 
-  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
+  error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting CPU devices in platform %p",
 	  _clerror2string(error), p->pid);
   }
 
-  error = p->pid->dispatch->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
+  error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting ALL devices in platform %p",
 	  _clerror2string(error), p->pid);
@@ -496,6 +496,10 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       debug(D_WARN, "Not enough platform allocated. Skipping ICD");
       continue;
     }
+#ifdef CL_ICD2_TAG_KHR
+    clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr =
+      _get_function_addr(dlh, picd->ext_fn_ptr, "clGetFunctionAddressForPlatformKHR");
+#endif
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
       struct platform_icd *p=&_picds[_num_picds];
@@ -504,13 +508,27 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->vicd=&_icds[i];
       p->pid=platforms[j];
 
+#ifdef CL_ICD2_TAG_KHR
+      if (KHR_ICD2_HAS_TAG(p->pid) && !pltfn_fn_ptr) {
+        debug(D_WARN, "Found icd 2 platform, but it is missing clGetFunctionAddressForPlatformKHR, skipping it");
+        continue;
+      }
+
+      if (pltfn_fn_ptr && KHR_ICD2_HAS_TAG(p->pid))
+      {
+          _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data.dispatch);
+          p->pid->disp_data = &p->disp_data;
+          debug(D_LOG, "Found icd 2 pltform, using loader managed dispatch");
+      }
+#endif
+
       /* If clGetPlatformInfo is not exported and we are here, it
        * means that OCL_ICD_ASSUME_ICD_EXTENSION. Si we try to take it
        * from the dispatch * table. If that fails too, we have to
        * bail.
        */
       if (plt_info_ptr == NULL) {
-        plt_info_ptr = p->pid->dispatch->clGetPlatformInfo;
+        plt_info_ptr = KHR_ICD2_DISPATCH(p->pid)->clGetPlatformInfo;
         if (plt_info_ptr == NULL) {
           debug(D_WARN, "Missing clGetPlatformInfo even in ICD dispatch table, skipping it");
           continue;
@@ -1176,8 +1194,8 @@ hidden_alias(clGetPlatformIDs);
 	    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL); \
           } \
         } \
-        RETURN(((struct _cl_platform_id *) properties[i+1]) \
-          ->dispatch->clCreateContext(properties, num_devices, devices, \
+        RETURN(KHR_ICD2_DISPATCH((struct _cl_platform_id *) properties[i+1]) \
+          ->clCreateContext(properties, num_devices, devices, \
                         pfn_notify, user_data, errcode_ret)); \
       } \
       i += 2; \
@@ -1189,8 +1207,8 @@ hidden_alias(clGetPlatformIDs);
   if((struct _cl_device_id *)devices[0] == NULL) { \
     RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_DEVICE, NULL); \
   } \
-  RETURN(((struct _cl_device_id *)devices[0]) \
-    ->dispatch->clCreateContext(properties, num_devices, devices, \
+  RETURN(KHR_ICD2_DISPATCH((struct _cl_device_id *)devices[0]) \
+    ->clCreateContext(properties, num_devices, devices, \
                   pfn_notify, user_data, errcode_ret));
 
 
@@ -1239,15 +1257,15 @@ hidden_alias(clCreateContext);
             goto out; \
           } \
         } \
-        return ((struct _cl_platform_id *) properties[i+1]) \
-          ->dispatch->clCreateContextFromType(properties, device_type, \
+        return KHR_ICD2_DISPATCH((struct _cl_platform_id *) properties[i+1]) \
+          ->clCreateContextFromType(properties, device_type, \
                         pfn_notify, user_data, errcode_ret); \
       } \
       i += 2; \
     } \
   } else { \
     cl_platform_id default_platform=getDefaultPlatformID(); \
-    RETURN(default_platform->dispatch->clCreateContextFromType \
+    RETURN(KHR_ICD2_DISPATCH(default_platform)->clCreateContextFromType \
 	(properties, device_type, pfn_notify, user_data, errcode_ret)); \
   } \
  out: \
@@ -1292,8 +1310,8 @@ hidden_alias(clCreateContextFromType);
 	    RETURN(CL_INVALID_PLATFORM); \
           } \
         } \
-        RETURN(((struct _cl_platform_id *) properties[i+1]) \
-	  ->dispatch->clGetGLContextInfoKHR(properties, param_name, \
+        RETURN(KHR_ICD2_DISPATCH((struct _cl_platform_id *) properties[i+1]) \
+	  ->clGetGLContextInfoKHR(properties, param_name, \
                         param_value_size, param_value, param_value_size_ret)); \
       } \
       i += 2; \
@@ -1333,8 +1351,8 @@ hidden_alias(clGetGLContextInfoKHR);
     RETURN(CL_INVALID_VALUE); \
   if( (struct _cl_event *)event_list[0] == NULL ) \
     RETURN(CL_INVALID_EVENT); \
-  RETURN(((struct _cl_event *)event_list[0]) \
-    ->dispatch->clWaitForEvents(num_events, event_list));
+  RETURN(KHR_ICD2_DISPATCH((struct _cl_event *)event_list[0]) \
+    ->clWaitForEvents(num_events, event_list));
 
 __attribute__ ((visibility ("hidden"))) cl_int
 clWaitForEvents_disp(cl_uint              num_events,
