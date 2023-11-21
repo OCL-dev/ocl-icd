@@ -92,6 +92,14 @@ clGetFunctionAddressForPlatformKHR_t(
 typedef clGetFunctionAddressForPlatformKHR_t *
 clGetFunctionAddressForPlatformKHR_fn;
 
+typedef cl_int CL_API_CALL
+clSetPlatformDispatchDataKHR_t(
+    cl_platform_id platform,
+    void *disp_data);
+
+typedef clSetPlatformDispatchDataKHR_t *
+clSetPlatformDispatchDataKHR_fn;
+
 __attribute__((visibility("hidden")))
 extern void _populate_dispatch_table(
     cl_platform_id platform,

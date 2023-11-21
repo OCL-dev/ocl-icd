@@ -499,6 +499,8 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 #ifdef CL_ICD2_TAG_KHR
     clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr =
       _get_function_addr(dlh, picd->ext_fn_ptr, "clGetFunctionAddressForPlatformKHR");
+    clSetPlatformDispatchDataKHR_fn spltdd_fn_ptr =
+      _get_function_addr(dlh, picd->ext_fn_ptr, "clSetPlatformDispatchDataKHR");
 #endif
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
@@ -514,10 +516,15 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
         continue;
       }
 
-      if (pltfn_fn_ptr && KHR_ICD2_HAS_TAG(p->pid))
+      if (KHR_ICD2_HAS_TAG(p->pid) && !spltdd_fn_ptr) {
+        debug(D_WARN, "Found icd 2 platform, but it is missing clSetPlatformDispatchDataKHR, skipping it");
+        continue;
+      }
+
+      if (KHR_ICD2_HAS_TAG(p->pid))
       {
           _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data.dispatch);
-          p->pid->disp_data = &p->disp_data;
+          spltdd_fn_ptr(p->pid, &p->disp_data);
           debug(D_LOG, "Found icd 2 pltform, using loader managed dispatch");
       }
 #endif
