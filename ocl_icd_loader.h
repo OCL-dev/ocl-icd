@@ -76,14 +76,8 @@ struct layer_icd {
 
 
 #ifndef CL_ICD2_TAG_KHR
+#define CL_ICD2_TAG_KHR ((size_t)0x4F50454E434C3331ULL)
 
-#if SIZE_MAX == UINT64_MAX
-#define CL_ICD2_TAG_KHR ((size_t)UINT64_C(0x4F50454E434C3331))
-#elif SIZE_MAX == UINT32_MAX
-#define CL_ICD2_TAG_KHR ((size_t)UINT32_C(0x434C3331))
-#endif
-
-#ifdef CL_ICD2_TAG_KHR
 typedef void * CL_API_CALL
 clGetFunctionAddressForPlatformKHR_t(
     cl_platform_id platform,
@@ -107,9 +101,6 @@ extern void _populate_dispatch_table(
     struct _cl_icd_dispatch* dispatch);
 #endif
 
-#endif
-
-#ifdef CL_ICD2_TAG_KHR
 struct _cl_disp_data
 {
     struct _cl_icd_dispatch dispatch;
@@ -122,9 +113,6 @@ struct _cl_disp_data
 (KHR_ICD2_HAS_TAG(object) ?                                                   \
        &(object)->disp_data->dispatch :                                       \
        (object)->dispatch)
-#else
-#define KHR_ICD2_DISPATCH(object) ((object)->dispatch)
-#endif
 
 struct platform_icd {
   char                *extension_suffix;
@@ -134,9 +122,7 @@ struct platform_icd {
   cl_uint              ngpus; /* number of GPU devices */
   cl_uint              ncpus; /* number of CPU devices */
   cl_uint              ndevs; /* total number of devices, of all types */
-#ifdef CL_ICD2_TAG_KHR
   struct _cl_disp_data disp_data;
-#endif
 };
 
 __attribute__((visibility("hidden")))

@@ -828,9 +828,7 @@ EOF
       ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
-    ocl_icd_loader_gen_source += "#ifdef CL_ICD2_TAG_KHR\n"
     $api_entries.each &(api_stub)
-    ocl_icd_loader_gen_source += "#endif\n"
     $api_entries.each &(api_proc.curry[true])
     $api_entries.each &(api_proc.curry[false])
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
@@ -899,7 +897,6 @@ EOF
 }
 #endif
 
-#ifdef CL_ICD2_TAG_KHR
 void _populate_dispatch_table(
     cl_platform_id pid,
     clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
@@ -919,7 +916,6 @@ EOF
 
     ocl_icd_loader_gen_source << <<EOF
 }
-#endif
 
 #pragma GCC visibility pop
 
