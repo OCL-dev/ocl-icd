@@ -496,10 +496,10 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       debug(D_WARN, "Not enough platform allocated. Skipping ICD");
       continue;
     }
-    clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr =
-      _get_function_addr(dlh, picd->ext_fn_ptr, "clGetFunctionAddressForPlatformKHR");
-    clSetPlatformDispatchDataKHR_fn spltdd_fn_ptr =
-      _get_function_addr(dlh, picd->ext_fn_ptr, "clSetPlatformDispatchDataKHR");
+    clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr =
+      _get_function_addr(dlh, picd->ext_fn_ptr, "clIcdGetFunctionAddressForPlatformKHR");
+    clIcdSetPlatformDispatchDataKHR_fn spltdd_fn_ptr =
+      _get_function_addr(dlh, picd->ext_fn_ptr, "clIcdSetPlatformDispatchDataKHR");
 
     for(j=0; j<num_platforms; j++) {
       debug(D_LOG, "Checking platform %i", j);
@@ -510,12 +510,12 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       p->pid=platforms[j];
 
       if (KHR_ICD2_HAS_TAG(p->pid) && !pltfn_fn_ptr) {
-        debug(D_WARN, "Found icd 2 platform, but it is missing clGetFunctionAddressForPlatformKHR, skipping it");
+        debug(D_WARN, "Found icd 2 platform, but it is missing clIcdGetFunctionAddressForPlatformKHR, skipping it");
         continue;
       }
 
       if (KHR_ICD2_HAS_TAG(p->pid) && !spltdd_fn_ptr) {
-        debug(D_WARN, "Found icd 2 platform, but it is missing clSetPlatformDispatchDataKHR, skipping it");
+        debug(D_WARN, "Found icd 2 platform, but it is missing clIcdSetPlatformDispatchDataKHR, skipping it");
         continue;
       }
 

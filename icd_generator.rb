@@ -899,7 +899,7 @@ EOF
 
 void _populate_dispatch_table(
     cl_platform_id pid,
-    clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
+    clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
     struct _cl_icd_dispatch *dispatch) {
 EOF
     ($api_entries.length+$buff).times { |i|

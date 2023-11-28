@@ -79,25 +79,25 @@ struct layer_icd {
 #define CL_ICD2_TAG_KHR ((size_t)0x4F50454E434C3331ULL)
 
 typedef void * CL_API_CALL
-clGetFunctionAddressForPlatformKHR_t(
+clIcdGetFunctionAddressForPlatformKHR_t(
     cl_platform_id platform,
     const char* function_name);
 
-typedef clGetFunctionAddressForPlatformKHR_t *
-clGetFunctionAddressForPlatformKHR_fn;
+typedef clIcdGetFunctionAddressForPlatformKHR_t *
+clIcdGetFunctionAddressForPlatformKHR_fn;
 
 typedef cl_int CL_API_CALL
-clSetPlatformDispatchDataKHR_t(
+clIcdSetPlatformDispatchDataKHR_t(
     cl_platform_id platform,
     void *disp_data);
 
-typedef clSetPlatformDispatchDataKHR_t *
-clSetPlatformDispatchDataKHR_fn;
+typedef clIcdSetPlatformDispatchDataKHR_t *
+clIcdSetPlatformDispatchDataKHR_fn;
 
 __attribute__((visibility("hidden")))
 extern void _populate_dispatch_table(
     cl_platform_id platform,
-    clGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
+    clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
     struct _cl_icd_dispatch* dispatch);
 #endif
 
