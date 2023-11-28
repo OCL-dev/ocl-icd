@@ -542,20 +542,15 @@ struct vendor_icd {
   clGetExtensionFunctionAddress_fn ext_fn_ptr;
 };
 
-struct platform_icd {
-  char *	extension_suffix;
-  char *	version;
-  struct vendor_icd *vicd;
-  cl_platform_id pid;
-  cl_uint	ngpus; /* number of GPU devices */
-  cl_uint	ncpus; /* number of CPU devices */
-  cl_uint	ndevs; /* total number of devices, of all types */
-};
-
+extern struct _cl_icd_dispatch master_dispatch;
 EOF
-    ocl_icd_header += "extern struct _cl_icd_dispatch master_dispatch;\n"
     $cl_objects.each { |o|
-      ocl_icd_header += "struct _cl_#{o} { struct _cl_icd_dispatch *dispatch; };\n"
+      ocl_icd_header += <<EOF
+struct _cl_#{o} {
+  struct _cl_icd_dispatch *dispatch;
+  struct _cl_disp_data    *disp_data;
+};
+EOF
     }
     return ocl_icd_header
   end
@@ -721,14 +716,55 @@ EOF
 #include "ocl_icd_debug.h"
 #define hidden_alias(name) \\
   typeof(name) name##_hid __attribute__ ((alias (#name), visibility("hidden")))
+
 EOF
-    api_proc = proc { |disp, (func_name, entry)|
-      next if skip_funcs.include?(func_name)
+    cleanup = proc { |entry|
       clean_entry = entry.sub(/(.*\)).*/m,'\1').gsub("/*","").gsub("*/","").gsub("\r","") + "{\n"
       return_type = entry.match(/CL_API_ENTRY (.*) CL_API_CALL/)[1]
       parameters = clean_entry.match(/\(.*\)/m)[0][1..-2]
       parameters.gsub!(/\[.*?\]/,"")
       parameters.sub!(/\(.*?\*\s*(.*?)\)\s*\(.*?\)/m,'\1')
+      ps = parameters.split(",")
+      ps = ps.collect { |p|
+        p = p.split
+        p = p[-1].gsub("*","")
+      }
+      [clean_entry, return_type, parameters, ps]
+    }
+    api_stub = proc { |(func_name, entry)|
+      clean_entry, return_type, parameters, ps = cleanup.call(entry)
+      clean_entry = clean_entry.gsub(func_name, func_name+"_unsupp").gsub("CL_API_ENTRY", "")
+      ocl_icd_loader_gen_source +=  'static '
+      ocl_icd_loader_gen_source += clean_entry.gsub(/\*\[.*?\]/,"*  ").gsub(/\[.+?\]/,"")
+      if(ps.include?("errcode_ret")) then
+        ocl_icd_loader_gen_source += "  if( errcode_ret != NULL ) {\n";
+        ocl_icd_loader_gen_source += "    *errcode_ret = CL_INVALID_OPERATION;\n"
+        ocl_icd_loader_gen_source += "  }\n"
+        if return_type != "void" then
+          ocl_icd_loader_gen_source += "  RETURN(NULL);\n"
+        else
+          ocl_icd_loader_gen_source += "  return;\n"
+        end
+      elsif ($non_standard_error.include?(func_name)) then
+        if return_type != "void" then
+          ocl_icd_loader_gen_source += "  RETURN(NULL);\n"
+        else
+          ocl_icd_loader_gen_source += "  return;\n"
+        end
+      elsif func_name == "clGetExtensionFunctionAddress"
+          ocl_icd_loader_gen_source += "  return NULL;\n"
+      else
+        if return_type != "void" then
+          ocl_icd_loader_gen_source += "  RETURN(CL_INVALID_OPERATION);\n" if return_type != "void"
+        else
+          ocl_icd_loader_gen_source += "  return;\n"
+        end
+      end
+      ocl_icd_loader_gen_source += "}\n\n"
+    }
+    api_proc = proc { |disp, (func_name, entry)|
+      next if skip_funcs.include?(func_name)
+      clean_entry, return_type, parameters, ps = cleanup.call(entry)
       if disp
         clean_entry = clean_entry.gsub(func_name, func_name+"_disp").gsub("CL_API_ENTRY", "").gsub("CL_API_CALL", "")
         ocl_icd_loader_gen_source +=  '__attribute__((visibility("hidden"))) '
@@ -741,11 +777,6 @@ EOF
         first_parameter = first_parameter[0][0..-2]
       end
       fps = first_parameter.split
-      ps = parameters.split(",")
-      ps = ps.collect { |p|
-        p = p.split
-        p = p[-1].gsub("*","")
-      }
       if !disp
         ocl_icd_loader_gen_source += "  debug_trace();\n"
         ocl_icd_loader_gen_source += "  _initClIcd_no_inline();\n" if fps[0] == "cl_platform_id"
@@ -757,7 +788,7 @@ EOF
       ocl_icd_loader_gen_source += generate_get_extension_address_for_platform if func_name == "clGetExtensionFunctionAddressForPlatform"
       raise "Unsupported data_type #{fps[0]}" if ! $cl_data_type_error[fps[0]]
       error_handler = lambda {
-         if(ps.include?("errcode_ret")) then
+        if(ps.include?("errcode_ret")) then
           ocl_icd_loader_gen_source += "    if( errcode_ret != NULL ) {\n";
           ocl_icd_loader_gen_source += "      *errcode_ret = #{$cl_data_type_error[fps[0]]};\n"
           ocl_icd_loader_gen_source += "    }\n"
@@ -792,11 +823,12 @@ EOF
       else
         return_debug="return"
       end
-      ocl_icd_loader_gen_source += "  #{return_debug}(((struct _#{fps[0]} *)#{fps[1]})->dispatch->#{func_name}("
+      ocl_icd_loader_gen_source += "  #{return_debug}(KHR_ICD2_DISPATCH((struct _#{fps[0]} *)#{fps[1]})->#{func_name}("
       ocl_icd_loader_gen_source += ps.join(", ")
       ocl_icd_loader_gen_source += "));\n"
       ocl_icd_loader_gen_source += "}\n\n"
     }
+    $api_entries.each &(api_stub)
     $api_entries.each &(api_proc.curry[true])
     $api_entries.each &(api_proc.curry[false])
     ocl_icd_loader_gen_source += "#pragma GCC visibility push(hidden)\n\n"
@@ -864,6 +896,26 @@ EOF
     ocl_icd_loader_gen_source << <<EOF
 }
 #endif
+
+void _populate_dispatch_table(
+    cl_platform_id pid,
+    clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
+    struct _cl_icd_dispatch *dispatch) {
+EOF
+    ($api_entries.length+$buff).times { |i|
+      if ( e = $known_entries[i] ) then
+        ocl_icd_loader_gen_source << <<EOF
+  dispatch->#{e} = (typeof(#{e})*)pltfn_fn_ptr(pid, "#{e}");
+  if (!dispatch->#{e})
+    dispatch->#{e} = #{e}_unsupp;
+EOF
+      else
+        ocl_icd_loader_gen_source << "  dispatch->clUnknown#{i} = NULL;\n"
+      end
+    }
+
+    ocl_icd_loader_gen_source << <<EOF
+}
 
 #pragma GCC visibility pop
 
