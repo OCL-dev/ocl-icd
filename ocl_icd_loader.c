@@ -523,7 +523,7 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       {
           _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data.dispatch);
           spltdd_fn_ptr(p->pid, &p->disp_data);
-          debug(D_LOG, "Found icd 2 pltform, using loader managed dispatch");
+          debug(D_LOG, "Found icd 2 platform, using loader managed dispatch");
       }
 
       /* If clGetPlatformInfo is not exported and we are here, it
