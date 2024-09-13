@@ -519,6 +519,11 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
         continue;
       }
 
+      if (KHR_ICD2_HAS_TAG(p->pid) && !(((size_t)((p->pid)->dispatch->clUnloadCompiler)) == CL_ICD2_TAG_KHR)) {
+        debug(D_WARN, "Found icd 2 platform, but it is missing clUnloadCompiler tag, skipping it");
+        continue;
+      }
+
       if (KHR_ICD2_HAS_TAG(p->pid))
       {
           _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data.dispatch);
