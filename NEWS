@@ -1,3 +1,8 @@
+Version 2.3.3
+=============
+Brice Videau (1):
+      Add support for cl_khr_icd 2.0.0 specification
+
 Version 2.3.2
 =============
 Brice Videau (7):
