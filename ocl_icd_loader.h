@@ -76,12 +76,16 @@ struct layer_icd {
 
 
 #ifndef CL_ICD2_TAG_KHR
-#define CL_ICD2_TAG_KHR ((size_t)0x4F50454E434C3331ULL)
+#if INTPTR_MAX == INT32_MAX
+#define CL_ICD2_TAG_KHR ((intptr_t)0x434C3331)
+#else
+#define CL_ICD2_TAG_KHR ((intptr_t)0x4F50454E434C3331)
+#endif
 
 typedef void * CL_API_CALL
 clIcdGetFunctionAddressForPlatformKHR_t(
     cl_platform_id platform,
-    const char* function_name);
+    const char* func_name);
 
 typedef clIcdGetFunctionAddressForPlatformKHR_t *
 clIcdGetFunctionAddressForPlatformKHR_fn;
@@ -93,13 +97,13 @@ clIcdSetPlatformDispatchDataKHR_t(
 
 typedef clIcdSetPlatformDispatchDataKHR_t *
 clIcdSetPlatformDispatchDataKHR_fn;
+#endif // CL_ICD2_TAG_KHR
 
 __attribute__((visibility("hidden")))
 extern void _populate_dispatch_table(
     cl_platform_id platform,
     clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
     struct _cl_icd_dispatch* dispatch);
-#endif
 
 struct _cl_disp_data
 {
@@ -107,7 +111,7 @@ struct _cl_disp_data
 };
 
 #define KHR_ICD2_HAS_TAG(object)                                              \
-(((size_t)((object)->dispatch->clGetPlatformIDs)) == CL_ICD2_TAG_KHR)
+(((intptr_t)((object)->dispatch->clGetPlatformIDs)) == CL_ICD2_TAG_KHR)
 
 #define KHR_ICD2_DISPATCH(object)                                             \
 (KHR_ICD2_HAS_TAG(object) ?                                                   \
