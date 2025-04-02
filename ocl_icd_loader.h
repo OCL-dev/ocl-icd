@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocl_icd.h"
 #include "ocl_icd_loader_gen.h"
+#include <stdint.h>
 
 cl_platform_id __attribute__((visibility("internal")))
 getDefaultPlatformID();
@@ -73,6 +74,62 @@ struct layer_icd {
 #endif
 };
 
-__attribute__((visibility("hidden"))) extern struct layer_icd *_first_layer;
+
+#ifndef CL_ICD2_TAG_KHR
+#if INTPTR_MAX == INT32_MAX
+#define CL_ICD2_TAG_KHR ((intptr_t)0x434C3331)
+#else
+#define CL_ICD2_TAG_KHR ((intptr_t)0x4F50454E434C3331)
+#endif
+
+typedef void * CL_API_CALL
+clIcdGetFunctionAddressForPlatformKHR_t(
+    cl_platform_id platform,
+    const char* func_name);
+
+typedef clIcdGetFunctionAddressForPlatformKHR_t *
+clIcdGetFunctionAddressForPlatformKHR_fn;
+
+typedef cl_int CL_API_CALL
+clIcdSetPlatformDispatchDataKHR_t(
+    cl_platform_id platform,
+    void *disp_data);
+
+typedef clIcdSetPlatformDispatchDataKHR_t *
+clIcdSetPlatformDispatchDataKHR_fn;
+#endif // CL_ICD2_TAG_KHR
+
+__attribute__((visibility("hidden")))
+extern void _populate_dispatch_table(
+    cl_platform_id platform,
+    clIcdGetFunctionAddressForPlatformKHR_fn pltfn_fn_ptr,
+    struct _cl_icd_dispatch* dispatch);
+
+struct _cl_disp_data
+{
+    struct _cl_icd_dispatch dispatch;
+};
+
+#define KHR_ICD2_HAS_TAG(object)                                              \
+(((intptr_t)((object)->dispatch->clGetPlatformIDs)) == CL_ICD2_TAG_KHR)
+
+#define KHR_ICD2_DISPATCH(object)                                             \
+(KHR_ICD2_HAS_TAG(object) ?                                                   \
+       &(object)->disp_data->dispatch :                                       \
+       (object)->dispatch)
+
+struct platform_icd {
+  char                *extension_suffix;
+  char                *version;
+  struct vendor_icd   *vicd;
+  cl_platform_id       pid;
+  cl_uint              ngpus; /* number of GPU devices */
+  cl_uint              ncpus; /* number of CPU devices */
+  cl_uint              ndevs; /* total number of devices, of all types */
+  struct _cl_disp_data disp_data;
+};
+
+__attribute__((visibility("hidden")))
+extern struct layer_icd *_first_layer;
 
 #endif
