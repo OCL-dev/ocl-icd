@@ -24,14 +24,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v2
-      - run: brew install automake
+      - uses: actions/checkout@v4
+      - run: brew install automake libtool
         if: ${{ matrix.os == 'macos-latest' }}
       - run: ./bootstrap
       - run: ./configure --enable-official-khronos-headers
       - run: make
       - run: make check
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: build-and-check
@@ -44,7 +44,7 @@ jobs:
     name: Distcheck Ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: ./bootstrap
       - run: ./configure --enable-official-khronos-headers
       - run: make distcheck DISTCHECK_CONFIGURE_FLAGS=--enable-official-khronos-headers
@@ -55,9 +55,9 @@ jobs:
     name: Build and Check Ubuntu Official Headers
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Dependencies
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: KhronosGroup/OpenCL-Headers
           path: OpenCL-Headers
@@ -74,9 +74,9 @@ jobs:
     name: Distcheck Ubuntu Official Headers
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Dependencies
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: KhronosGroup/OpenCL-Headers
           path: OpenCL-Headers
