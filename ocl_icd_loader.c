@@ -1010,7 +1010,7 @@ getDefaultPlatformID() {
       int num_default_platform;
       char *end_scan;
       if (! default_platform) {
-	num_default_platform = 0;
+	break;
       } else {
 	num_default_platform = strtol(default_platform, &end_scan, 10);
 	if (*default_platform == '\0' || *end_scan != '\0') {
