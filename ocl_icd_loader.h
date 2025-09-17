@@ -119,14 +119,14 @@ struct _cl_disp_data
        (object)->dispatch)
 
 struct platform_icd {
-  char                *extension_suffix;
-  char                *version;
-  struct vendor_icd   *vicd;
-  cl_platform_id       pid;
-  cl_uint              ngpus; /* number of GPU devices */
-  cl_uint              ncpus; /* number of CPU devices */
-  cl_uint              ndevs; /* total number of devices, of all types */
-  struct _cl_disp_data disp_data;
+  char                 *extension_suffix;
+  char                 *version;
+  struct vendor_icd    *vicd;
+  cl_platform_id        pid;
+  cl_uint               ngpus; /* number of GPU devices */
+  cl_uint               ncpus; /* number of CPU devices */
+  cl_uint               ndevs; /* total number of devices, of all types */
+  struct _cl_disp_data *disp_data;
 };
 
 __attribute__((visibility("hidden")))

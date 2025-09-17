@@ -526,8 +526,13 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 
       if (KHR_ICD2_HAS_TAG(p->pid))
       {
-          _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data.dispatch);
-          spltdd_fn_ptr(p->pid, &p->disp_data);
+          p->disp_data = (struct _cl_disp_data *)calloc(1, sizeof(struct _cl_disp_data));
+          if (!p->disp_data) {
+            debug(D_WARN, "Not enough memory to allocate dispatch data, skipping ICD");
+            continue;
+          }
+          _populate_dispatch_table(p->pid, pltfn_fn_ptr, &p->disp_data->dispatch);
+          spltdd_fn_ptr(p->pid, p->disp_data);
           debug(D_LOG, "Found icd 2 platform, using loader managed dispatch");
       }
 
