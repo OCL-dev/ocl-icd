@@ -59,7 +59,7 @@ int debug_ocl_icd_mask=0;
 
 static inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
-	v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
+        v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
 }
 
 __attribute__((visibility("hidden"))) struct layer_icd *_first_layer=NULL;
@@ -226,7 +226,7 @@ static inline unsigned int _load_icd(int num_icds, const char* lib_path) {
 }
 
 static inline unsigned int _open_driver(unsigned int num_icds,
-					const char*dir_path, const char*file_path) {
+                                        const char*dir_path, const char*file_path) {
   char * lib_path;
   char * err;
   unsigned int lib_path_length;
@@ -325,27 +325,27 @@ static int _allocate_platforms(int req) {
   RETURN(allocated - _num_picds);
 }
 
-static char* _malloc_clGetPlatformInfo(clGetPlatformInfo_fn plt_info_ptr,
-		 cl_platform_id pid, cl_platform_info cname, char* sname) {
+static char* _malloc_clGetPlatformInfo(clGetPlatformInfo_fn plt_info_ptr, cl_platform_id pid,
+                                       cl_platform_info cname, char* sname) {
   cl_int error;
   size_t param_value_size_ret;
   error = plt_info_ptr(pid, cname, 0, NULL, &param_value_size_ret);
   if (error != CL_SUCCESS) {
     debug(D_WARN, "Error %s while requesting %s in platform %p",
-	  _clerror2string(error), sname, pid);
+          _clerror2string(error), sname, pid);
     return NULL;
   }
   char *param_value = (char *)malloc(sizeof(char)*param_value_size_ret);
   if (param_value == NULL) {
     debug(D_WARN, "Error in malloc while requesting %s in platform %p",
-	  sname, pid);
+          sname, pid);
     return NULL;
   }
   error = plt_info_ptr(pid, cname, param_value_size_ret, param_value, NULL);
   if (error != CL_SUCCESS){
     free(param_value);
     debug(D_WARN, "Error %s while requesting %s in platform %p",
-	  _clerror2string(error), sname, pid);
+          _clerror2string(error), sname, pid);
     return NULL;
   }
   RETURN_STR(param_value);
@@ -360,60 +360,60 @@ static void _count_devices(struct platform_icd *p) {
   error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_GPU, 0, NULL, &(p->ngpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting GPU devices in platform %p",
-	  _clerror2string(error), p->pid);
+          _clerror2string(error), p->pid);
   }
 
   error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_CPU, 0, NULL, &(p->ncpus));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting CPU devices in platform %p",
-	  _clerror2string(error), p->pid);
+          _clerror2string(error), p->pid);
   }
 
   error = KHR_ICD2_DISPATCH(p->pid)->clGetDeviceIDs(p->pid, CL_DEVICE_TYPE_ALL, 0, NULL, &(p->ndevs));
   if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND){
     debug(D_WARN, "Error %s while counting ALL devices in platform %p",
-	  _clerror2string(error), p->pid);
+          _clerror2string(error), p->pid);
   }
 
 }
 
 static int _cmp_platforms(const void *_a, const void *_b) {
-	const struct platform_icd *a=(const struct platform_icd *)_a;
-	const struct platform_icd *b=(const struct platform_icd *)_b;
+  const struct platform_icd *a=(const struct platform_icd *)_a;
+  const struct platform_icd *b=(const struct platform_icd *)_b;
 
-	/* sort first platforms handling max gpu */
-	if (a->ngpus > b->ngpus) return -1;
-	if (a->ngpus < b->ngpus) return 1;
-	/* sort next platforms handling max cpu */
-	if (a->ncpus > b->ncpus) return -1;
-	if (a->ncpus < b->ncpus) return 1;
-	/* sort then platforms handling max devices */
-	if (a->ndevs > b->ndevs) return -1;
-	if (a->ndevs < b->ndevs) return 1;
-	/* else consider platforms equal */
-	return 0;
+  /* sort first platforms handling max gpu */
+  if (a->ngpus > b->ngpus) return -1;
+  if (a->ngpus < b->ngpus) return 1;
+  /* sort next platforms handling max cpu */
+  if (a->ncpus > b->ncpus) return -1;
+  if (a->ncpus < b->ncpus) return 1;
+  /* sort then platforms handling max devices */
+  if (a->ndevs > b->ndevs) return -1;
+  if (a->ndevs < b->ndevs) return 1;
+  /* else consider platforms equal */
+  return 0;
 }
 
 static void _sort_platforms(struct platform_icd *picds, int npicds) {
-	debug(D_WARN, "Nb platefroms: %i", npicds);
-	if (npicds > 1) {
-		char* ocl_sort=getenv("OCL_ICD_PLATFORM_SORT");
-		if (ocl_sort!=NULL && !strcmp(ocl_sort, "none")) {
-			debug(D_LOG, "Platform not sorted");
-		} else {
-			if (ocl_sort!=NULL && strcmp(ocl_sort, "devices")) {
-				debug(D_WARN, "Unknown platform sort algorithm requested: %s", ocl_sort);
-				debug(D_WARN, "Switching do the 'devices' algorithm");
-			}
-			int i;
-			debug(D_LOG, "Platform sorted by GPU, CPU, DEV");
-			for (i=0; i<npicds; i++) {
-				_count_devices(&picds[i]);
-			}
-			qsort(picds, npicds, sizeof(*picds),
-			      &_cmp_platforms);
-		}
-	}
+  debug(D_WARN, "Nb platefroms: %i", npicds);
+  if (npicds > 1) {
+    char* ocl_sort=getenv("OCL_ICD_PLATFORM_SORT");
+    if (ocl_sort!=NULL && !strcmp(ocl_sort, "none")) {
+      debug(D_LOG, "Platform not sorted");
+    } else {
+      if (ocl_sort!=NULL && strcmp(ocl_sort, "devices")) {
+        debug(D_WARN, "Unknown platform sort algorithm requested: %s", ocl_sort);
+        debug(D_WARN, "Switching do the 'devices' algorithm");
+      }
+      int i;
+      debug(D_LOG, "Platform sorted by GPU, CPU, DEV");
+      for (i=0; i<npicds; i++) {
+        _count_devices(&picds[i]);
+      }
+      qsort(picds, npicds, sizeof(*picds),
+            &_cmp_platforms);
+    }
+  }
 }
 
 #define ASSUME_ICD_EXTENSION_UNKNOWN ((int)-1)
@@ -423,18 +423,18 @@ static void _sort_platforms(struct platform_icd *picds, int npicds) {
 
 
 static int _assume_ICD_extension() {
-	static int val=ASSUME_ICD_EXTENSION_UNKNOWN;
-	if (val == ASSUME_ICD_EXTENSION_UNKNOWN) {
-		const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
-		if (! str || str[0]==0) {
-			val=ASSUME_ICD_EXTENSION_NO;
-		} else if (strcmp(str, "debug")==0) {
-			val=ASSUME_ICD_EXTENSION_YES;
-		} else {
-			val=ASSUME_ICD_EXTENSION_YES_AND_QUIET;
-		}
-	}
-	return val;
+  static int val=ASSUME_ICD_EXTENSION_UNKNOWN;
+  if (val == ASSUME_ICD_EXTENSION_UNKNOWN) {
+    const char* str=getenv("OCL_ICD_ASSUME_ICD_EXTENSION");
+    if (! str || str[0]==0) {
+      val=ASSUME_ICD_EXTENSION_NO;
+    } else if (strcmp(str, "debug")==0) {
+      val=ASSUME_ICD_EXTENSION_YES;
+    } else {
+      val=ASSUME_ICD_EXTENSION_YES_AND_QUIET;
+    }
+  }
+  return val;
 }
 
 static inline void _find_and_check_platforms(cl_uint num_icds) {
@@ -454,25 +454,25 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       continue;
     }
     clGetPlatformInfo_fn plt_info_ptr =
-      _get_function_addr(dlh, picd->ext_fn_ptr,	"clGetPlatformInfo");
+      _get_function_addr(dlh, picd->ext_fn_ptr, "clGetPlatformInfo");
     if (plt_info_ptr == NULL) {
-	    switch (_assume_ICD_extension()) {
-	    case ASSUME_ICD_EXTENSION_NO:
-		    debug(D_WARN, "Missing 'clGetPlatformInfo' symbol in ICD, skipping it (use OCL_ICD_ASSUME_ICD_EXTENSION to ignore this check)");
-		    continue;
-	    case ASSUME_ICD_EXTENSION_YES:
-		    debug(D_LOG, "Missing 'clGetPlatformInfo' symbol in ICD, but still continuing due to OCL_ICD_ASSUME_ICD_EXTENSION");
-		    /* Fall through */
-	    case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
-		    /* Assuming an ICD extension, so we will try to
-		     * find the ICD specific version of
-		     * clGetPlatformInfo before knowing for sure that
-		     * the cl_khr_icd is really present */
-		    break;
-	    default:
-		    debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
-		    break;
-	    }
+      switch (_assume_ICD_extension()) {
+      case ASSUME_ICD_EXTENSION_NO:
+        debug(D_WARN, "Missing 'clGetPlatformInfo' symbol in ICD, skipping it (use OCL_ICD_ASSUME_ICD_EXTENSION to ignore this check)");
+        continue;
+      case ASSUME_ICD_EXTENSION_YES:
+        debug(D_LOG, "Missing 'clGetPlatformInfo' symbol in ICD, but still continuing due to OCL_ICD_ASSUME_ICD_EXTENSION");
+        /* Fall through */
+      case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
+        /* Assuming an ICD extension, so we will try to
+         * find the ICD specific version of
+         * clGetPlatformInfo before knowing for sure that
+         * the cl_khr_icd is really present */
+        break;
+      default:
+        debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
+        break;
+      }
     }
     cl_uint num_platforms=0;
     cl_int error;
@@ -548,49 +548,49 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
         debug_ocl_icd_mask &= ~D_TRACE;
-	dump_platform(p->vicd->ext_fn_ptr, p->pid);
+        dump_platform(p->vicd->ext_fn_ptr, p->pid);
         debug_ocl_icd_mask |= log;
       }
 #endif
       {
-	      switch (_assume_ICD_extension()) {
-	      case ASSUME_ICD_EXTENSION_NO:
-		      /* checking the extension as required by the specs */
-		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
-		      if (param_value == NULL){
-			      debug(D_WARN, "Skipping platform %i", j);
-			      continue;
-		      }
-		      debug(D_DUMP, "Supported extensions: %s", param_value);
-		      if( strstr(param_value, "cl_khr_icd") == NULL){
-			      free(param_value);
-			      debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
-			      continue;
-		      }
-		      free(param_value);
-		      break;
-	      case ASSUME_ICD_EXTENSION_YES:
-		      /* Allow to workaround a bug in the Intel ICD used
-		       * with optirun :
-		       * - https://software.intel.com/en-us/forums/opencl/topic/328091
-		       * - https://sourceforge.net/p/virtualgl/bugs/54/
-		       */
-		      debug(D_LOG, "Assuming cl_khr_icd extension without checking for it");
-		      /* Fall through */
-	      case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
-		      /* Assuming an ICD extension, so we will try to
-		       * find the ICD specific version of
-		       * clGetPlatformInfo before knowing for sure that
-		       * the cl_khr_icd is really present */
-		      break;
-	      default:
-		      debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
-		      break;
-	      }
+        switch (_assume_ICD_extension()) {
+        case ASSUME_ICD_EXTENSION_NO:
+          /* checking the extension as required by the specs */
+          param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
+          if (param_value == NULL){
+            debug(D_WARN, "Skipping platform %i", j);
+            continue;
+          }
+          debug(D_DUMP, "Supported extensions: %s", param_value);
+          if( strstr(param_value, "cl_khr_icd") == NULL){
+            free(param_value);
+            debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
+            continue;
+          }
+          free(param_value);
+          break;
+        case ASSUME_ICD_EXTENSION_YES:
+          /* Allow to workaround a bug in the Intel ICD used
+           * with optirun :
+           * - https://software.intel.com/en-us/forums/opencl/topic/328091
+           * - https://sourceforge.net/p/virtualgl/bugs/54/
+           */
+          debug(D_LOG, "Assuming cl_khr_icd extension without checking for it");
+          /* Fall through */
+        case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
+          /* Assuming an ICD extension, so we will try to
+           * find the ICD specific version of
+           * clGetPlatformInfo before knowing for sure that
+           * the cl_khr_icd is really present */
+          break;
+        default:
+          debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
+          break;
+        }
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
       if (param_value == NULL){
-	debug(D_WARN, "Skipping platform %i", j);
+        debug(D_WARN, "Skipping platform %i", j);
         continue;
       }
       p->extension_suffix = param_value;
@@ -599,23 +599,23 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_PROFILE, "profile");
       if (param_value != NULL){
         debug(D_DUMP, "Profile: %s", param_value);
-	free(param_value);
+        free(param_value);
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VERSION, "version");
       p->version = param_value;
       if (param_value != NULL){
         debug(D_DUMP, "Version: %s", param_value);
-	free(param_value);
+        free(param_value);
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_NAME, "name");
       if (param_value != NULL){
         debug(D_DUMP, "Name: %s", param_value);
-	free(param_value);
+        free(param_value);
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VENDOR, "vendor");
       if (param_value != NULL){
         debug(D_DUMP, "Vendor: %s", param_value);
-	free(param_value);
+        free(param_value);
       }
 #endif
       num_valid_platforms++;
@@ -879,7 +879,7 @@ static void __initClIcd( void ) {
     if(dir == NULL) {
       if (errno == ENOTDIR) {
         debug(D_DUMP, "%s is not a directory, trying to use it as a ICD libname",
-	  dir_path);
+              dir_path);
       }
       goto abort;
     }
@@ -899,10 +899,10 @@ static void __initClIcd( void ) {
     if (_string_end_with_icd(dir_path)) {
       num_icds = 0;
       if (! _string_with_slash(dir_path)) {
-	num_icds = _open_driver(0, vendor_path, dir_path);
+        num_icds = _open_driver(0, vendor_path, dir_path);
       }
       if (num_icds == 0) {
-	num_icds = _open_driver(0, NULL, dir_path);
+        num_icds = _open_driver(0, NULL, dir_path);
       }
     } else {
       num_icds = _load_icd(0, dir_path);
@@ -975,7 +975,7 @@ static void _initClIcd_real( void ) {
       /* someone else started __initClIcd(). We wait until it ends. */
       debug(D_WARN, "Waiting end of init");
       while (!_initialized) {
-	__sync_synchronize();
+        __sync_synchronize();
       }
       debug(D_WARN, "Wait done");
    }
@@ -1004,21 +1004,21 @@ getDefaultPlatformID() {
   if (! defaultSet) {
     do {
       if(_num_picds == 0) {
-	break;
+        break;
       }
       const char *default_platform = getenv("OCL_ICD_DEFAULT_PLATFORM");
       int num_default_platform;
       char *end_scan;
       if (! default_platform) {
-	num_default_platform = 0;
+        num_default_platform = 0;
       } else {
-	num_default_platform = strtol(default_platform, &end_scan, 10);
-	if (*default_platform == '\0' || *end_scan != '\0') {
-	  break;
-	}
+        num_default_platform = strtol(default_platform, &end_scan, 10);
+        if (*default_platform == '\0' || *end_scan != '\0') {
+          break;
+        }
       }
       if (num_default_platform < 0 || num_default_platform >= _num_picds) {
-	break;
+        break;
       }
       defaultPlatformID=_picds[num_default_platform].pid;
     } while(0);
@@ -1200,7 +1200,7 @@ hidden_alias(clGetPlatformIDs);
           RETURN(NULL); \
         } else { \
           if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
-	    RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL); \
+            RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL); \
           } \
         } \
         RETURN(KHR_ICD2_DISPATCH((struct _cl_platform_id *) properties[i+1]) \
@@ -1259,8 +1259,8 @@ hidden_alias(clCreateContext);
   if( properties != NULL){ \
     while( properties[i] != 0 ) { \
       if( properties[i] == CL_CONTEXT_PLATFORM ) { \
-	if( (struct _cl_platform_id *) properties[i+1] == NULL ) { \
-	  goto out; \
+        if( (struct _cl_platform_id *) properties[i+1] == NULL ) { \
+          goto out; \
         } else { \
           if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
             goto out; \
@@ -1275,7 +1275,7 @@ hidden_alias(clCreateContext);
   } else { \
     cl_platform_id default_platform=getDefaultPlatformID(); \
     RETURN(KHR_ICD2_DISPATCH(default_platform)->clCreateContextFromType \
-	(properties, device_type, pfn_notify, user_data, errcode_ret)); \
+      (properties, device_type, pfn_notify, user_data, errcode_ret)); \
   } \
  out: \
   RETURN_WITH_ERRCODE(errcode_ret, CL_INVALID_PLATFORM, NULL);
@@ -1313,14 +1313,14 @@ hidden_alias(clCreateContextFromType);
     while( properties[i] != 0 ) { \
       if( properties[i] == CL_CONTEXT_PLATFORM ) { \
         if( (struct _cl_platform_id *) properties[i+1] == NULL ) { \
-	  RETURN(CL_INVALID_PLATFORM); \
+          RETURN(CL_INVALID_PLATFORM); \
         } else { \
           if( !CHECK_PLATFORM((cl_platform_id) properties[i+1]) ) { \
-	    RETURN(CL_INVALID_PLATFORM); \
+          RETURN(CL_INVALID_PLATFORM); \
           } \
         } \
         RETURN(KHR_ICD2_DISPATCH((struct _cl_platform_id *) properties[i+1]) \
-	  ->clGetGLContextInfoKHR(properties, param_name, \
+          ->clGetGLContextInfoKHR(properties, param_name, \
                         param_value_size, param_value, param_value_size_ret)); \
       } \
       i += 2; \
