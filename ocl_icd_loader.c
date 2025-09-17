@@ -212,17 +212,16 @@ static int compare_path(const void *a, const void *b)
 }
 
 static inline unsigned int _load_icd(int num_icds, const char* lib_path) {
-  unsigned int ret=0;
   debug(D_LOG, "Loading ICD '%s'", lib_path);
 
   _icds[num_icds].dl_handle = dlopen(lib_path, RTLD_LAZY|RTLD_LOCAL);//|RTLD_DEEPBIND);
   if(_icds[num_icds].dl_handle != NULL) {
     debug(D_LOG, "ICD[%i] loaded", num_icds);
-    ret=1;
+    num_icds += 1;
   } else {
     debug(D_WARN, "error while dlopening the IDL: '%s',\n  => skipping ICD", dlerror());
   }
-  return ret;
+  return num_icds;
 }
 
 static inline unsigned int _open_driver(unsigned int num_icds,
@@ -268,14 +267,13 @@ static inline unsigned int _open_driver(unsigned int num_icds,
   if( lib_path[lib_path_length-1] == '\n' )
     lib_path[lib_path_length-1] = '\0';
 
-  num_icds += _load_icd(num_icds, lib_path);
+  num_icds = _load_icd(num_icds, lib_path);
 
   free(lib_path);
   RETURN(num_icds);
 }
 
-static inline unsigned int _open_drivers(DIR *dir, const char* dir_path) {
-  unsigned int num_icds = 0;
+static inline unsigned int _open_drivers(unsigned int num_icds, DIR *dir, const char* dir_path) {
   struct dirent *ent;
   while( (ent=readdir(dir)) != NULL ){
     if(! _string_end_with_icd(ent->d_name)) {
@@ -852,6 +850,22 @@ static void __initClIcd( void ) {
   DIR *dir = NULL;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
   const char* vendor_path=getenv("OPENCL_VENDOR_PATH");
+  char* icd_filenames=getenv("OCL_ICD_FILENAMES");
+
+  if (icd_filenames) {
+    debug(D_DUMP, "OCL_ICD_FILENAMES set to '%s', using it", icd_filenames);
+    if (*icd_filenames) {
+      num_icds++;
+      char* next_icd_filenames = strchr(icd_filenames, ':');
+      while (next_icd_filenames) {
+        next_icd_filenames++;
+        num_icds++;
+        next_icd_filenames = strchr(next_icd_filenames, ':');
+      }
+    }
+    debug(D_LOG, "found %ld potential ICDs in OCL_ICD_FILENAMES", (long)num_icds);
+  }
+
   if (! vendor_path || vendor_path[0]==0) {
     vendor_path=ETC_OPENCL_VENDORS;
     debug(D_DUMP, "OPENCL_VENDOR_PATH unset or empty. Using hard-coded path '%s'", vendor_path);
@@ -876,7 +890,7 @@ static void __initClIcd( void ) {
 
   if (!is_dir) {
     debug(D_LOG,"Only loading '%s' as an ICD", dir_path);
-    num_icds = 1;
+    num_icds += 1;
     dir=NULL;
   } else {
     debug(D_LOG,"Reading icd list from '%s'", dir_path);
@@ -889,7 +903,7 @@ static void __initClIcd( void ) {
       goto abort;
     }
 
-    num_icds = _find_num_icds(dir);
+    num_icds += _find_num_icds(dir);
     if(num_icds == 0) {
       goto abort;
     }
@@ -900,20 +914,36 @@ static void __initClIcd( void ) {
     goto abort;
   }
 
+  num_icds = 0;
+
+  if (icd_filenames) {
+    char* icd_filename = icd_filenames;
+    char* next_icd_filename = strchr(icd_filenames, ':');
+    while (icd_filename) {
+      if (next_icd_filename)
+        *next_icd_filename++ = '\0';
+      num_icds = _load_icd(num_icds, icd_filename);
+      icd_filename = next_icd_filename;
+      if (next_icd_filename)
+        next_icd_filename = strchr(next_icd_filename, ':');
+    }
+  }
+
   if (!is_dir) {
     if (_string_end_with_icd(dir_path)) {
-      num_icds = 0;
+      cl_uint n_icds = 0;
       if (! _string_with_slash(dir_path)) {
-	num_icds = _open_driver(0, vendor_path, dir_path);
+	n_icds = _open_driver(num_icds, vendor_path, dir_path);
       }
-      if (num_icds == 0) {
-	num_icds = _open_driver(0, NULL, dir_path);
+      if (n_icds == num_icds) {
+	n_icds = _open_driver(num_icds, NULL, dir_path);
       }
+      num_icds = n_icds;
     } else {
-      num_icds = _load_icd(0, dir_path);
+      num_icds = _load_icd(num_icds, dir_path);
     }
   } else {
-    num_icds = _open_drivers(dir, dir_path);
+    num_icds = _open_drivers(num_icds, dir, dir_path);
   }
   if(num_icds == 0) {
     goto abort;
