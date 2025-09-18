@@ -1,3 +1,8 @@
+Version 2.3.4
+=============
+Brice Videau (1):
+      Fix sorting that would overwrite dispatch table
+
 Version 2.3.3
 =============
 Brice Videau (1):
