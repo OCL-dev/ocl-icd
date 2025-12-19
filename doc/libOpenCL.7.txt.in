@@ -106,6 +106,15 @@ Number of the platform to choose as default platform. Note that using this
 environment variable without ensuring the use of a sort algorithm for platforms
 is not really useful.
 
+*OCL_ICD_FORCE_LEGACY_TERMINATION*::
+Prevent the new deinitializaiton scheme to take place. Allows loading legacy
+layers that do not export clInitLayerWithProperties. Accepts *True*,
+*true*, *T*, or *1*.
+
+*OCL_ICD_DISABLE_DYNAMIC_LIBRARY_UNLOADING*::
+Prevent dynamic libraries from being unloaded once sucessfully loaded. For
+debuging purposes. Accepts *True*, *true*, *T*, or *1*.
+
 *OCL_ICD_DEBUG*::
 +
 --

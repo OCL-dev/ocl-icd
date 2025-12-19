@@ -51,7 +51,7 @@ void unmute(void) {
 void print_layer_info(const struct layer_icd *layer)
 {
   cl_layer_api_version api_version = 0;
-  clGetLayerInfo_fn layer_info_fn_ptr = (clGetLayerInfo_fn)layer->layer_info_fn_ptr;
+  clGetLayerInfo_fn layer_info_fn_ptr = layer->layer_info_fn_ptr;
   cl_int error = CL_SUCCESS;
   size_t sz;
 
@@ -87,5 +87,8 @@ int main (int argc, char *argv[])
     print_layer_info(layer);
     layer = layer->next_layer;
   }
+  mute();
+  _deinitClIcd_no_inline();
+  unmute();
   return 0;
 }

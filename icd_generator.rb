@@ -423,6 +423,30 @@ clInitLayer(
   return CL_SUCCESS;
 }
 
+CL_API_ENTRY cl_int CL_API_CALL
+clInitLayerWithProperties(
+    cl_uint                         num_entries,
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                        *num_entries_out,
+    const struct _cl_icd_dispatch **layer_dispatch,
+    cl_properties                  *properties) {
+  (void)properties;
+  if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < sizeof(dispatch)/sizeof(dispatch.clGetPlatformIDs))
+    return -1;
+
+  _init_dispatch();
+
+  tdispatch = target_dispatch;
+  *layer_dispatch = &dispatch;
+  *num_entries_out = sizeof(dispatch)/sizeof(dispatch.clGetPlatformIDs);
+  return CL_SUCCESS;
+}
+
+CL_API_ENTRY cl_int CL_API_CALL
+clDeinitLayer(void) {
+  tdispatch = NULL;
+  return CL_SUCCESS;
+}
 EOF
 
     $api_entries.each { |func_name, entry|
@@ -543,6 +567,7 @@ struct vendor_icd {
 };
 
 extern struct _cl_icd_dispatch master_dispatch;
+extern struct _cl_icd_dispatch deinit_dispatch;
 EOF
     $cl_objects.each { |o|
       ocl_icd_header += <<EOF
@@ -870,6 +895,21 @@ EOF
     ($api_entries.length+$buff-1).times { |i|
       if( $known_entries[i] ) then
         ocl_icd_loader_gen_source << "  #{$known_entries[i]}_disp,\n"
+      else
+        ocl_icd_loader_gen_source << "  (void *) NULL,\n"
+      end
+    }
+    if( $known_entries[$api_entries.length+$buff-1] ) then
+      ocl_icd_loader_gen_source << "  #{$known_entries[$api_entries.length+$buff-1]}\n"
+    else
+      ocl_icd_loader_gen_source << "  (void *) NULL\n"
+    end
+    ocl_icd_loader_gen_source << "};\n"
+
+    ocl_icd_loader_gen_source << "struct _cl_icd_dispatch deinit_dispatch = {\n"
+    ($api_entries.length+$buff-1).times { |i|
+      if( $known_entries[i] ) then
+        ocl_icd_loader_gen_source << "  #{$known_entries[i]}_unsupp,\n"
       else
         ocl_icd_loader_gen_source << "  (void *) NULL,\n"
       end
