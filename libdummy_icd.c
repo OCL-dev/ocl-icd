@@ -166,10 +166,11 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
 #ifdef ICD_WITHOUT_EXTENSION
 	  "private_ext"
 #else
-	  "cl_khr_icd"
+	  "cl_khr_icd cl_khr_icd_unloadable"
 #endif
 	  ;
   char cl_platform_icd_suffix_khr[] = "LIG";
+  cl_bool cl_platform_unloadable = CL_TRUE;
   size_t size_string;
   char * string_p;
   if( platform != NULL ) {
@@ -211,6 +212,10 @@ CL_API_ENTRY cl_int CL_API_CALL INTclGetPlatformInfo(
     case CL_PLATFORM_ICD_SUFFIX_KHR:
       string_p = cl_platform_icd_suffix_khr;
       size_string = sizeof(cl_platform_icd_suffix_khr);
+      break;
+    case CL_PLATFORM_UNLOADABLE_KHR:
+      string_p = (char *)&cl_platform_unloadable;
+      size_string = sizeof(cl_platform_unloadable);
       break;
     default:
       return CL_INVALID_VALUE;

@@ -56,10 +56,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocl_icd_debug.h"
 
 int debug_ocl_icd_mask=0;
+static int force_legacy_termination = 0;
+static int disable_library_unloading = 0;
 
 static inline void dump_vendor_icd(const char* info, const struct vendor_icd *v) {
   debug(D_DUMP, "%s %p={ num=%i, handle=%p, f=%p}\n", info,
 	v, v->num_platforms, v->dl_handle, v->ext_fn_ptr);
+}
+
+static inline char * getenv_dup(const char * name) {
+  const char * val = getenv(name);
+  if (!val)
+    return NULL;
+  return strdup(val);
 }
 
 __attribute__((visibility("hidden"))) struct layer_icd *_first_layer=NULL;
@@ -504,7 +513,9 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       struct platform_icd *p=&_picds[_num_picds];
       char *param_value=NULL;
       p->extension_suffix=NULL;
-      p->vicd=&_icds[i];
+      p->unloadable=CL_FALSE;
+      p->disp_data=NULL;
+      p->vicd_index=_num_icds;
       p->pid=platforms[j];
 
       if (KHR_ICD2_HAS_TAG(p->pid) && !pltfn_fn_ptr) {
@@ -551,45 +562,48 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       if (debug_ocl_icd_mask & D_DUMP) {
         int log=debug_ocl_icd_mask & D_TRACE;
         debug_ocl_icd_mask &= ~D_TRACE;
-	dump_platform(p->vicd->ext_fn_ptr, p->pid);
+	dump_platform(picd->ext_fn_ptr, p->pid);
         debug_ocl_icd_mask |= log;
       }
 #endif
       {
-	      switch (_assume_ICD_extension()) {
-	      case ASSUME_ICD_EXTENSION_NO:
-		      /* checking the extension as required by the specs */
-		      param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
-		      if (param_value == NULL){
-			      debug(D_WARN, "Skipping platform %i", j);
-			      continue;
-		      }
-		      debug(D_DUMP, "Supported extensions: %s", param_value);
-		      if( strstr(param_value, "cl_khr_icd") == NULL){
-			      free(param_value);
-			      debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
-			      continue;
-		      }
-		      free(param_value);
-		      break;
-	      case ASSUME_ICD_EXTENSION_YES:
-		      /* Allow to workaround a bug in the Intel ICD used
-		       * with optirun :
-		       * - https://software.intel.com/en-us/forums/opencl/topic/328091
-		       * - https://sourceforge.net/p/virtualgl/bugs/54/
-		       */
-		      debug(D_LOG, "Assuming cl_khr_icd extension without checking for it");
-		      /* Fall through */
-	      case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
-		      /* Assuming an ICD extension, so we will try to
-		       * find the ICD specific version of
-		       * clGetPlatformInfo before knowing for sure that
-		       * the cl_khr_icd is really present */
-		      break;
-	      default:
-		      debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
-		      break;
-	      }
+        switch (_assume_ICD_extension()) {
+          case ASSUME_ICD_EXTENSION_NO:
+            /* checking the extension as required by the specs */
+            param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_EXTENSIONS, "extensions");
+            if (param_value == NULL){
+              debug(D_WARN, "Skipping platform %i", j);
+              continue;
+            }
+            debug(D_DUMP, "Supported extensions: %s", param_value);
+            if( strstr(param_value, "cl_khr_icd") == NULL){
+              free(param_value);
+              debug(D_WARN, "Missing khr extension in platform %i, skipping it", j);
+              continue;
+            }
+            if( strstr(param_value, "cl_khr_icd_unloadable") ){
+              plt_info_ptr(p->pid, CL_PLATFORM_UNLOADABLE_KHR, sizeof(p->unloadable), &p->unloadable, NULL);
+            }
+            free(param_value);
+            break;
+          case ASSUME_ICD_EXTENSION_YES:
+            /* Allow to workaround a bug in the Intel ICD used
+             * with optirun :
+             * - https://software.intel.com/en-us/forums/opencl/topic/328091
+             * - https://sourceforge.net/p/virtualgl/bugs/54/
+             */
+            debug(D_LOG, "Assuming cl_khr_icd extension without checking for it");
+            /* Fall through */
+          case ASSUME_ICD_EXTENSION_YES_AND_QUIET:
+            /* Assuming an ICD extension, so we will try to
+             * find the ICD specific version of
+             * clGetPlatformInfo before knowing for sure that
+             * the cl_khr_icd is really present */
+            break;
+          default:
+            debug(D_ALWAYS, "Internal error in _assume_ICD_extension, please report");
+            break;
+        }
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_ICD_SUFFIX_KHR, "suffix");
       if (param_value == NULL){
@@ -605,7 +619,6 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
 	free(param_value);
       }
       param_value=_malloc_clGetPlatformInfo(plt_info_ptr, p->pid, CL_PLATFORM_VERSION, "version");
-      p->version = param_value;
       if (param_value != NULL){
         debug(D_DUMP, "Version: %s", param_value);
 	free(param_value);
@@ -625,12 +638,11 @@ static inline void _find_and_check_platforms(cl_uint num_icds) {
       _num_picds++;
     }
     if( num_valid_platforms != 0 ) {
-      if ( _num_icds != i ) {
-        picd->dl_handle = dlh;
-      }
+      _icds[_num_icds].dl_handle = dlh;
+      _icds[_num_icds].ext_fn_ptr = picd->ext_fn_ptr;
+      _icds[_num_icds].num_platforms = num_valid_platforms;
       dump_vendor_icd("after looking for platforms", &_icds[_num_icds]);
       _num_icds++;
-      picd->num_platforms = num_valid_platforms;
     } else {
       dlclose(dlh);
     }
@@ -660,13 +672,33 @@ static void __initLayer(char * layer_path) {
     }
     debug(D_LOG, "Layer: %s loaded", layer_path);
     clGetLayerInfo_fn clGetLayerInfo_ptr = (clGetLayerInfo_fn)dlsym(handle, "clGetLayerInfo");
-    clInitLayer_fn clInitLayer_ptr = (clInitLayer_fn)dlsym(handle, "clInitLayer");
+    clInitLayer_fn clInitLayer_ptr = NULL;
+    clInitLayerWithProperties_fn clInitLayerWithProperties_ptr = NULL;
+    clDeinitLayer_fn clDeinitLayer_ptr = NULL;
 
-    if (!clGetLayerInfo_ptr || !clInitLayer_ptr) {
+    if (!clGetLayerInfo_ptr) {
       dlclose(handle);
       debug(D_WARN, "Layer: %s was rejected", layer_path);
       return;
     }
+
+    if (force_legacy_termination) {
+      clInitLayer_ptr = (clInitLayer_fn)dlsym(handle, "clInitLayer");
+      if (!clInitLayer_ptr) {
+        dlclose(handle);
+        debug(D_WARN, "Layer: %s was rejected", layer_path);
+        return;
+      }
+    } else {
+      clInitLayerWithProperties_ptr = (clInitLayerWithProperties_fn)dlsym(handle, "clInitLayerWithProperties");
+      if (!clInitLayerWithProperties_ptr) {
+        dlclose(handle);
+        debug(D_WARN, "Layer: %s was rejected", layer_path);
+        return;
+      }
+      clDeinitLayer_ptr = dlsym(handle, "clDeinitLayer");
+    }
+
     cl_layer_api_version layer_version = 0;
     cl_int err = clGetLayerInfo_ptr(CL_LAYER_API_VERSION, sizeof(layer_version), &layer_version, NULL);
     if (CL_SUCCESS != err) {
@@ -692,7 +724,11 @@ static void __initLayer(char * layer_path) {
       target_dispatch = &(master_dispatch);
     }
 
-    err = clInitLayer_ptr(OCL_ICD_LAST_FUNCTION+1, target_dispatch, &layer_dispatch_num_entries, &layer_dispatch);
+    if (force_legacy_termination) {
+      err = clInitLayer_ptr(OCL_ICD_LAST_FUNCTION+1, target_dispatch, &layer_dispatch_num_entries, &layer_dispatch);
+    } else {
+      err = clInitLayerWithProperties_ptr(OCL_ICD_LAST_FUNCTION+1, target_dispatch, &layer_dispatch_num_entries, &layer_dispatch, NULL);
+    }
 
     if (err != CL_SUCCESS || !layer_dispatch || !layer_dispatch_num_entries) {
       dlclose(handle);
@@ -716,9 +752,10 @@ static void __initLayer(char * layer_path) {
       ((void **)&(new_layer->dispatch))[i] = ((void **)target_dispatch)[i];
     }
 #ifdef CLLAYERINFO
-  new_layer->library_name = strdup(layer_path);
-  new_layer->layer_info_fn_ptr = clGetLayerInfo_ptr;
+    new_layer->library_name = strdup(layer_path);
+    new_layer->layer_info_fn_ptr = clGetLayerInfo_ptr;
 #endif
+    new_layer->layer_deinit_fn_ptr = clDeinitLayer_ptr;
   } else {
     debug(D_WARN, "Layer: %s could not be loaded", layer_path);
   }
@@ -828,7 +865,7 @@ static void __initSystemLayers( void ) {
 static void __initLayers( void ) {
   __initSystemLayers();
 
-  char* layers_path=getenv("OPENCL_LAYERS");
+  char* layers_path=getenv_dup("OPENCL_LAYERS");
   if (layers_path) {
     char* layer_path = layers_path;
     char* next_layer_path = strchr(layers_path, ':');
@@ -840,7 +877,15 @@ static void __initLayers( void ) {
       if (next_layer_path)
         next_layer_path = strchr(next_layer_path, ':');
     }
+    free(layers_path);
   }
+}
+
+static int checkTrue(const char *var) {
+  return var && (strcmp(var, "1") == 0 ||
+                 strcmp(var, "T") == 0 ||
+                 strcmp(var, "True") == 0 ||
+                 strcmp(var, "true") == 0);
 }
 
 static void __initClIcd( void ) {
@@ -850,7 +895,12 @@ static void __initClIcd( void ) {
   DIR *dir = NULL;
   const char* dir_path=getenv("OCL_ICD_VENDORS");
   const char* vendor_path=getenv("OPENCL_VENDOR_PATH");
-  char* icd_filenames=getenv("OCL_ICD_FILENAMES");
+  char* icd_filenames=getenv_dup("OCL_ICD_FILENAMES");
+
+  force_legacy_termination =
+    checkTrue(getenv("OCL_ICD_FORCE_LEGACY_TERMINATION"));
+  disable_library_unloading =
+    checkTrue(getenv("OCL_ICD_DISABLE_DYNAMIC_LIBRARY_UNLOADING"));
 
   if (icd_filenames) {
     debug(D_DUMP, "OCL_ICD_FILENAMES set to '%s', using it", icd_filenames);
@@ -927,6 +977,8 @@ static void __initClIcd( void ) {
       if (next_icd_filename)
         next_icd_filename = strchr(next_icd_filename, ':');
     }
+    free(icd_filenames);
+    icd_filenames = NULL;
   }
 
   if (!is_dir) {
@@ -972,6 +1024,9 @@ static void __initClIcd( void ) {
   }
   if (dir != NULL){
     closedir(dir);
+  }
+  if (icd_filenames){
+    free(icd_filenames);
   }
   return;
 }
@@ -1137,7 +1192,7 @@ static cl_int clGetICDLoaderInfoOCLICD(
     if( suffix_length > strlen(func_name) ) \
       continue; \
     if(strcmp(_picds[i].extension_suffix, &func_name[strlen(func_name)-suffix_length]) == 0) \
-      RETURN((*_picds[i].vicd->ext_fn_ptr)(func_name)); \
+      RETURN((*_icds[_picds[i].vicd_index].ext_fn_ptr)(func_name)); \
   } \
   if(strcmp(func_name, "clGetICDLoaderInfoOCLICD") == 0) { \
     return (void*)(void*(*)(void))(&clGetICDLoaderInfoOCLICD); \
@@ -1431,3 +1486,67 @@ clUnloadCompiler(void) CL_API_SUFFIX__VERSION_1_0 {
   clUnloadCompiler_body
 }
 hidden_alias(clUnloadCompiler);
+
+/* Deinitialization */
+
+static struct layer_icd deinit_layer = {0};
+
+void __attribute__((visibility("internal")))
+_deinitClIcd_no_inline( void ) {
+  if (force_legacy_termination) {
+    debug(D_LOG, "Loader termination disabled");
+    return;
+  } else {
+    debug(D_LOG, "Terminating loader");
+  }
+
+  struct layer_icd *head_layer = _first_layer;
+  deinit_layer.dispatch = deinit_dispatch;
+  _first_layer = &deinit_layer;
+
+  debug(D_LOG, "Unloading layers");
+  while (head_layer) {
+    struct layer_icd *current_layer = head_layer;
+#ifdef CLLAYERINFO
+    free(current_layer->library_name);
+#endif
+    if (current_layer->layer_deinit_fn_ptr) {
+      cl_int err = current_layer->layer_deinit_fn_ptr();
+      if (CL_SUCCESS != err) {
+        debug(D_WARN, "Layer deinit returned error");
+      }
+    }
+    if (!disable_library_unloading) {
+      dlclose(current_layer->dl_handle);
+    }
+    head_layer = current_layer->next_layer;
+    free(current_layer);
+  }
+
+  debug(D_LOG, "Unloading icds");
+  for(int i = 0; i < _num_picds; i++) {
+    free(_picds[i].extension_suffix);
+    free(_picds[i].disp_data);
+    if (_picds[i].unloadable) {
+      _icds[_picds[i].vicd_index].num_platforms--;
+    }
+  }
+  free(_picds);
+  _picds = NULL;
+  _num_picds = 0;
+  for(int i = 0; i < _num_icds; i++) {
+    if (_icds[i].num_platforms == 0) {
+      if (!disable_library_unloading) {
+        dlclose(_icds[i].dl_handle);
+      }
+    }
+  }
+  free(_icds);
+}
+
+#ifndef CLLAYERINFO
+static
+void __attribute__((destructor)) ocl_icd_destructor(void) {
+  _deinitClIcd_no_inline();
+}
+#endif

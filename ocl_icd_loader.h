@@ -38,6 +38,9 @@ getDefaultPlatformID();
 void __attribute__((visibility("internal")))
 _initClIcd_no_inline(void);
 
+void __attribute__((visibility("internal")))
+_deinitClIcd_no_inline(void);
+
 static inline
 cl_platform_id selectPlatformID(cl_platform_id pid) {
   if (pid) return pid;
@@ -50,6 +53,9 @@ typedef cl_uint cl_layer_api_version;
 #define CL_LAYER_NAME        0x4241
 #define CL_LAYER_API_VERSION_100 100
 
+typedef cl_properties cl_layer_properties;
+#define CL_LAYER_PROPERTIES_LIST_END         ((cl_layer_properties)0)
+
 typedef __typeof__(clGetPlatformInfo) *clGetPlatformInfo_fn;
 typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
     cl_layer_info  param_name,
@@ -60,8 +66,17 @@ typedef cl_int (CL_API_CALL *clGetLayerInfo_fn)(
 typedef cl_int (CL_API_CALL *clInitLayer_fn)(
     cl_uint                         num_entries,
     const struct _cl_icd_dispatch  *target_dispatch,
-    cl_uint                        *num_entries_out,
+    cl_uint                        *num_entries_ret,
     const struct _cl_icd_dispatch **layer_dispatch);
+
+typedef cl_int (CL_API_CALL *clInitLayerWithProperties_fn)(
+    cl_uint                         num_entries,
+    const struct _cl_icd_dispatch  *target_dispatch,
+    cl_uint                        *num_entries_ret,
+    const struct _cl_icd_dispatch **layer_dispatch_ret,
+    const cl_layer_properties      *properties);
+
+typedef cl_int (CL_API_CALL *clDeinitLayer_fn)(void);
 
 struct layer_icd;
 struct layer_icd {
@@ -70,8 +85,9 @@ struct layer_icd {
   struct layer_icd        *next_layer;
 #ifdef CLLAYERINFO
   char                    *library_name;
-  void                    *layer_info_fn_ptr;
+  clGetLayerInfo_fn        layer_info_fn_ptr;
 #endif
+  clDeinitLayer_fn         layer_deinit_fn_ptr;
 };
 
 
@@ -99,6 +115,10 @@ typedef clIcdSetPlatformDispatchDataKHR_t *
 clIcdSetPlatformDispatchDataKHR_fn;
 #endif // CL_ICD2_TAG_KHR
 
+#if !defined(CL_PLATFORM_UNLOADABLE_KHR)
+#define CL_PLATFORM_UNLOADABLE_KHR 0x0921
+#endif
+
 __attribute__((visibility("hidden")))
 extern void _populate_dispatch_table(
     cl_platform_id platform,
@@ -120,13 +140,13 @@ struct _cl_disp_data
 
 struct platform_icd {
   char                 *extension_suffix;
-  char                 *version;
-  struct vendor_icd    *vicd;
+  size_t                vicd_index;
   cl_platform_id        pid;
   cl_uint               ngpus; /* number of GPU devices */
   cl_uint               ncpus; /* number of CPU devices */
   cl_uint               ndevs; /* total number of devices, of all types */
   struct _cl_disp_data *disp_data;
+  cl_bool               unloadable;
 };
 
 __attribute__((visibility("hidden")))
