@@ -181,7 +181,7 @@ EOF
     headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_2_0_APIS\n"
     headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_2_1_APIS\n"
     headers_no_warn << "#  define CL_USE_DEPRECATED_OPENCL_2_2_APIS\n"
-    headers_no_warn << "#  define CL_TARGET_OPENCL_VERSION 300\n"
+    headers_no_warn << "#  define CL_TARGET_OPENCL_VERSION 310\n"
     headers_no_warn << "#  include <CL/opencl.h>\n"
     headers_no_warn << self.include_headers
     headers_no_warn << "#pragma GCC diagnostic pop\n"
@@ -193,7 +193,7 @@ EOF
   # generate mode
   def self.generate_libdummy_icd_header
     libdummy_icd_structures = "/**\n#{$license}\n*/\n"
-    libdummy_icd_structures += "#define CL_TARGET_OPENCL_VERSION 300\n"
+    libdummy_icd_structures += "#define CL_TARGET_OPENCL_VERSION 310\n"
     libdummy_icd_structures += "#include <CL/opencl.h>\n"
     libdummy_icd_structures += self.include_headers
     libdummy_icd_structures += "\n\nstruct _cl_icd_dispatch;\n"
@@ -357,7 +357,7 @@ EOF
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_2_APIS
-#define CL_TARGET_OPENCL_VERSION 300
+#define CL_TARGET_OPENCL_VERSION 310
 #ifdef HAVE_OPENCL_CL_LAYER_H
 #include <OpenCL/cl_layer.h>
 #elif defined HAVE_CL_CL_LAYER_H
@@ -429,7 +429,7 @@ clInitLayerWithProperties(
     const struct _cl_icd_dispatch  *target_dispatch,
     cl_uint                        *num_entries_out,
     const struct _cl_icd_dispatch **layer_dispatch,
-    cl_properties                  *properties) {
+    const cl_layer_properties      *properties) {
   (void)properties;
   if (!target_dispatch || !layer_dispatch ||!num_entries_out || num_entries < sizeof(dispatch)/sizeof(dispatch.clGetPlatformIDs))
     return -1;
