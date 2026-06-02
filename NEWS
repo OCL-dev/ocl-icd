@@ -1,3 +1,10 @@
+Version 2.3.5
+=============
+Brice Videau (3):
+      Updated for OpenCL 3.1
+      Loader deinitialization
+      Add support for OCL_ICD_FILENAMES
+
 Version 2.3.4
 =============
 Brice Videau (1):
